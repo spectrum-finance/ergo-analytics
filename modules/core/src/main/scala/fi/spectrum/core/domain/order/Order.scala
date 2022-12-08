@@ -8,20 +8,20 @@ import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
 import fi.spectrum.core.domain.order.OrderType.{AMM, LOCK}
 import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
 import fi.spectrum.core.domain.order.Version.{V3, _}
+import fi.spectrum.core.domain.transaction.Output
 import io.circe.derivation.{deriveDecoder, deriveEncoder}
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
 
 sealed trait Order[+V <: Version, +T <: OrderType, +O <: Operation] {
-  val boxId: BoxId
+  val box: Output
   val fee: Fee
-  val state: OrderState
 
   val version: V
   val orderType: T
   val orderOperation: O
 
-  def id: OrderId = OrderId(boxId.value)
+  def id: OrderId = OrderId(box.boxId.value)
 }
 
 object Order {
@@ -52,9 +52,8 @@ object Order {
 
     @derive(encoder, decoder)
     final case class DepositV3(
-      boxId: BoxId,
+      box: Output,
       fee: SPF,
-      state: OrderState,
       poolId: PoolId,
       params: DepositParams[ErgoTreeRedeemer],
       maxMinerFee: Long,
@@ -65,9 +64,8 @@ object Order {
 
     @derive(encoder, decoder)
     final case class DepositV1(
-      boxId: BoxId,
+      box: Output,
       fee: ERG,
-      state: OrderState,
       poolId: PoolId,
       params: DepositParams[PublicKeyRedeemer],
       maxMinerFee: Long,
@@ -78,9 +76,8 @@ object Order {
 
     @derive(encoder, decoder)
     final case class DepositLegacyV2(
-      boxId: BoxId,
+      box: Output,
       fee: ERG,
-      state: OrderState,
       poolId: PoolId,
       params: DepositParams[PublicKeyRedeemer],
       version: LegacyV2,
@@ -90,9 +87,8 @@ object Order {
 
     @derive(encoder, decoder)
     final case class DepositLegacyV1(
-      boxId: BoxId,
+      box: Output,
       fee: ERG,
-      state: OrderState,
       poolId: PoolId,
       params: DepositParams[PublicKeyRedeemer],
       version: LegacyV1,
@@ -112,10 +108,9 @@ object Order {
 
     @derive(encoder, decoder)
     final case class RedeemV3(
+      box: Output,
       poolId: PoolId,
-      boxId: BoxId,
       fee: SPF,
-      state: OrderState,
       params: RedeemParams[ErgoTreeRedeemer],
       maxMinerFee: Long,
       version: V3,
@@ -125,10 +120,9 @@ object Order {
 
     @derive(encoder, decoder)
     final case class RedeemV1(
+      box: Output,
       poolId: PoolId,
-      boxId: BoxId,
       fee: ERG,
-      state: OrderState,
       params: RedeemParams[PublicKeyRedeemer],
       maxMinerFee: Long,
       version: V1,
@@ -138,10 +132,9 @@ object Order {
 
     @derive(encoder, decoder)
     final case class RedeemLegacyV1(
+      box: Output,
       poolId: PoolId,
-      boxId: BoxId,
       fee: ERG,
-      state: OrderState,
       params: RedeemParams[PublicKeyRedeemer],
       version: LegacyV1,
       orderType: AMM,
@@ -160,10 +153,9 @@ object Order {
 
     @derive(encoder, decoder)
     final case class SwapV3(
+      box: Output,
       poolId: PoolId,
-      boxId: BoxId,
       fee: SPF,
-      state: OrderState,
       params: SwapParams[ErgoTreeRedeemer],
       maxMinerFee: Long,
       reservedExFee: Long,
@@ -174,10 +166,9 @@ object Order {
 
     @derive(encoder, decoder)
     final case class SwapV2(
+      box: Output,
       poolId: PoolId,
-      boxId: BoxId,
       fee: ERG,
-      state: OrderState,
       params: SwapParams[ErgoTreeRedeemer],
       maxMinerFee: Long,
       version: V2,
@@ -187,10 +178,9 @@ object Order {
 
     @derive(encoder, decoder)
     final case class SwapV1(
+      box: Output,
       poolId: PoolId,
-      boxId: BoxId,
       fee: ERG,
-      state: OrderState,
       params: SwapParams[PublicKeyRedeemer],
       maxMinerFee: Long,
       version: V1,
@@ -200,10 +190,9 @@ object Order {
 
     @derive(encoder, decoder)
     final case class SwapLegacyV1(
+      box: Output,
       poolId: PoolId,
-      boxId: BoxId,
       fee: ERG,
-      state: OrderState,
       params: SwapParams[PublicKeyRedeemer],
       version: LegacyV1,
       orderType: AMM,
@@ -221,9 +210,8 @@ object Order {
 
     @derive(encoder, decoder)
     final case class LockV1(
-      boxId: BoxId,
+      box: Output,
       fee: ERG,
-      state: OrderState,
       deadline: Int,
       amount: AssetAmount,
       redeemer: SErgoTree,

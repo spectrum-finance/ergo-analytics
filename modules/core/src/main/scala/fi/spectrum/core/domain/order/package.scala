@@ -12,7 +12,11 @@ package object order {
   object OrderId {}
 
   @derive(encoder, decoder)
-  @newtype final case class PoolId(value: String)
+  @newtype final case class PoolId(value: TokenId)
 
-  object PoolId {}
+  object PoolId {
+
+    def fromBytes(bytes: Array[Byte]): PoolId =
+      PoolId(TokenId.fromBytes(bytes))
+  }
 }

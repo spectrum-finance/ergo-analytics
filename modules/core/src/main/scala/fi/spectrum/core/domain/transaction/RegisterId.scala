@@ -1,6 +1,7 @@
 package fi.spectrum.core.domain.transaction
 
 import enumeratum.{CirceEnum, Enum, EnumEntry}
+import io.circe.{KeyDecoder, KeyEncoder}
 
 sealed abstract class RegisterId extends EnumEntry
 
@@ -27,4 +28,7 @@ object RegisterId extends Enum[RegisterId] with CirceEnum[RegisterId] {
   case object R9 extends RegisterId
 
   val values = findValues
+
+  implicit val keyDecoder: KeyDecoder[RegisterId] = withNameOption
+  implicit val keyEncoder: KeyEncoder[RegisterId] = _.entryName
 }

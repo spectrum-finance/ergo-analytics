@@ -32,35 +32,21 @@ object Version {
   implicit val legacyV1Encoder: Encoder[LegacyV1] = Encoder[String].contramap(_ => make.legacyV1.show)
   implicit val legacyV2Encoder: Encoder[LegacyV2] = Encoder[String].contramap(_ => make.legacyV2.show)
 
-  implicit val v1Decoder: Decoder[V1] = Decoder[String].emap {
-    case v1 if v1 === make.v1.show => make.v1.asRight
-    case invalid                   => s"Invalid version v1 decoder: $invalid".asLeft
+  def anyDecoder[R: Show](r: R): Decoder[R] = Decoder[String].emap {
+    case result if result === r.show => r.asRight
+    case invalid                     => s"Invalid version ${r.show} decoder: $invalid".asLeft
   }
 
-  implicit val v2Decoder: Decoder[V2] = Decoder[String].emap {
-    case v2 if v2 === make.v2.show => make.v2.asRight
-    case invalid                   => s"Invalid version v2 decoder: $invalid".asLeft
-  }
-
-  implicit val v3Decoder: Decoder[V3] = Decoder[String].emap {
-    case v3 if v3 === make.v3.show => make.v3.asRight
-    case invalid                   => s"Invalid version v3 decoder: $invalid".asLeft
-  }
-
-  implicit val legacyV1Decoder: Decoder[LegacyV1] = Decoder[String].emap {
-    case legacyV1 if legacyV1 === make.legacyV1.show => make.legacyV1.asRight
-    case invalid                                     => s"Invalid legacy v1 decoder: $invalid".asLeft
-  }
-
-  implicit val legacyV2Decoder: Decoder[LegacyV2] = Decoder[String].emap {
-    case legacyV2 if legacyV2 === make.legacyV2.show => make.legacyV2.asRight
-    case invalid                                     => s"Invalid legacy v2 decoder: $invalid".asLeft
-  }
+  implicit val v1Decoder: Decoder[V1]             = anyDecoder[V1](make.v1)
+  implicit val v2Decoder: Decoder[V2]             = anyDecoder[V2](make.v2)
+  implicit val v3Decoder: Decoder[V3]             = anyDecoder[V3](make.v3)
+  implicit val legacyV1Decoder: Decoder[LegacyV1] = anyDecoder[LegacyV1](make.legacyV1)
+  implicit val legacyV2Decoder: Decoder[LegacyV2] = anyDecoder[LegacyV2](make.legacyV2)
 
   implicit val orderTypeEncoder: Encoder[Version] = {
-    case v1: V1 => v1.asJson
-    case v2: V2 => v2.asJson
-    case v3: V3 => v3.asJson
+    case v1: V1             => v1.asJson
+    case v2: V2             => v2.asJson
+    case v3: V3             => v3.asJson
     case legacyV1: LegacyV1 => legacyV1.asJson
     case legacyV2: LegacyV2 => legacyV2.asJson
   }

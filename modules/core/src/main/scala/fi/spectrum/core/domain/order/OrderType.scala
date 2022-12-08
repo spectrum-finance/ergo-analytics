@@ -23,25 +23,19 @@ object OrderType {
   implicit val lockEncoder: Encoder[LOCK] = Encoder[String].contramap(_ => make.lock.show)
   implicit val lmEncoder: Encoder[LM]     = Encoder[String].contramap(_ => make.lm.show)
 
-  implicit val ammDecoder: Decoder[AMM] = Decoder[String].emap {
-    case amm if amm === make.amm.show => make.amm.asRight
-    case invalid                      => s"Invalid amm type decoder: $invalid".asLeft
+  def anyDecoder[R: Show](r: R): Decoder[R] = Decoder[String].emap {
+    case result if result === r.show => r.asRight
+    case invalid                     => s"Invalid order type ${r.show} decoder: $invalid".asLeft
   }
 
-  implicit val lockDecoder: Decoder[LOCK] = Decoder[String].emap {
-    case lock if lock === make.lock.show => make.lock.asRight
-    case invalid                         => s"Invalid lock type decoder: $invalid".asLeft
-  }
-
-  implicit val lmDecoder: Decoder[LM] = Decoder[String].emap {
-    case lm if lm === make.lm.show => make.lm.asRight
-    case invalid                   => s"Invalid lm type decoder: $invalid".asLeft
-  }
+  implicit val ammDecoder: Decoder[AMM]   = anyDecoder[AMM](make.amm)
+  implicit val lockDecoder: Decoder[LOCK] = anyDecoder[LOCK](make.lock)
+  implicit val lmDecoder: Decoder[LM]     = anyDecoder[LM](make.lm)
 
   implicit val orderTypeEncoder: Encoder[OrderType] = {
-    case amm: AMM => amm.asJson
+    case amm: AMM   => amm.asJson
     case lock: LOCK => lock.asJson
-    case lm: LM => lm.asJson
+    case lm: LM     => lm.asJson
   }
 
   implicit val orderTypeDecoder: Decoder[OrderType] =

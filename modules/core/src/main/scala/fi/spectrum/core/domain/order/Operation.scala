@@ -27,25 +27,15 @@ object Operation {
   implicit val redeemEncoder: Encoder[Redeem]   = Encoder[String].contramap(_ => make.redeem.show)
   implicit val lockEncoder: Encoder[Lock]       = Encoder[String].contramap(_ => make.lock.show)
 
-  implicit val swapDecoder: Decoder[Swap] = Decoder[String].emap {
-    case swap if swap === make.swap.show => make.swap.asRight
-    case invalid                         => s"Invalid swap operation decoder: $invalid".asLeft
+  def anyDecoder[R: Show](r: R): Decoder[R] = Decoder[String].emap {
+    case result if result === r.show => r.asRight
+    case invalid                     => s"Invalid operation ${r.show} decoder: $invalid".asLeft
   }
 
-  implicit val depositDecoder: Decoder[Deposit] = Decoder[String].emap {
-    case deposit if deposit === make.deposit.show => make.deposit.asRight
-    case invalid                                  => s"Invalid deposit operation decoder: $invalid".asLeft
-  }
-
-  implicit val redeemDecoder: Decoder[Redeem] = Decoder[String].emap {
-    case redeem if redeem === make.redeem.show => make.redeem.asRight
-    case invalid                               => s"Invalid redeem operation decoder: $invalid".asLeft
-  }
-
-  implicit val lockDecoder: Decoder[Lock] = Decoder[String].emap {
-    case lock if lock === make.lock.show => make.lock.asRight
-    case invalid                         => s"Invalid lock operation decoder: $invalid".asLeft
-  }
+  implicit val swapDecoder: Decoder[Swap] = anyDecoder(make.swap)
+  implicit val depositDecoder: Decoder[Deposit] = anyDecoder(make.deposit)
+  implicit val redeemDecoder: Decoder[Redeem] = anyDecoder(make.redeem)
+  implicit val lockDecoder: Decoder[Lock] = anyDecoder(make.lock)
 
   implicit val operationEncoder: Encoder[Operation] = {
     case swap: Swap       => swap.asJson
