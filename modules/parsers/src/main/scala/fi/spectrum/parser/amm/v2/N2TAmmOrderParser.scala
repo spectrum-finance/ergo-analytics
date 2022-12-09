@@ -69,13 +69,13 @@ class N2TAmmOrderParser extends AmmOrderParser[V2, N2T] {
                  inAmount,
                  outAmount,
                  dexFeePerTokenNum,
-                 dexFeePerTokenDenom,
-                 ErgoTreeRedeemer(redeemer)
+                 dexFeePerTokenDenom
                )
     } yield SwapV2(
       box,
       ERG(0),
       poolId,
+      ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
       Version.make.v2,
@@ -89,5 +89,5 @@ class N2TAmmOrderParser extends AmmOrderParser[V2, N2T] {
 }
 
 object N2TAmmOrderParser {
-  implicit def ev: AmmOrderParser[V2, N2T] = new N2TAmmOrderParser
+  implicit def n2tV2: AmmOrderParser[V2, N2T] = new N2TAmmOrderParser
 }

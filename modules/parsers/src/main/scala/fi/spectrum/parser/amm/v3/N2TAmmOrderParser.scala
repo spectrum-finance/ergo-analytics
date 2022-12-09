@@ -38,12 +38,12 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       dexFeePerTokenNum   <- tree.constants.parseLong(17)
       dexFeePerTokenDenom <- tree.constants.parseLong(18)
       redeemer            <- tree.constants.parseBytea(12).map(SErgoTree.fromBytes)
-      params = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom, ErgoTreeRedeemer(redeemer))
+      params = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
       reserveExFee <- tree.constants.parseLong(1)
     } yield SwapV3(
       box,
       SPF(0),
-      poolId,
+      poolId, ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
       reserveExFee,
@@ -66,11 +66,11 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       reserveExFee <- tree.constants.parseLong(8)
       redeemer     <- tree.constants.parseBytea(14).map(SErgoTree.fromBytes)
       baseAmount = if (spectrumId == inAmount.tokenId) inAmount - reserveExFee else inAmount
-      params     = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom, ErgoTreeRedeemer(redeemer))
+      params     = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV3(
       box,
       SPF(0),
-      poolId,
+      poolId, ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
       reserveExFee,
@@ -91,11 +91,11 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
           inY         <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- tree.constants.parseLong(11)
           redeemer    <- tree.constants.parseBytea(15).map(SErgoTree.fromBytes)
-          params = DepositParams(inX, if (dexFeeFromY) inY - dexFee else inY, ErgoTreeRedeemer(redeemer))
+          params = DepositParams(inX, if (dexFeeFromY) inY - dexFee else inY)
         } yield DepositV3(
           box,
           SPF(dexFee),
-          poolId,
+          poolId, ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v3,
@@ -116,11 +116,12 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
           inLP        <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
           redeemer    <- tree.constants.parseBytea(12).map(SErgoTree.fromBytes)
-          params = RedeemParams(inLP, ErgoTreeRedeemer(redeemer))
+          params = RedeemParams(inLP)
         } yield RedeemV3(
           box,
           SPF(dexFee.amount),
           poolId,
+          ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v3,
@@ -133,5 +134,5 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
 }
 
 object N2TAmmOrderParser {
-  implicit def ev: AmmOrderParser[V3, N2T] = new N2TAmmOrderParser
+  implicit def n2tV3: AmmOrderParser[V3, N2T] = new N2TAmmOrderParser
 }

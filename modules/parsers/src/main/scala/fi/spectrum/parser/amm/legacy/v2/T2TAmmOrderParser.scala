@@ -29,11 +29,12 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV2, T2T] {
           inY      <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
           dexFee   <- tree.constants.parseLong(11)
           redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = DepositParams(inX, inY, PublicKeyRedeemer(redeemer))
+          params = DepositParams(inX, inY)
         } yield DepositLegacyV2(
           box,
           ERG(dexFee),
           poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV2,
           OrderType.make.amm,
@@ -47,5 +48,5 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV2, T2T] {
 }
 
 object T2TAmmOrderParser {
-  implicit def ev: AmmOrderParser[LegacyV2, T2T] = new T2TAmmOrderParser
+  implicit def t2tLegacyV2: AmmOrderParser[LegacyV2, T2T] = new T2TAmmOrderParser
 }

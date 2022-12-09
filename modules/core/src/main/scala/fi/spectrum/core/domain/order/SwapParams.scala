@@ -5,10 +5,9 @@ import derevo.derive
 import fi.spectrum.core.domain.AssetAmount
 
 @derive(encoder, decoder)
-final case class SwapParams[R <: Redeemer](
+final case class SwapParams(
   base: AssetAmount,
   minQuote: AssetAmount,
   dexFeePerTokenNum: Long,
-  dexFeePerTokenDenom: Long,
-  redeemer: R
+  dexFeePerTokenDenom: Long
 )

@@ -5,6 +5,7 @@ import derevo.derive
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.refineV
 import fi.spectrum.core.domain.TypeConstraints.{AddressType, Base58Spec, HexString}
+import fi.spectrum.core.syntax.PubKeyOps
 import io.circe.refined._
 import io.estatico.newtype.macros.newtype
 import scorex.util.encode.Base16
@@ -45,6 +46,8 @@ package object domain {
   @derive(encoder, decoder)
   @newtype final case class PubKey(value: HexString) {
     def toBytes: Array[Byte] = Base16.decode(value.value).get
+
+    def ergoTree: SErgoTree  = SErgoTree.fromBytes(PubKey(value).toErgoTree.bytes)
   }
 
   object PubKey {

@@ -6,9 +6,11 @@ sealed abstract class OrderStatus extends EnumEntry
 
 object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
 
-  case object Pending extends OrderStatus
+  case object WaitingRegistration extends OrderStatus
 
   case object Registered extends OrderStatus
+
+  case object WaitingExecution extends OrderStatus
 
   case object Executed extends OrderStatus
 

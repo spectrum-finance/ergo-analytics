@@ -2,6 +2,7 @@ package fi.spectrum.parser.lock.v1
 
 import cats.syntax.option._
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
+import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.order.Version.V1
 import fi.spectrum.core.domain.order.{Operation, Order, OrderType, Version}
 import fi.spectrum.core.domain.transaction.SConstant.{IntConstant, SigmaPropConstant}
@@ -25,7 +26,7 @@ class LockParser extends LockOrderParser[V1] {
           box,
           deadline,
           amount,
-          redeemer,
+          PublicKeyRedeemer(redeemer),
           Version.make.v1,
           OrderType.make.lock,
           Operation.make.lock

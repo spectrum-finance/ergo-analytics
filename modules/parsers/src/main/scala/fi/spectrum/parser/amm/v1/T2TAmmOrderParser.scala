@@ -35,11 +35,11 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           dexFeePerTokenNum   <- tree.constants.parseLong(16)
           dexFeePerTokenDenom <- tree.constants.parseLong(17)
           redeemer            <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom, PublicKeyRedeemer(redeemer))
+          params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
         } yield SwapV1(
           box,
           ERG(0),
-          poolId,
+          poolId, PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v1,
@@ -61,11 +61,11 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           inY         <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- tree.constants.parseLong(15)
           redeemer    <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = DepositParams(inX, inY, PublicKeyRedeemer(redeemer))
+          params = DepositParams(inX, inY)
         } yield DepositV1(
           box,
           ERG(dexFee),
-          poolId,
+          poolId, PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v1,
@@ -86,11 +86,11 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           inLP        <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- tree.constants.parseLong(15)
           redeemer    <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = RedeemParams(inLP, PublicKeyRedeemer(redeemer))
+          params = RedeemParams(inLP)
         } yield RedeemV1(
           box,
           ERG(dexFee),
-          poolId,
+          poolId, PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v1,
@@ -103,5 +103,5 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
 }
 
 object T2TAmmOrderParser {
-  implicit def ev: AmmOrderParser[V1, T2T] = new T2TAmmOrderParser
+  implicit def t2tV1: AmmOrderParser[V1, T2T] = new T2TAmmOrderParser
 }

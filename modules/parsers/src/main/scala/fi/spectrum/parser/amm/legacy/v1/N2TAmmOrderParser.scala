@@ -42,13 +42,13 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
                  baseAmount,
                  outAmount,
                  dexFeePerTokenNum,
-                 dexFeePerTokenDenom,
-                 PublicKeyRedeemer(redeemer)
+                 dexFeePerTokenDenom
                )
     } yield SwapLegacyV1(
       box,
       ERG(0),
       poolId,
+      PublicKeyRedeemer(redeemer),
       params,
       Version.make.legacyV1,
       OrderType.make.amm,
@@ -69,13 +69,13 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
                  inAmount,
                  outAmount,
                  dexFeePerTokenNum,
-                 dexFeePerTokenDenom,
-                 PublicKeyRedeemer(redeemer)
+                 dexFeePerTokenDenom
                )
     } yield SwapLegacyV1(
       box,
       ERG(0),
       poolId,
+      PublicKeyRedeemer(redeemer),
       params,
       Version.make.legacyV1,
       OrderType.make.amm,
@@ -92,11 +92,11 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
           inY      <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
           dexFee   <- tree.constants.parseLong(11)
           redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = DepositParams(inX, inY, PublicKeyRedeemer(redeemer))
+          params = DepositParams(inX, inY)
         } yield DepositLegacyV1(
           box,
           ERG(dexFee),
-          poolId,
+          poolId, PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,
@@ -115,11 +115,11 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
           inLP     <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee   <- tree.constants.parseLong(12)
           redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = RedeemParams(inLP, PublicKeyRedeemer(redeemer))
+          params = RedeemParams(inLP)
         } yield RedeemLegacyV1(
           box,
           ERG(dexFee),
-          poolId,
+          poolId, PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,
@@ -131,5 +131,5 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
 }
 
 object N2TAmmOrderParser {
-  implicit def ev: AmmOrderParser[LegacyV1, N2T] = new N2TAmmOrderParser
+  implicit def n2tLegacyV1: AmmOrderParser[LegacyV1, N2T] = new N2TAmmOrderParser
 }

@@ -40,13 +40,13 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
                      if (spectrumId == inAmount.tokenId) inAmount - reservedExFee else inAmount,
                      outAmount,
                      dexFeePerTokenNum,
-                     dexFeePerTokenDenom,
-                     ErgoTreeRedeemer(redeemer)
+                     dexFeePerTokenDenom
                    )
         } yield SwapV3(
           box,
           SPF(0),
           poolId,
+          ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
           reservedExFee,
@@ -73,13 +73,13 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
           redeemer    <- tree.constants.parseBytea(17).map(SErgoTree.fromBytes)
           params = DepositParams(
                      if (dexFeeFromX) inX - dexFee else inX,
-                     if (dexFeeFromY) inY - dexFee else inY,
-                     ErgoTreeRedeemer(redeemer)
+                     if (dexFeeFromY) inY - dexFee else inY
                    )
         } yield DepositV3(
           box,
           SPF(dexFee),
           poolId,
+          ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v3,
@@ -100,11 +100,11 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
           inLP        <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
           redeemer    <- tree.constants.parseBytea(14).map(SErgoTree.fromBytes)
-          params = RedeemParams(inLP, ErgoTreeRedeemer(redeemer))
+          params = RedeemParams(inLP)
         } yield RedeemV3(
           box,
           SPF(dexFee.amount),
-          poolId,
+          poolId, ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v3,
@@ -117,5 +117,5 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
 }
 
 object T2TAmmOrderParser {
-  implicit def ev: AmmOrderParser[V3, T2T] = new T2TAmmOrderParser
+  implicit def t2tV3: AmmOrderParser[V3, T2T] = new T2TAmmOrderParser
 }

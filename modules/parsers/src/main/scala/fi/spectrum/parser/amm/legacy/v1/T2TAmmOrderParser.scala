@@ -96,5 +96,5 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
 }
 
 object T2TAmmOrderParser {
-  implicit def ev: AmmOrderParser[LegacyV1, T2T] = new T2TAmmOrderParser
+  implicit def t2tLegacyV1: AmmOrderParser[LegacyV1, T2T] = new T2TAmmOrderParser
 }

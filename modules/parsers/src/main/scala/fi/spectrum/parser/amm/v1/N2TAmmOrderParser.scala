@@ -20,8 +20,6 @@ import sigmastate.Values
 
 class N2TAmmOrderParser extends AmmOrderParser[V1, N2T] {
 
-
-
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V1, AMM]] = {
     val template = ErgoTreeTemplate.fromBytes(tree.template)
     if (template == swapSellV1) swapSell(box, tree)
@@ -40,11 +38,12 @@ class N2TAmmOrderParser extends AmmOrderParser[V1, N2T] {
       dexFeePerTokenNum   <- tree.constants.parseLong(11)
       dexFeePerTokenDenom <- tree.constants.parseLong(12)
       redeemer            <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-      params = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom, PublicKeyRedeemer(redeemer))
+      params = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV1(
       box,
       ERG(0),
       poolId,
+      PublicKeyRedeemer(redeemer),
       params,
       maxMinerFee,
       Version.make.v1,
@@ -63,11 +62,12 @@ class N2TAmmOrderParser extends AmmOrderParser[V1, N2T] {
       dexFeePerTokenNumDiff <- tree.constants.parseLong(6)
       dexFeePerTokenNum = dexFeePerTokenDenom - dexFeePerTokenNumDiff
       redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-      params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom, PublicKeyRedeemer(redeemer))
+      params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV1(
       box,
       ERG(0),
       poolId,
+      PublicKeyRedeemer(redeemer),
       params,
       maxMinerFee,
       Version.make.v1,
@@ -86,11 +86,12 @@ class N2TAmmOrderParser extends AmmOrderParser[V1, N2T] {
           inY         <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- tree.constants.parseLong(15)
           redeemer    <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = DepositParams(inX, inY, PublicKeyRedeemer(redeemer))
+          params = DepositParams(inX, inY)
         } yield DepositV1(
           box,
           ERG(dexFee),
           poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v1,
@@ -111,11 +112,12 @@ class N2TAmmOrderParser extends AmmOrderParser[V1, N2T] {
           inLP        <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- tree.constants.parseLong(12)
           redeemer    <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = RedeemParams(inLP, PublicKeyRedeemer(redeemer))
+          params = RedeemParams(inLP)
         } yield RedeemV1(
           box,
           ERG(dexFee),
           poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v1,
@@ -128,5 +130,5 @@ class N2TAmmOrderParser extends AmmOrderParser[V1, N2T] {
 }
 
 object N2TAmmOrderParser {
-  implicit def ev: AmmOrderParser[V1, N2T] = new N2TAmmOrderParser
+  implicit def n2tV1: AmmOrderParser[V1, N2T] = new N2TAmmOrderParser
 }

@@ -5,12 +5,13 @@ object Dependencies {
   object Version {
     val ce3        = "3.4.2"
     val tofu       = "0.11.0"
+    val glass      = "0.1.0"
     val derevo     = "0.13.0"
     val newtype    = "0.4.4"
     val refined    = "0.10.1"
     val enumeratum = "1.7.0"
     val circe      = "0.14.1"
-    val mouse       = "1.2.1"
+    val mouse      = "1.2.1"
 
     val sigma = "7.7.7"
 
@@ -24,7 +25,7 @@ object Dependencies {
   val refined     = "eu.timepit"  %% "refined"      % Version.refined
   val refinedCats = "eu.timepit"  %% "refined-cats" % Version.refined
 
-  val mouse = "org.typelevel" %% "mouse"               % Version.mouse
+  val mouse = "org.typelevel" %% "mouse" % Version.mouse
 
   val enums: List[ModuleID] = List(
     "com.beachape" %% "enumeratum"       % Version.enumeratum,
@@ -46,7 +47,8 @@ object Dependencies {
 //    "tf.tofu" %% "tofu-zio-interop"     % Version.tofu,
     "tf.tofu" %% "tofu-derivation" % Version.tofu,
     "tf.tofu" %% "tofu-streams"    % Version.tofu,
-    "tf.tofu" %% "tofu-logging"    % Version.tofu
+    "tf.tofu" %% "tofu-logging"    % Version.tofu,
+    "tf.tofu" %% "glass"           % Version.glass
   )
 
   val derevo = List(
