@@ -1,0 +1,135 @@
+package fi.spectrum.parser.amm.legacy.v1
+
+import cats.syntax.option._
+import fi.spectrum.core.domain.order.Fee._
+import fi.spectrum.core.domain.order.Order.Deposit.DepositLegacyV1
+import fi.spectrum.core.domain.order.Order.Redeem.RedeemLegacyV1
+import fi.spectrum.core.domain.order.Order.Swap.SwapLegacyV1
+import fi.spectrum.core.domain.order.Order._
+import fi.spectrum.core.domain.order.OrderType.AMM
+import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
+import fi.spectrum.core.domain.order.Version.LegacyV1
+import fi.spectrum.core.domain.order._
+import fi.spectrum.core.domain.transaction.Output
+import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, PubKey, TokenId}
+import fi.spectrum.parser.amm.AmmOrderParser
+import fi.spectrum.parser.domain.AmmType.N2T
+import fi.spectrum.parser.syntax._
+import fi.spectrum.parser.templates.N2T._
+import sigmastate.Values
+import sigmastate.Values.ErgoTree
+
+class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
+
+  def swap(box: Output, tree: Values.ErgoTree): Option[Swap[LegacyV1, AMM]] = {
+    val template = ErgoTreeTemplate.fromBytes(tree.template)
+    if (template == swapSellLegacyV1) swapSellV0(box, tree)
+    else if (template == swapBuyLegacyV1) swapBuyV0(box, tree)
+    else None
+  }
+
+  private def swapSellV0(box: Output, tree: ErgoTree): Option[Swap[LegacyV1, AMM]] =
+    for {
+      poolId       <- tree.constants.parseBytea(8).map(PoolId.fromBytes)
+      baseAmount   <- tree.constants.parseLong(2).map(AssetAmount.native)
+      outId        <- tree.constants.parseBytea(9).map(TokenId.fromBytes)
+      minOutAmount <- tree.constants.parseLong(10)
+      outAmount = AssetAmount(outId, minOutAmount)
+      dexFeePerTokenNum   <- tree.constants.parseLong(11)
+      dexFeePerTokenDenom <- tree.constants.parseLong(12)
+      redeemer            <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
+      params = SwapParams(
+                 baseAmount,
+                 outAmount,
+                 dexFeePerTokenNum,
+                 dexFeePerTokenDenom,
+                 PublicKeyRedeemer(redeemer)
+               )
+    } yield SwapLegacyV1(
+      box,
+      ERG(0),
+      poolId,
+      params,
+      Version.make.legacyV1,
+      OrderType.make.amm,
+      Operation.make.swap
+    )
+
+  private def swapBuyV0(box: Output, tree: ErgoTree): Option[Swap[LegacyV1, AMM]] =
+    for {
+      poolId       <- tree.constants.parseBytea(9).map(PoolId.fromBytes)
+      inAmount     <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
+      minOutAmount <- tree.constants.parseLong(10)
+      outAmount = AssetAmount.native(minOutAmount)
+      dexFeePerTokenDenom   <- tree.constants.parseLong(5)
+      dexFeePerTokenNumDiff <- tree.constants.parseLong(6)
+      dexFeePerTokenNum = dexFeePerTokenDenom - dexFeePerTokenNumDiff
+      redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
+      params = SwapParams(
+                 inAmount,
+                 outAmount,
+                 dexFeePerTokenNum,
+                 dexFeePerTokenDenom,
+                 PublicKeyRedeemer(redeemer)
+               )
+    } yield SwapLegacyV1(
+      box,
+      ERG(0),
+      poolId,
+      params,
+      Version.make.legacyV1,
+      OrderType.make.amm,
+      Operation.make.swap
+    )
+
+  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit[LegacyV1, AMM]] =
+    Either
+      .cond(
+        ErgoTreeTemplate.fromBytes(tree.template) == depositLegacyV1,
+        for {
+          poolId   <- tree.constants.parseBytea(9).map(PoolId.fromBytes)
+          inX      <- tree.constants.parseLong(11).map(AssetAmount.native)
+          inY      <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
+          dexFee   <- tree.constants.parseLong(11)
+          redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
+          params = DepositParams(inX, inY, PublicKeyRedeemer(redeemer))
+        } yield DepositLegacyV1(
+          box,
+          ERG(dexFee),
+          poolId,
+          params,
+          Version.make.legacyV1,
+          OrderType.make.amm,
+          Operation.make.deposit
+        ),
+        none
+      )
+      .merge
+
+  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem[LegacyV1, AMM]] =
+    Either
+      .cond(
+        ErgoTreeTemplate.fromBytes(tree.template) == redeemLegacyV1,
+        for {
+          poolId   <- tree.constants.parseBytea(11).map(PoolId.fromBytes)
+          inLP     <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
+          dexFee   <- tree.constants.parseLong(12)
+          redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
+          params = RedeemParams(inLP, PublicKeyRedeemer(redeemer))
+        } yield RedeemLegacyV1(
+          box,
+          ERG(dexFee),
+          poolId,
+          params,
+          Version.make.legacyV1,
+          OrderType.make.amm,
+          Operation.make.redeem
+        ),
+        none
+      )
+      .merge
+}
+
+object N2TAmmOrderParser {
+  implicit def ev: AmmOrderParser[LegacyV1, N2T] = new N2TAmmOrderParser
+}

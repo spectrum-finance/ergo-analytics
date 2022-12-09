@@ -1,4 +1,4 @@
-package fi.spectrum.parser.amm
+package fi.spectrum.parser.amm.v1
 
 import cats.syntax.option._
 import fi.spectrum.core.domain.order.Fee.ERG
@@ -9,15 +9,17 @@ import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderType.AMM
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.order.Version.V1
-import fi.spectrum.core.domain.order.{OrderType, _}
+import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, PubKey, TokenId}
+import fi.spectrum.parser.amm.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType.T2T
-import fi.spectrum.parser.syntax.ConstantsOps
+import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.T2T._
 import sigmastate.Values
 
-final class T2TAmmOrderV1Parser extends AmmOrderParser[V1, T2T] {
+final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
+
 
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V1, AMM]] =
     Either
@@ -36,8 +38,8 @@ final class T2TAmmOrderV1Parser extends AmmOrderParser[V1, T2T] {
           params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom, PublicKeyRedeemer(redeemer))
         } yield SwapV1(
           box,
-          poolId,
           ERG(0),
+          poolId,
           params,
           maxMinerFee,
           Version.make.v1,
@@ -87,8 +89,8 @@ final class T2TAmmOrderV1Parser extends AmmOrderParser[V1, T2T] {
           params = RedeemParams(inLP, PublicKeyRedeemer(redeemer))
         } yield RedeemV1(
           box,
-          poolId,
           ERG(dexFee),
+          poolId,
           params,
           maxMinerFee,
           Version.make.v1,
@@ -98,4 +100,8 @@ final class T2TAmmOrderV1Parser extends AmmOrderParser[V1, T2T] {
         none
       )
       .merge
+}
+
+object T2TAmmOrderParser {
+  implicit def ev: AmmOrderParser[V1, T2T] = new T2TAmmOrderParser
 }

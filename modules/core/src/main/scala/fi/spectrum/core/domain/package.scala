@@ -3,7 +3,8 @@ package fi.spectrum.core
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import eu.timepit.refined.api.Refined
-import fi.spectrum.core.domain.TypeConstraints.HexString
+import eu.timepit.refined.refineV
+import fi.spectrum.core.domain.TypeConstraints.{AddressType, Base58Spec, HexString}
 import io.circe.refined._
 import io.estatico.newtype.macros.newtype
 import scorex.util.encode.Base16
@@ -42,13 +43,17 @@ package object domain {
   }
 
   @derive(encoder, decoder)
-  @newtype final case class PubKey(value: HexString)
+  @newtype final case class PubKey(value: HexString) {
+    def toBytes: Array[Byte] = Base16.decode(value.value).get
+  }
 
   object PubKey {
 
     def unsafeFromString(s: String): PubKey = PubKey(Refined.unsafeApply(s))
+
     def fromBytes(bytes: Array[Byte]): PubKey =
       PubKey(Refined.unsafeApply(scorex.util.encode.Base16.encode(bytes)))
+
   }
 
   @newtype case class ErgoTreeTemplate(value: HexString) {
@@ -61,5 +66,14 @@ package object domain {
       Refined.unsafeApply(scorex.util.encode.Base16.encode(bytes))
     )
     def unsafeFromString(s: String): ErgoTreeTemplate = ErgoTreeTemplate(Refined.unsafeApply(s))
+  }
+
+  @derive(encoder, decoder)
+  @newtype case class Address(value: AddressType)
+
+  object Address {
+
+    def fromStringUnsafe(s: String): Address =
+      Address(refineV[Base58Spec].unsafeFrom(s))
   }
 }

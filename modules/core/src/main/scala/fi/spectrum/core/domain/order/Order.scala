@@ -3,7 +3,7 @@ package fi.spectrum.core.domain.order
 import cats.syntax.functor._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import fi.spectrum.core.domain.{AssetAmount, BoxId, SErgoTree}
+import fi.spectrum.core.domain.{AssetAmount, BoxId, PubKey, SErgoTree}
 import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
 import fi.spectrum.core.domain.order.OrderType.{AMM, LOCK}
 import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
@@ -15,7 +15,6 @@ import io.circe.{Decoder, Encoder}
 
 sealed trait Order[+V <: Version, +T <: OrderType, +O <: Operation] {
   val box: Output
-  val fee: Fee
 
   val version: V
   val orderType: T
@@ -30,7 +29,7 @@ object Order {
     case deposit: Deposit[Version, OrderType] => deposit.asJson
     case redeem: Redeem[Version, OrderType]   => redeem.asJson
     case swap: Swap[Version, OrderType]       => swap.asJson
-    case lock: Lock[Version, OrderType]       => lock.asJson
+    case lock: Lock[Version]                  => lock.asJson
   }
 
   implicit def orderDecoder: Decoder[Order[Version, OrderType, Operation]] =
@@ -38,7 +37,7 @@ object Order {
       Decoder[Deposit[Version, OrderType]].widen,
       Decoder[Redeem[Version, OrderType]].widen,
       Decoder[Swap[Version, OrderType]].widen,
-      Decoder[Lock[Version, OrderType]].widen
+      Decoder[Lock[Version]].widen
     ).reduceLeft(_ or _)
 
   sealed abstract class Deposit[+V <: Version, +T <: OrderType] extends Order[V, T, Operation.Deposit] {
@@ -109,8 +108,8 @@ object Order {
     @derive(encoder, decoder)
     final case class RedeemV3(
       box: Output,
-      poolId: PoolId,
       fee: SPF,
+      poolId: PoolId,
       params: RedeemParams[ErgoTreeRedeemer],
       maxMinerFee: Long,
       version: V3,
@@ -121,8 +120,8 @@ object Order {
     @derive(encoder, decoder)
     final case class RedeemV1(
       box: Output,
-      poolId: PoolId,
       fee: ERG,
+      poolId: PoolId,
       params: RedeemParams[PublicKeyRedeemer],
       maxMinerFee: Long,
       version: V1,
@@ -133,8 +132,8 @@ object Order {
     @derive(encoder, decoder)
     final case class RedeemLegacyV1(
       box: Output,
-      poolId: PoolId,
       fee: ERG,
+      poolId: PoolId,
       params: RedeemParams[PublicKeyRedeemer],
       version: LegacyV1,
       orderType: AMM,
@@ -154,8 +153,8 @@ object Order {
     @derive(encoder, decoder)
     final case class SwapV3(
       box: Output,
-      poolId: PoolId,
       fee: SPF,
+      poolId: PoolId,
       params: SwapParams[ErgoTreeRedeemer],
       maxMinerFee: Long,
       reservedExFee: Long,
@@ -167,8 +166,8 @@ object Order {
     @derive(encoder, decoder)
     final case class SwapV2(
       box: Output,
-      poolId: PoolId,
       fee: ERG,
+      poolId: PoolId,
       params: SwapParams[ErgoTreeRedeemer],
       maxMinerFee: Long,
       version: V2,
@@ -179,8 +178,8 @@ object Order {
     @derive(encoder, decoder)
     final case class SwapV1(
       box: Output,
-      poolId: PoolId,
       fee: ERG,
+      poolId: PoolId,
       params: SwapParams[PublicKeyRedeemer],
       maxMinerFee: Long,
       version: V1,
@@ -191,8 +190,8 @@ object Order {
     @derive(encoder, decoder)
     final case class SwapLegacyV1(
       box: Output,
-      poolId: PoolId,
       fee: ERG,
+      poolId: PoolId,
       params: SwapParams[PublicKeyRedeemer],
       version: LegacyV1,
       orderType: AMM,
@@ -200,25 +199,24 @@ object Order {
     ) extends Swap[LegacyV1, AMM]
   }
 
-  sealed abstract class Lock[+V <: Version, +T <: OrderType] extends Order[V, T, Operation.Lock]
+  sealed abstract class Lock[+V <: Version] extends Order[V, LOCK, Operation.Lock]
 
   object Lock {
 
-    implicit def lockEncoder: Encoder[Lock[Version, OrderType]] = deriveEncoder
+    implicit def lockEncoder: Encoder[Lock[Version]] = deriveEncoder
 
-    implicit def lockDecoder: Decoder[Lock[Version, OrderType]] = deriveDecoder
+    implicit def lockDecoder: Decoder[Lock[Version]] = deriveDecoder
 
     @derive(encoder, decoder)
     final case class LockV1(
       box: Output,
-      fee: ERG,
       deadline: Int,
       amount: AssetAmount,
-      redeemer: SErgoTree,
+      redeemer: PubKey,
       version: V1,
       orderType: LOCK,
       orderOperation: Operation.Lock
-    ) extends Lock[V1, LOCK]
+    ) extends Lock[V1]
   }
 
 }
