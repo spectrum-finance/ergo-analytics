@@ -29,6 +29,8 @@ package object domain {
 
   object SErgoTree {
 
+    def unsafeFromString(s: String): SErgoTree = SErgoTree(Refined.unsafeApply(s))
+
     def fromBytes(bytes: Array[Byte]): SErgoTree = SErgoTree(
       Refined.unsafeApply(scorex.util.encode.Base16.encode(bytes))
     )

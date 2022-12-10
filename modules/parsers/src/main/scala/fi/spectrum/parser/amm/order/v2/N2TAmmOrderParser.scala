@@ -1,16 +1,17 @@
-package fi.spectrum.parser.amm.v2
+package fi.spectrum.parser.amm.order.v2
 
 import cats.syntax.option._
 import fi.spectrum.core.domain._
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.order.Order.Swap.SwapV2
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderType.AMM
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
-import fi.spectrum.core.domain.order.Version.V2
+import fi.spectrum.core.domain.analytics.Version.V2
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
-import fi.spectrum.parser.amm.AmmOrderParser
+import fi.spectrum.parser.amm.order.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType.N2T
 import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.N2T._
@@ -40,13 +41,13 @@ class N2TAmmOrderParser extends AmmOrderParser[V2, N2T] {
                  baseAmount,
                  outAmount,
                  dexFeePerTokenNum,
-                 dexFeePerTokenDenom,
-                 ErgoTreeRedeemer(redeemer)
+                 dexFeePerTokenDenom
                )
     } yield SwapV2(
       box,
       ERG(0),
       poolId,
+      ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
       Version.make.v2,

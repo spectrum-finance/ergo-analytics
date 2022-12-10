@@ -1,4 +1,4 @@
-package fi.spectrum.core.domain.order
+package fi.spectrum.core.domain.analytics
 
 import cats.Show
 import cats.syntax.either._

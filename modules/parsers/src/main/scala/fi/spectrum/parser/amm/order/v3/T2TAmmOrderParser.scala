@@ -1,7 +1,8 @@
-package fi.spectrum.parser.amm.v3
+package fi.spectrum.parser.amm.order.v3
 
 import cats.syntax.option._
 import fi.spectrum.core.domain._
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.SPF
 import fi.spectrum.core.domain.order.Order.Deposit.DepositV3
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV3
@@ -9,16 +10,16 @@ import fi.spectrum.core.domain.order.Order.Swap.SwapV3
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderType.AMM
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
-import fi.spectrum.core.domain.order.Version.V3
+import fi.spectrum.core.domain.analytics.Version.V3
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
-import fi.spectrum.parser.amm.AmmOrderParser
+import fi.spectrum.parser.amm.order.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType.T2T
 import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.T2T._
 import sigmastate.Values
 
-class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
+class T2TAmmOrderParser(spf: TokenId) extends AmmOrderParser[V3, T2T] {
 
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V3, AMM]] =
     Either
@@ -44,7 +45,7 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
                    )
         } yield SwapV3(
           box,
-          SPF(0),
+          SPF(0, spf),
           poolId,
           ErgoTreeRedeemer(redeemer),
           params,
@@ -77,7 +78,7 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
                    )
         } yield DepositV3(
           box,
-          SPF(dexFee),
+          SPF(dexFee, spf),
           poolId,
           ErgoTreeRedeemer(redeemer),
           params,
@@ -103,8 +104,9 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
           params = RedeemParams(inLP)
         } yield RedeemV3(
           box,
-          SPF(dexFee.amount),
-          poolId, ErgoTreeRedeemer(redeemer),
+          SPF(dexFee.amount, spf),
+          poolId,
+          ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v3,
@@ -117,5 +119,5 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
 }
 
 object T2TAmmOrderParser {
-  implicit def t2tV3: AmmOrderParser[V3, T2T] = new T2TAmmOrderParser
+  def t2tV3(spf: TokenId): AmmOrderParser[V3, T2T] = new T2TAmmOrderParser(spf)
 }

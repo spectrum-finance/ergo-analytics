@@ -35,6 +35,8 @@ object constants {
     T2T.swapLegacyV1,
     N2T.depositLegacyV2,
     T2T.depositLegacyV2,
+    T2T.pool,
+    N2T.pool,
     ergoBaseOutput
   )
 }

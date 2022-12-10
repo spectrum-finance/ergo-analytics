@@ -1,6 +1,7 @@
-package fi.spectrum.parser.amm.v1
+package fi.spectrum.parser.amm.order.v1
 
 import cats.syntax.option._
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee._
 import fi.spectrum.core.domain.order.Order.Deposit.DepositV1
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV1
@@ -8,11 +9,11 @@ import fi.spectrum.core.domain.order.Order.Swap.SwapV1
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderType.AMM
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
-import fi.spectrum.core.domain.order.Version.V1
+import fi.spectrum.core.domain.analytics.Version.V1
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, PubKey, TokenId}
-import fi.spectrum.parser.amm.AmmOrderParser
+import fi.spectrum.parser.amm.order.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType.N2T
 import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.N2T._

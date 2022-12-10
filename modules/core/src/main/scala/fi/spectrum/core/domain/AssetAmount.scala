@@ -10,6 +10,8 @@ final case class AssetAmount(tokenId: TokenId, amount: Long) {
   def withAmount(x: Long): AssetAmount = copy(amount = x)
   def -(that: AssetAmount): AssetAmount = withAmount(amount - that.amount)
 
+  def isNative: Boolean = tokenId == ErgoAssetId
+
   def -(that: Long): AssetAmount = withAmount(amount - that)
 }
 

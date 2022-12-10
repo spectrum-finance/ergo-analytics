@@ -3,14 +3,16 @@ package fi.spectrum.core.domain.order
 import cats.syntax.functor._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.{AssetAmount, BoxId, PubKey, SErgoTree}
 import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
-import fi.spectrum.core.domain.order.Order.Deposit.{DepositV1, DepositV3, DepositLegacyV1, DepositLegacyV2}
+import fi.spectrum.core.domain.order.Order.Deposit.{DepositLegacyV1, DepositLegacyV2, DepositV1, DepositV3}
 import fi.spectrum.core.domain.order.OrderType.{AMM, LOCK}
 import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
-import fi.spectrum.core.domain.order.Version.{V3, _}
+import fi.spectrum.core.domain.analytics.Version._
 import fi.spectrum.core.domain.transaction.Output
 import glass.Subset
+import glass.classic.Lens
 import glass.macros.{ClassyOptics, GenSubset}
 import io.circe.derivation.{deriveDecoder, deriveEncoder}
 import io.circe.syntax._
@@ -29,22 +31,11 @@ sealed trait Order[+V <: Version, +T <: OrderType, +O <: Operation] {
 
 object Order {
 
-  type Any = Order[Version, OrderType, Operation]
-
-  implicit val prismOrderAMMDeposit: Subset[Order[Version, AMM, Operation], Deposit[Version, AMM]] =
-    GenSubset[Order[Version, AMM, Operation], Deposit[Version, AMM]]
-
-  implicit val prismDepositDepositV1: Subset[Deposit[Version, AMM], DepositV1] =
-    GenSubset[Deposit[Version, AMM], DepositV1]
-
-  implicit val prismDepositDepositV3: Subset[Deposit[Version, AMM], DepositV3] =
-    GenSubset[Deposit[Version, AMM], DepositV3]
-
-  implicit val prismDepositDepositLegacyV1: Subset[Deposit[Version, AMM], DepositLegacyV1] =
-    GenSubset[Deposit[Version, AMM], DepositLegacyV1]
-
-  implicit val prismDepositDepositLegacyV2: Subset[Deposit[Version, AMM], DepositLegacyV2] =
-    GenSubset[Deposit[Version, AMM], DepositLegacyV2]
+  type Any        = Order[Version, OrderType, Operation]
+  type AnySwap    = Swap[Version, OrderType]
+  type AnyDeposit = Deposit[Version, OrderType]
+  type AnyRedeem  = Redeem[Version, OrderType]
+  type AnyLock    = Lock[Version]
 
   implicit def orderEncoder: Encoder[Order[Version, OrderType, Operation]] = {
     case deposit: Deposit[Version, OrderType] => deposit.asJson
@@ -63,6 +54,7 @@ object Order {
 
   sealed abstract class Deposit[+V <: Version, +T <: OrderType] extends Order[V, T, Operation.Deposit] {
     val poolId: PoolId
+    val fee: Fee
   }
 
   object Deposit {
@@ -132,6 +124,7 @@ object Order {
 
   sealed abstract class Redeem[+V <: Version, +T <: OrderType] extends Order[V, T, Operation.Redeem] {
     val poolId: PoolId
+    val fee: Fee
   }
 
   object Redeem {
@@ -180,6 +173,7 @@ object Order {
 
   sealed abstract class Swap[+V <: Version, +T <: OrderType] extends Order[V, T, Operation.Swap] {
     val poolId: PoolId
+    val fee: Fee
   }
 
   object Swap {

@@ -1,8 +1,8 @@
 package fi.spectrum.parser.lock
 
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order.Lock
-import fi.spectrum.core.domain.order.Version
-import fi.spectrum.core.domain.order.Version.V1
+import Version.V1
 import fi.spectrum.core.domain.transaction.Output
 import sigmastate.Values
 

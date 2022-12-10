@@ -1,7 +1,8 @@
-package fi.spectrum.parser.amm.v3
+package fi.spectrum.parser.amm.order.v3
 
 import cats.syntax.option._
 import fi.spectrum.core.domain._
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.SPF
 import fi.spectrum.core.domain.order.Order.Deposit.DepositV3
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV3
@@ -9,16 +10,16 @@ import fi.spectrum.core.domain.order.Order.Swap.SwapV3
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderType.AMM
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
-import fi.spectrum.core.domain.order.Version.V3
+import fi.spectrum.core.domain.analytics.Version.V3
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
-import fi.spectrum.parser.amm.AmmOrderParser
+import fi.spectrum.parser.amm.order.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType.N2T
 import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.N2T._
 import sigmastate.Values
 
-class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
+class N2TAmmOrderParser(spf: TokenId) extends AmmOrderParser[V3, N2T] {
 
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V3, AMM]] = {
     val template = ErgoTreeTemplate.fromBytes(tree.template)
@@ -42,7 +43,7 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       reserveExFee <- tree.constants.parseLong(1)
     } yield SwapV3(
       box,
-      SPF(0),
+      SPF(0, spf),
       poolId, ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
@@ -69,7 +70,7 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       params     = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV3(
       box,
-      SPF(0),
+      SPF(0, spf),
       poolId, ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
@@ -94,7 +95,7 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
           params = DepositParams(inX, if (dexFeeFromY) inY - dexFee else inY)
         } yield DepositV3(
           box,
-          SPF(dexFee),
+          SPF(dexFee, spf),
           poolId, ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
@@ -119,7 +120,7 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
           params = RedeemParams(inLP)
         } yield RedeemV3(
           box,
-          SPF(dexFee.amount),
+          SPF(dexFee.amount, spf),
           poolId,
           ErgoTreeRedeemer(redeemer),
           params,
@@ -134,5 +135,5 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
 }
 
 object N2TAmmOrderParser {
-  implicit def n2tV3: AmmOrderParser[V3, N2T] = new N2TAmmOrderParser
+  def n2tV3(spf: TokenId): AmmOrderParser[V3, N2T] = new N2TAmmOrderParser(spf)
 }

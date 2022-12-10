@@ -1,9 +1,10 @@
-package fi.spectrum.parser.amm
+package fi.spectrum.parser.amm.order
 
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderType.AMM
-import fi.spectrum.core.domain.order.Version._
-import fi.spectrum.core.domain.order.{Operation, Order, Version}
+import fi.spectrum.core.domain.analytics.Version._
+import fi.spectrum.core.domain.order.{Operation, Order}
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.parser.domain.AmmType
 import fi.spectrum.parser.domain.AmmType._

@@ -1,6 +1,7 @@
-package fi.spectrum.parser.amm.legacy.v1
+package fi.spectrum.parser.amm.order.legacy.v1
 
 import cats.syntax.option._
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.order.Order.Deposit.DepositLegacyV1
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemLegacyV1
@@ -8,11 +9,11 @@ import fi.spectrum.core.domain.order.Order.Swap.SwapLegacyV1
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderType.AMM
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
-import fi.spectrum.core.domain.order.Version.LegacyV1
+import fi.spectrum.core.domain.analytics.Version.LegacyV1
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, PubKey, TokenId}
-import fi.spectrum.parser.amm.AmmOrderParser
+import fi.spectrum.parser.amm.order.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType.T2T
 import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.T2T._
@@ -33,11 +34,11 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           dexFeePerTokenNum   <- tree.constants.parseLong(16)
           dexFeePerTokenDenom <- tree.constants.parseLong(17)
           redeemer            <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom, PublicKeyRedeemer(redeemer))
+          params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
         } yield SwapLegacyV1(
           box,
           ERG(0),
-          poolId,
+          poolId, PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,
@@ -57,11 +58,11 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           inY      <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
           dexFee   <- tree.constants.parseLong(11)
           redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = DepositParams(inX, inY, PublicKeyRedeemer(redeemer))
+          params = DepositParams(inX, inY)
         } yield DepositLegacyV1(
           box,
           ERG(dexFee),
-          poolId,
+          poolId, PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,
@@ -80,11 +81,11 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           inLP     <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee   <- tree.constants.parseLong(15)
           redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = RedeemParams(inLP, PublicKeyRedeemer(redeemer))
+          params = RedeemParams(inLP)
         } yield RedeemLegacyV1(
           box,
           ERG(dexFee),
-          poolId,
+          poolId, PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,

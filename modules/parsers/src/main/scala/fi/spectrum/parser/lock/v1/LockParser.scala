@@ -1,10 +1,11 @@
 package fi.spectrum.parser.lock.v1
 
 import cats.syntax.option._
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
-import fi.spectrum.core.domain.order.Version.V1
-import fi.spectrum.core.domain.order.{Operation, Order, OrderType, Version}
+import fi.spectrum.core.domain.analytics.Version.V1
+import fi.spectrum.core.domain.order.{Operation, Order, OrderType}
 import fi.spectrum.core.domain.transaction.SConstant.{IntConstant, SigmaPropConstant}
 import fi.spectrum.core.domain.transaction.{Output, RegisterId}
 import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate}

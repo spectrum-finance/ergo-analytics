@@ -1,6 +1,7 @@
-package fi.spectrum.parser.amm.legacy.v1
+package fi.spectrum.parser.amm.order.legacy.v1
 
 import cats.syntax.option._
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee._
 import fi.spectrum.core.domain.order.Order.Deposit.DepositLegacyV1
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemLegacyV1
@@ -8,11 +9,11 @@ import fi.spectrum.core.domain.order.Order.Swap.SwapLegacyV1
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderType.AMM
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
-import fi.spectrum.core.domain.order.Version.LegacyV1
+import fi.spectrum.core.domain.analytics.Version.LegacyV1
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, PubKey, TokenId}
-import fi.spectrum.parser.amm.AmmOrderParser
+import fi.spectrum.parser.amm.order.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType.N2T
 import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.N2T._
