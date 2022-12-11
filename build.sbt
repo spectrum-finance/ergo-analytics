@@ -56,4 +56,4 @@ lazy val indexer = mkModule("indexer", "indexer")
       CompilerPlugins.kindProjector
     )
   )
-  .dependsOn(core, parsers)
+  .dependsOn(core, parsers, streaming)

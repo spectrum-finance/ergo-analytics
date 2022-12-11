@@ -11,7 +11,8 @@ import tofu.doobie.transactor.Txr
 import tofu.syntax.monadic._
 import fi.spectrum.indexer.models.RedeemDB.{toSchema, _}
 import fi.spectrum.indexer.models.SwapDB.{toSchema, _}
-import fi.spectrum.indexer.processes.OrdersProcessor
+import fi.spectrum.indexer.processes.{FromNetwork, OrdersProcessor}
+import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fs2.Chunk
 import tofu.streams.{Chunks, Evals}
 
@@ -21,10 +22,12 @@ object Main {
     elh: EmbeddableLogHandler[D],
     txr: Txr[F, D]
   ) = {
-    val bundle  = PersistBundle.make[D, F]
-    val handle1 = Handle.makeOptional[ProcessedOrder, RedeemDB, F](bundle.redeems)
-    val handle2 = Handle.makeOptional[ProcessedOrder, SwapDB, F](bundle.swaps)
-    OrdersProcessor.make[Chunk, F, S](???, List(handle1, handle2))
+    val bundle   = PersistBundle.make[D, F]
+    val handle1  = Handle.makeOptional[ProcessedOrder, RedeemDB, F](bundle.redeems)
+    val handle2  = Handle.makeOptional[ProcessedOrder, SwapDB, F](bundle.swaps)
+    val process1 = OrdersProcessor.make[Chunk, F, S](???, List(handle1, handle2))
+    val parser   = ProcessedOrderParser.make
+    val process2 = FromNetwork.make[Chunk, F, S](???, parser)
   }
 
 }
