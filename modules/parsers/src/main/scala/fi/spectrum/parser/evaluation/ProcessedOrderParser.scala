@@ -29,7 +29,7 @@ class ProcessedOrderParser(implicit
         val eval = pool >>= { p => evalParser.parse(order, tx.outputs.toList, p) }
         ProcessedOrder(
           order,
-          OrderState(tx.id, timestamp, OrderStatus.Executed),
+          OrderState(tx.id, timestamp, if (pool.isEmpty) OrderStatus.Refunded else OrderStatus.Executed),
           eval,
           fee,
           pool

@@ -20,7 +20,7 @@ lazy val commonScalacOption = List(
 
 lazy val root = (project in file("."))
   .settings(name := "ergo-analytics")
-  .aggregate(core, streaming)
+  .aggregate(core, streaming, indexer)
 
 lazy val core = mkModule("core", "core")
   .settings(scalacOptions ++= commonScalacOption)
@@ -43,3 +43,6 @@ lazy val streaming = mkModule("streaming", "events-streaming")
 
 lazy val parsers = mkModule("parsers", "order-parsers")
   .dependsOn(core)
+
+lazy val indexer = mkModule("indexer", "indexer")
+  .dependsOn(parsers)
