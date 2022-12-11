@@ -12,6 +12,7 @@ object Dependencies {
     val enumeratum = "1.7.0"
     val circe      = "0.14.1"
     val mouse      = "1.2.1"
+    val doobiePostgres = "1.0.0-RC2"
 
     val sigma = "7.7.7"
 
@@ -20,6 +21,7 @@ object Dependencies {
   }
 
   val ce3 = "org.typelevel" %% "cats-effect-kernel" % Version.ce3
+  val doobiePostgres = "org.tpolecat" %% "doobie-postgres" % Version.doobiePostgres
 
   val newtype     = "io.estatico" %% "newtype"      % Version.newtype
   val refined     = "eu.timepit"  %% "refined"      % Version.refined

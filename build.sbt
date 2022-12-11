@@ -26,16 +26,20 @@ lazy val core = mkModule("core", "core")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(
     libraryDependencies ++= List(
+      CompilerPlugins.betterMonadicFor,
+      CompilerPlugins.kindProjector
+    )
+  )
+  .settings(
+    libraryDependencies ++= List(
       ce3,
       sigma,
       newtype,
       refined,
       refinedCats,
-      mouse
-    ) ++ tofu ++ derevo ++ enums ++ circe ++ List(
-      CompilerPlugins.betterMonadicFor,
-      CompilerPlugins.kindProjector
-    )
+      mouse,
+      doobiePostgres
+    ) ++ tofu ++ derevo ++ enums ++ circe
   )
 
 lazy val streaming = mkModule("streaming", "events-streaming")
@@ -45,4 +49,11 @@ lazy val parsers = mkModule("parsers", "order-parsers")
   .dependsOn(core)
 
 lazy val indexer = mkModule("indexer", "indexer")
-  .dependsOn(parsers)
+  .settings(scalacOptions ++= commonScalacOption)
+  .settings(
+    libraryDependencies ++= List(
+      CompilerPlugins.betterMonadicFor,
+      CompilerPlugins.kindProjector
+    )
+  )
+  .dependsOn(core, parsers)

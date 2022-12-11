@@ -2,8 +2,10 @@ package fi.spectrum.core
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import doobie.util.{Get, Put}
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.refineV
+import eu.timepit.refined.string.HexStringSpec
 import fi.spectrum.core.domain.TypeConstraints.{AddressType, Base58Spec, HexString}
 import fi.spectrum.core.syntax.PubKeyOps
 import io.circe.refined._
@@ -13,14 +15,28 @@ import scorex.util.encode.Base16
 package object domain {
 
   @derive(encoder, decoder)
+  @newtype final case class ProtocolVersion(value: Int)
+
+  object ProtocolVersion {
+    implicit val get: Get[ProtocolVersion] = deriving
+    implicit val put: Put[ProtocolVersion] = deriving
+  }
+
+  @derive(encoder, decoder)
   @newtype final case class TxId(value: String)
 
-  object TxId {}
+  object TxId {
+    implicit val get: Get[TxId] = deriving
+    implicit val put: Put[TxId] = deriving
+  }
 
   @derive(encoder, decoder)
   @newtype final case class BoxId(value: String)
 
-  object BoxId {}
+  object BoxId {
+    implicit val get: Get[BoxId] = deriving
+    implicit val put: Put[BoxId] = deriving
+  }
 
   @derive(encoder, decoder)
   @newtype final case class SErgoTree(value: HexString) {
@@ -28,6 +44,14 @@ package object domain {
   }
 
   object SErgoTree {
+
+    implicit val get: Get[SErgoTree] =
+      Get[String]
+        .temap(s => refineV[HexStringSpec](s))
+        .map(rs => SErgoTree(rs))
+
+    implicit val put: Put[SErgoTree] =
+      Put[String].contramap[SErgoTree](_.value.value)
 
     def unsafeFromString(s: String): SErgoTree = SErgoTree(Refined.unsafeApply(s))
 
@@ -41,6 +65,14 @@ package object domain {
 
   object TokenId {
 
+    implicit val get: Get[TokenId] =
+      Get[String]
+        .temap(s => refineV[HexStringSpec](s))
+        .map(rs => TokenId(rs))
+
+    implicit val put: Put[TokenId] =
+      Put[String].contramap[TokenId](_.value.value)
+
     def fromBytes(bytes: Array[Byte]): TokenId =
       TokenId(Refined.unsafeApply(scorex.util.encode.Base16.encode(bytes)))
   }
@@ -49,10 +81,18 @@ package object domain {
   @newtype final case class PubKey(value: HexString) {
     def toBytes: Array[Byte] = Base16.decode(value.value).get
 
-    def ergoTree: SErgoTree  = SErgoTree.fromBytes(PubKey(value).toErgoTree.bytes)
+    def ergoTree: SErgoTree = SErgoTree.fromBytes(PubKey(value).toErgoTree.bytes)
   }
 
   object PubKey {
+
+    implicit val get: Get[PubKey] =
+      Get[String]
+        .temap(s => refineV[HexStringSpec](s))
+        .map(rs => PubKey(rs))
+
+    implicit val put: Put[PubKey] =
+      Put[String].contramap[PubKey](_.value.value)
 
     def unsafeFromString(s: String): PubKey = PubKey(Refined.unsafeApply(s))
 

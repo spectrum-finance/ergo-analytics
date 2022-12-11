@@ -52,7 +52,7 @@ final class OrderEvaluationParser {
           if (quote.isNative) AssetAmount.native(output.value).some
           else output.assets.find(_.tokenId == quote.tokenId).map(AssetAmount.fromBoxAsset)
         out.map(SwapEvaluation(_))
-      case None => none
+      case _ => none
     }
 
   def deposit(redeemer: SErgoTree, output: Output, pool: Pool.Any): Option[DepositEvaluation] =

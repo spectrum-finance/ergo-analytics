@@ -3,6 +3,7 @@ package fi.spectrum.core.domain.order
 import fi.spectrum.core.domain.AssetAmount
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order.Deposit._
+import fi.spectrum.core.domain.order.Order.Redeem._
 import fi.spectrum.core.domain.order.Order.Swap._
 import fi.spectrum.core.domain.order.Order._
 import glass.classic.Optional
@@ -12,12 +13,22 @@ object OrderOptics {
 
   val depositPrism = GenSubset[Order.Any, Order.AnyDeposit]
   val swapPrism    = GenSubset[Order.Any, Order.AnySwap]
+  val redeemPrism  = GenSubset[Order.Any, Order.AnyRedeem]
+
+  val swapV1       = swapPrism >> GenSubset[Order.AnySwap, SwapV1]
+  val swapV2       = swapPrism >> GenSubset[Order.AnySwap, SwapV2]
+  val swapV3       = swapPrism >> GenSubset[Order.AnySwap, SwapV3]
+  val swapLegacyV1 = swapPrism >> GenSubset[Order.AnySwap, SwapLegacyV1]
+
+  val redeemV1       = redeemPrism >> GenSubset[Order.AnyRedeem, RedeemV1]
+  val redeemV3       = redeemPrism >> GenSubset[Order.AnyRedeem, RedeemV3]
+  val redeemLegacyV1 = redeemPrism >> GenSubset[Order.AnyRedeem, RedeemLegacyV1]
 
   implicit val optionalSwapQuote: Optional[Order.Any, AssetAmount] = {
-    (swapPrism >> GenSubset[Order.AnySwap, SwapV1] >> GenContains[SwapV1](_.params.minQuote)) orElse
-    (swapPrism >> GenSubset[Order.AnySwap, SwapV2] >> GenContains[SwapV2](_.params.minQuote)) orElse
-    (swapPrism >> GenSubset[Order.AnySwap, SwapV3] >> GenContains[SwapV3](_.params.minQuote)) orElse
-    (swapPrism >> GenSubset[Order.AnySwap, SwapLegacyV1] >> GenContains[SwapLegacyV1](_.params.minQuote))
+    (swapV1 >> GenContains[SwapV1](_.params.minQuote)) orElse
+    (swapV2 >> GenContains[SwapV2](_.params.minQuote)) orElse
+    (swapV3 >> GenContains[SwapV3](_.params.minQuote)) orElse
+    (swapLegacyV1 >> GenContains[SwapLegacyV1](_.params.minQuote))
   }
 
   implicit val optionalDepositParams: Optional[Order.Any, DepositParams] = {

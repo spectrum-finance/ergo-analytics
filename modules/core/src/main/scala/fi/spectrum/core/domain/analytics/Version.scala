@@ -5,6 +5,7 @@ import cats.syntax.either._
 import cats.syntax.eq._
 import cats.syntax.functor._
 import cats.syntax.show._
+import doobie.util.{Get, Put}
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
 
@@ -66,5 +67,22 @@ object Version {
     def v1: V1             = new V1 {}
     def legacyV2: LegacyV2 = new LegacyV2 {}
     def legacyV1: LegacyV1 = new LegacyV1 {}
+  }
+
+  implicit def put: Put[Version] = Put[String].contramap {
+    case _: V1       => make.v1.show
+    case _: V2       => make.v2.show
+    case _: V3       => make.v3.show
+    case _: LegacyV1 => make.legacyV1.show
+    case _: LegacyV2 => make.legacyV2.show
+  }
+
+  implicit def get: Get[Version] = Get[String].temap {
+    case s if s == make.v1.show       => make.v1.asRight[String]
+    case s if s == make.v2.show       => make.v2.asRight[String]
+    case s if s == make.v3.show       => make.v3.asRight[String]
+    case s if s == make.legacyV1.show => make.legacyV1.asRight[String]
+    case s if s == make.legacyV2.show => make.legacyV2.asRight[String]
+    case err                          => s"Invalid contract version: $err".asLeft[Version]
   }
 }
