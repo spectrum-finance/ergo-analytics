@@ -38,11 +38,19 @@ lazy val core = mkModule("core", "core")
       refined,
       refinedCats,
       mouse,
-      doobiePostgres
+      doobiePostgres,
+      kafka
     ) ++ tofu ++ derevo ++ enums ++ circe
   )
 
 lazy val streaming = mkModule("streaming", "events-streaming")
+  .settings(scalacOptions ++= commonScalacOption)
+  .settings(
+    libraryDependencies ++= List(
+      CompilerPlugins.betterMonadicFor,
+      CompilerPlugins.kindProjector
+    )
+  )
   .dependsOn(core)
 
 lazy val parsers = mkModule("parsers", "order-parsers")

@@ -3,16 +3,17 @@ import sbt._
 object Dependencies {
 
   object Version {
-    val ce3        = "3.4.2"
-    val tofu       = "0.11.0"
-    val glass      = "0.1.0"
-    val derevo     = "0.13.0"
-    val newtype    = "0.4.4"
-    val refined    = "0.10.1"
-    val enumeratum = "1.7.0"
-    val circe      = "0.14.1"
-    val mouse      = "1.2.1"
+    val ce3            = "3.4.2"
+    val tofu           = "0.11.0"
+    val glass          = "0.1.0"
+    val derevo         = "0.13.0"
+    val newtype        = "0.4.4"
+    val refined        = "0.10.1"
+    val enumeratum     = "1.7.0"
+    val circe          = "0.14.1"
+    val mouse          = "1.2.1"
     val doobiePostgres = "1.0.0-RC2"
+    val fs2Kafka       = "2.5.0"
 
     val sigma = "7.7.7"
 
@@ -20,8 +21,9 @@ object Dependencies {
     val kindProjector    = "0.13.2"
   }
 
-  val ce3 = "org.typelevel" %% "cats-effect-kernel" % Version.ce3
-  val doobiePostgres = "org.tpolecat" %% "doobie-postgres" % Version.doobiePostgres
+  val ce3            = "org.typelevel"   %% "cats-effect-kernel" % Version.ce3
+  val doobiePostgres = "org.tpolecat"    %% "doobie-postgres"    % Version.doobiePostgres
+  val kafka          = "com.github.fd4s" %% "fs2-kafka"          % Version.fs2Kafka
 
   val newtype     = "io.estatico" %% "newtype"      % Version.newtype
   val refined     = "eu.timepit"  %% "refined"      % Version.refined
@@ -46,11 +48,10 @@ object Dependencies {
     "tf.tofu" %% "tofu-core-ce3"        % Version.tofu,
     "tf.tofu" %% "tofu-doobie-ce3"      % Version.tofu,
     "tf.tofu" %% "tofu-fs2-ce3-interop" % Version.tofu,
-//    "tf.tofu" %% "tofu-zio-interop"     % Version.tofu,
-    "tf.tofu" %% "tofu-derivation" % Version.tofu,
-    "tf.tofu" %% "tofu-streams"    % Version.tofu,
-    "tf.tofu" %% "tofu-logging"    % Version.tofu,
-    "tf.tofu" %% "glass"           % Version.glass
+    "tf.tofu" %% "tofu-derivation"      % Version.tofu,
+    "tf.tofu" %% "tofu-streams"         % Version.tofu,
+    "tf.tofu" %% "tofu-logging"         % Version.tofu,
+    "tf.tofu" %% "glass"                % Version.glass
   )
 
   val derevo = List(

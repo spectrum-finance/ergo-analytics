@@ -25,9 +25,10 @@ object FromNetwork {
     parser: ProcessedOrderParser
   ) extends FromNetwork[S] {
 
-    override def run: S[Unit] = stream
-      .map { case Apply(timestamp, tx) =>
-        parser.parse(Transaction.fromErgoLike(tx), timestamp)
-      }
+    override def run: S[Unit] =  ???
+//      stream
+//      .map { case Apply(timestamp, tx) =>
+//        parser.parse(Transaction.fromErgoLike(tx), timestamp)
+//      }
   }
 }

@@ -1,5 +1,6 @@
 package fi.spectrum.indexer
 
+import cats.data.ReaderT
 import cats.{FlatMap, Monad}
 import fi.spectrum.core.domain.analytics.ProcessedOrder
 import fi.spectrum.indexer.classes.Handle
@@ -26,8 +27,8 @@ object Main {
     val handle1  = Handle.makeOptional[ProcessedOrder, RedeemDB, F](bundle.redeems)
     val handle2  = Handle.makeOptional[ProcessedOrder, SwapDB, F](bundle.swaps)
     val process1 = OrdersProcessor.make[Chunk, F, S](???, List(handle1, handle2))
-    val parser   = ProcessedOrderParser.make
-    val process2 = FromNetwork.make[Chunk, F, S](???, parser)
+//    val parser   = ProcessedOrderParser.make
+//    val process2 = FromNetwork.make[Chunk, F, S](???, parser)
   }
 
 }
