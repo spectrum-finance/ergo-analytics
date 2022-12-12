@@ -1,8 +1,8 @@
 package fi.spectrum.indexer.db.schema
 
-import fi.spectrum.indexer.models.DepositDB
+import fi.spectrum.indexer.models.{DepositDB, UpdateState}
 
-class DepositSchema extends Schema[DepositDB] {
+class DepositSchema extends OrderSchema[UpdateState, DepositDB] {
   val tableName: String = "deposits"
 
   val fields: List[String] = List(

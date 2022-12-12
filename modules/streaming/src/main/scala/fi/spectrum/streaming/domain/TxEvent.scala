@@ -2,7 +2,9 @@ package fi.spectrum.streaming.domain
 
 import org.ergoplatform.ErgoLikeTransaction
 
-sealed trait TxEvent
+sealed trait TxEvent {
+  val tx: ErgoLikeTransaction
+}
 
 object TxEvent {
   final case class Apply(timestamp: Long, tx: ErgoLikeTransaction) extends TxEvent

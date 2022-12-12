@@ -1,8 +1,8 @@
 package fi.spectrum.indexer.db.schema
 
-import fi.spectrum.indexer.models.SwapDB
+import fi.spectrum.indexer.models.{SwapDB, UpdateState}
 
-class SwapSchema extends Schema[SwapDB] {
+class SwapSchema extends OrderSchema[UpdateState, SwapDB] {
   val tableName: String = "swaps"
 
   val fields: List[String] = List(

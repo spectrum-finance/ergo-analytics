@@ -3,6 +3,7 @@ package fi.spectrum.indexer.db.schema
 import doobie.Update
 import doobie.util.Write
 import doobie.util.log.LogHandler
+import fi.spectrum.indexer.models.{DepositDB, LockDB, RedeemDB, SwapDB}
 
 trait Schema[T] {
 
@@ -24,8 +25,8 @@ trait Schema[T] {
 }
 
 object Schema {
-  implicit val swapSchema: SwapSchema       = new SwapSchema
-  implicit val redeemSchema: RedeemSchema   = new RedeemSchema
-  implicit val depositSchema: DepositSchema = new DepositSchema
-  implicit val lockSchema: LockSchema       = new LockSchema
+  implicit val swapSchema: Schema[SwapDB]       = new SwapSchema
+  implicit val redeemSchema: Schema[RedeemDB]   = new RedeemSchema
+  implicit val depositSchema: Schema[DepositDB] = new DepositSchema
+  implicit val lockSchema: Schema[LockDB]       = new LockSchema
 }

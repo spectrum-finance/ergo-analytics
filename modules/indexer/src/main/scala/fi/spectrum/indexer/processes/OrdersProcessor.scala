@@ -7,6 +7,11 @@ import fi.spectrum.indexer.classes.Handle
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.streams.all._
 import cats.syntax.foldable._
+import cats.syntax.traverse._
+import fi.spectrum.indexer.db.persistence.{PersistBundle, UpdateBundle}
+import fi.spectrum.indexer.services.ProcessedOrderHandler
+import fi.spectrum.streaming.OrderEventsConsumer
+import fi.spectrum.streaming.domain.OrderEvent
 import tofu.syntax.monadic._
 
 trait OrdersProcessor[S[_]] {
@@ -16,21 +21,25 @@ trait OrdersProcessor[S[_]] {
 object OrdersProcessor {
 
   def make[C[_]: Functor: Foldable, F[_]: Monad, S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad](
-    stream: S[ProcessedOrder],
-    handler: List[Handle[ProcessedOrder, F]]
-  ): OrdersProcessor[S] = new Live[C, F, S](stream, handler)
+    order: OrderEventsConsumer[S, F],
+    handle: List[ProcessedOrderHandler[F]]
+  ): OrdersProcessor[S] = new Live[C, F, S](order, handle)
 
   final private class Live[C[_]: Functor: Foldable, F[_]: Monad, S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad](
-    stream: S[ProcessedOrder],
-    handler: List[Handle[ProcessedOrder, F]]
+    order: OrderEventsConsumer[S, F],
+    handle: List[ProcessedOrderHandler[F]]
   ) extends OrdersProcessor[S] {
 
-    override def run: S[Unit] = stream.chunksN(10).evalMap { batch =>
-      NonEmptyList.fromList(batch.toList) match {
-        case Some(value) => ??? //handler.handle(value).void
-        case None        => unit[F]
+    override def run: S[Unit] = order.stream
+      .chunksN(10)
+      .evalMap { committables =>
+        committables.toList.map { committable =>
+          committable.message match {
+            case OrderEvent.Apply(event) =>
+              handle.map(_.handle(event)).sequence
+            case OrderEvent.Unapply(tx) => ???
+          }
+        }.sequence_
       }
-
-    }
   }
 }

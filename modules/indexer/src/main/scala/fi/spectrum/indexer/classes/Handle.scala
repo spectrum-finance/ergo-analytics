@@ -18,12 +18,13 @@ trait Handle[T, F[_]] {
 
 object Handle {
 
-  def makeOptional[A, B, F[_]: Applicative](persist: Persist[B, F])(implicit
-    schema: ToSchema[A, Option[B]]
+  def makeOptional[A, B, F[_]: Applicative](implicit
+    schema: ToSchema[A, Option[B]],
+    persist: Persist[B, F]
   ): Handle[A, F] =
-    new Live[A, B, F](persist)
+    new Live[A, B, F]
 
-  final private class Live[A, B, F[_]: Applicative](persist: Persist[B, F])(implicit schema: ToSchema[A, Option[B]])
+  final private class Live[A, B, F[_]: Applicative](implicit schema: ToSchema[A, Option[B]], persist: Persist[B, F])
     extends Handle[A, F] {
 
     override def handle(in: NonEmptyList[A]): F[Int] =

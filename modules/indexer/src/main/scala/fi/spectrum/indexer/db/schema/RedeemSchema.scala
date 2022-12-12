@@ -1,8 +1,8 @@
 package fi.spectrum.indexer.db.schema
 
-import fi.spectrum.indexer.models.RedeemDB
+import fi.spectrum.indexer.models.{RedeemDB, UpdateState}
 
-class RedeemSchema extends Schema[RedeemDB] {
+class RedeemSchema extends OrderSchema[UpdateState, RedeemDB] {
   val tableName: String = "redeems"
 
   val fields: List[String] = List(
