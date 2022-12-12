@@ -25,12 +25,9 @@ final case class SwapDB(
   protocolVersion: ProtocolVersion,
   contractVersion: Version,
   redeemerErgoTree: Option[SErgoTree],
-  registeredTransactionId: Option[TxId],
-  registeredTransactionTimestamp: Option[Long],
-  executedTransactionId: Option[TxId],
-  executedTransactionTimestamp: Option[Long],
-  refundedTransactionId: Option[TxId],
-  refundedTransactionTimestamp: Option[Long]
+  registeredTx: Option[TxInfo],
+  executedTx: Option[TxInfo],
+  refundedTx: Option[TxInfo]
 )
 
 object SwapDB {
@@ -44,6 +41,7 @@ object SwapDB {
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
       Subset[Order.Any, SwapV1].getOption(processed.order) match {
         case Some(swap) =>
+          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
           SwapDB(
             swap.id,
             swap.poolId,
@@ -58,12 +56,9 @@ object SwapDB {
             ProtocolVersion(1),
             swap.version,
             none,
-            if (processed.state.status.in(Registered)) processed.state.txId.some else none,
-            if (processed.state.status.in(Registered)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Executed)) processed.state.txId.some else none,
-            if (processed.state.status.in(Executed)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.txId.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.timestamp.some else none
+            if (processed.state.status.in(Registered)) txInfo.some else none,
+            if (processed.state.status.in(Executed)) txInfo.some else none,
+            if (processed.state.status.in(Refunded)) txInfo.some else none
           ).some
         case None =>
           none
@@ -75,6 +70,7 @@ object SwapDB {
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
       Subset[Order.Any, SwapV2].getOption(processed.order) match {
         case Some(swap) =>
+          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
           SwapDB(
             swap.id,
             swap.poolId,
@@ -89,12 +85,9 @@ object SwapDB {
             ProtocolVersion(1),
             swap.version,
             swap.redeemer.value.some,
-            if (processed.state.status.in(Registered)) processed.state.txId.some else none,
-            if (processed.state.status.in(Registered)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Executed)) processed.state.txId.some else none,
-            if (processed.state.status.in(Executed)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.txId.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.timestamp.some else none
+            if (processed.state.status.in(Registered)) txInfo.some else none,
+            if (processed.state.status.in(Executed)) txInfo.some else none,
+            if (processed.state.status.in(Refunded)) txInfo.some else none
           ).some
         case None =>
           none
@@ -106,6 +99,7 @@ object SwapDB {
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
       Subset[Order.Any, SwapV3].getOption(processed.order) match {
         case Some(swap) =>
+          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
           SwapDB(
             swap.id,
             swap.poolId,
@@ -120,12 +114,9 @@ object SwapDB {
             ProtocolVersion(1),
             swap.version,
             swap.redeemer.value.some,
-            if (processed.state.status.in(Registered)) processed.state.txId.some else none,
-            if (processed.state.status.in(Registered)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Executed)) processed.state.txId.some else none,
-            if (processed.state.status.in(Executed)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.txId.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.timestamp.some else none
+            if (processed.state.status.in(Registered)) txInfo.some else none,
+            if (processed.state.status.in(Executed)) txInfo.some else none,
+            if (processed.state.status.in(Refunded)) txInfo.some else none
           ).some
         case None =>
           none
@@ -137,6 +128,7 @@ object SwapDB {
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
       Subset[Order.Any, SwapLegacyV1].getOption(processed.order) match {
         case Some(swap) =>
+          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
           SwapDB(
             swap.id,
             swap.poolId,
@@ -151,12 +143,9 @@ object SwapDB {
             ProtocolVersion(1),
             swap.version,
             none,
-            if (processed.state.status.in(Registered)) processed.state.txId.some else none,
-            if (processed.state.status.in(Registered)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Executed)) processed.state.txId.some else none,
-            if (processed.state.status.in(Executed)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.txId.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.timestamp.some else none
+            if (processed.state.status.in(Registered)) txInfo.some else none,
+            if (processed.state.status.in(Executed)) txInfo.some else none,
+            if (processed.state.status.in(Refunded)) txInfo.some else none
           ).some
         case None =>
           none

@@ -47,7 +47,6 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
                )
     } yield SwapLegacyV1(
       box,
-      ERG(0),
       poolId,
       PublicKeyRedeemer(redeemer),
       params,
@@ -74,7 +73,6 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
                )
     } yield SwapLegacyV1(
       box,
-      ERG(0),
       poolId,
       PublicKeyRedeemer(redeemer),
       params,

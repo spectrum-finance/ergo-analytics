@@ -6,7 +6,7 @@ import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
 import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
 import fi.spectrum.core.domain.order.{Order, PoolId}
 import fi.spectrum.core.domain.transaction.Output
-import fi.spectrum.core.domain.{ErgoTreeTemplate, PubKey}
+import fi.spectrum.core.domain.{ErgoTreeTemplate, PubKey, TokenId}
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.constants.predefinedErgoTrees
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
@@ -17,9 +17,9 @@ trait OffChainFeeParser {
 
 object OffChainFeeParser {
 
-  def make(implicit e: ErgoAddressEncoder): OffChainFeeParser = new Live
+  def make(spf: TokenId)(implicit e: ErgoAddressEncoder): OffChainFeeParser = new Live(spf)
 
-  final private class Live(implicit e: ErgoAddressEncoder) extends OffChainFeeParser {
+  final private class Live(spf: TokenId)(implicit e: ErgoAddressEncoder) extends OffChainFeeParser {
 
     def parse(outputs: List[Output], order: Order.Any, poolId: PoolId): Option[OffChainOperatorFee] =
       outputs
@@ -38,7 +38,7 @@ object OffChainFeeParser {
           val feeOpt = order match {
             case deposit: Order.Deposit[_, _] => deposit.fee.some
             case redeem: Order.Redeem[_, _]   => redeem.fee.some
-            case swap: Order.Swap[_, _]       => swap.fee.some
+            case _: Order.Swap[_, _]          => SPF(0).some
             case _: Order.Lock[_]             => none
           }
 
@@ -47,10 +47,10 @@ object OffChainFeeParser {
           }
 
           (feeOpt, pkOpt) match {
-            case (Some(SPF(_, tokenId)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>
-              box.assets.find(_.tokenId == tokenId) match {
+            case (Some(SPF(_)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>
+              box.assets.find(_.tokenId == spf) match {
                 case Some(value) =>
-                  OffChainOperatorFee(poolId, order.id, box.boxId, pk, SPF(value.amount, value.tokenId)).some
+                  OffChainOperatorFee(poolId, order.id, box.boxId, pk, SPF(value.amount)).some
                 case None => none
               }
             case (Some(ERG(_)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>

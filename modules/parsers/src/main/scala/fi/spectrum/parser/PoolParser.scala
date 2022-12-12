@@ -22,9 +22,8 @@ object PoolParser {
 
   def make: PoolParser = List[PoolParser](ammPoolParser).reduceLeft(_ or _)
 
-  def ammPoolParser: PoolParser = new PoolParser {
+  private def ammPoolParser: PoolParser = {
     val poolParser: AmmPoolParser[Version, AmmType] = AmmPoolParser.make
-
-    def parse(box: Output): Option[Pool[Version, PoolType]] = poolParser.pool(box)
+    (box: Output) => poolParser.pool(box)
   }
 }

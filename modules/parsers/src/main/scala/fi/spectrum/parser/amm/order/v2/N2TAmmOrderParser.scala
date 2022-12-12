@@ -45,7 +45,6 @@ class N2TAmmOrderParser extends AmmOrderParser[V2, N2T] {
                )
     } yield SwapV2(
       box,
-      ERG(0),
       poolId,
       ErgoTreeRedeemer(redeemer),
       params,
@@ -74,7 +73,6 @@ class N2TAmmOrderParser extends AmmOrderParser[V2, N2T] {
                )
     } yield SwapV2(
       box,
-      ERG(0),
       poolId,
       ErgoTreeRedeemer(redeemer),
       params,

@@ -37,7 +37,6 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
         } yield SwapLegacyV1(
           box,
-          ERG(0),
           poolId, PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,

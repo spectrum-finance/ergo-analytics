@@ -173,7 +173,6 @@ object Order {
 
   sealed abstract class Swap[+V <: Version, +T <: OrderType] extends Order[V, T, Operation.Swap] {
     val poolId: PoolId
-    val fee: Fee
   }
 
   object Swap {
@@ -184,7 +183,6 @@ object Order {
     @derive(encoder, decoder)
     final case class SwapV3(
       box: Output,
-      fee: SPF,
       poolId: PoolId,
       redeemer: ErgoTreeRedeemer,
       params: SwapParams,
@@ -198,7 +196,6 @@ object Order {
     @derive(encoder, decoder)
     final case class SwapV2(
       box: Output,
-      fee: ERG,
       poolId: PoolId,
       redeemer: ErgoTreeRedeemer,
       params: SwapParams,
@@ -211,7 +208,6 @@ object Order {
     @derive(encoder, decoder)
     final case class SwapV1(
       box: Output,
-      fee: ERG,
       poolId: PoolId,
       redeemer: PublicKeyRedeemer,
       params: SwapParams,
@@ -224,7 +220,6 @@ object Order {
     @derive(encoder, decoder)
     final case class SwapLegacyV1(
       box: Output,
-      fee: ERG,
       poolId: PoolId,
       redeemer: PublicKeyRedeemer,
       params: SwapParams,

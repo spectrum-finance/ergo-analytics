@@ -19,7 +19,7 @@ import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.T2T._
 import sigmastate.Values
 
-class T2TAmmOrderParser(spf: TokenId) extends AmmOrderParser[V3, T2T] {
+class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
 
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V3, AMM]] =
     Either
@@ -45,7 +45,6 @@ class T2TAmmOrderParser(spf: TokenId) extends AmmOrderParser[V3, T2T] {
                    )
         } yield SwapV3(
           box,
-          SPF(0, spf),
           poolId,
           ErgoTreeRedeemer(redeemer),
           params,
@@ -78,7 +77,7 @@ class T2TAmmOrderParser(spf: TokenId) extends AmmOrderParser[V3, T2T] {
                    )
         } yield DepositV3(
           box,
-          SPF(dexFee, spf),
+          SPF(dexFee),
           poolId,
           ErgoTreeRedeemer(redeemer),
           params,
@@ -104,7 +103,7 @@ class T2TAmmOrderParser(spf: TokenId) extends AmmOrderParser[V3, T2T] {
           params = RedeemParams(inLP)
         } yield RedeemV3(
           box,
-          SPF(dexFee.amount, spf),
+          SPF(dexFee.amount),
           poolId,
           ErgoTreeRedeemer(redeemer),
           params,
@@ -119,5 +118,5 @@ class T2TAmmOrderParser(spf: TokenId) extends AmmOrderParser[V3, T2T] {
 }
 
 object T2TAmmOrderParser {
-  def t2tV3(spf: TokenId): AmmOrderParser[V3, T2T] = new T2TAmmOrderParser(spf)
+  implicit def t2tV3: AmmOrderParser[V3, T2T] = new T2TAmmOrderParser
 }

@@ -39,7 +39,6 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
         } yield SwapV1(
           box,
-          ERG(0),
           poolId, PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,

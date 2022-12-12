@@ -41,7 +41,6 @@ final class T2TAmmOrderParser extends AmmOrderParser[V2, T2T] {
                    )
         } yield SwapV2(
           box,
-          ERG(0),
           poolId,
           ErgoTreeRedeemer(redeemer),
           params,

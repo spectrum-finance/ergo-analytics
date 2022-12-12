@@ -1,21 +1,21 @@
 package fi.spectrum.indexer.db.schema
 
-import fi.spectrum.indexer.models.RedeemDB
+import fi.spectrum.indexer.models.DepositDB
 
-class RedeemSchema extends Schema[RedeemDB] {
-  val tableName: String = "redeems"
+class DepositSchema extends Schema[DepositDB] {
+  val tableName: String = "deposits"
 
   val fields: List[String] = List(
     "order_id",
     "pool_id",
     "pool_box_id",
     "max_miner_fee",
-    "lp_id",
-    "lp_amount",
-    "output_amount_x",
-    "output_id_x",
-    "output_amount_y",
-    "output_id_y",
+    "input_id_x",
+    "input_amount_x",
+    "input_id_y",
+    "input_amount_y",
+    "output_id_lp",
+    "output_amount_lp",
     "dex_fee",
     "fee_type",
     "redeemer",

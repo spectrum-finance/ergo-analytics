@@ -24,6 +24,8 @@ trait Schema[T] {
 }
 
 object Schema {
-  implicit val swapSchema: SwapSchema     = new SwapSchema
-  implicit val redeemSchema: RedeemSchema = new RedeemSchema
+  implicit val swapSchema: SwapSchema       = new SwapSchema
+  implicit val redeemSchema: RedeemSchema   = new RedeemSchema
+  implicit val depositSchema: DepositSchema = new DepositSchema
+  implicit val lockSchema: LockSchema       = new LockSchema
 }

@@ -13,7 +13,7 @@ sealed trait Fee {
 object Fee {
 
   @derive(encoder, decoder)
-  final case class SPF(amount: Long, tokenId: TokenId) extends Fee
+  final case class SPF(amount: Long) extends Fee
 
   @derive(encoder, decoder)
   final case class ERG(amount: Long) extends Fee

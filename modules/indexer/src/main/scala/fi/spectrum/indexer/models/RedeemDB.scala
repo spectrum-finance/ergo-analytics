@@ -24,12 +24,9 @@ final case class RedeemDB(
   protocolVersion: ProtocolVersion,
   contractVersion: Version,
   redeemerErgoTree: Option[SErgoTree],
-  registeredTransactionId: Option[TxId],
-  registeredTransactionTimestamp: Option[Long],
-  executedTransactionId: Option[TxId],
-  executedTransactionTimestamp: Option[Long],
-  refundedTransactionId: Option[TxId],
-  refundedTransactionTimestamp: Option[Long]
+  registeredTx: Option[TxInfo],
+  executedTx: Option[TxInfo],
+  refundedTx: Option[TxInfo]
 )
 
 object RedeemDB {
@@ -42,6 +39,7 @@ object RedeemDB {
       val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, RedeemEvaluation].getOption)
       Subset[Order.Any, RedeemV1].getOption(processed.order) match {
         case Some(redeem) =>
+          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
           RedeemDB(
             redeem.id,
             redeem.poolId,
@@ -55,12 +53,9 @@ object RedeemDB {
             ProtocolVersion(1),
             redeem.version,
             none,
-            if (processed.state.status.in(Registered)) processed.state.txId.some else none,
-            if (processed.state.status.in(Registered)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Executed)) processed.state.txId.some else none,
-            if (processed.state.status.in(Executed)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.txId.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.timestamp.some else none
+            if (processed.state.status.in(Registered)) txInfo.some else none,
+            if (processed.state.status.in(Executed)) txInfo.some else none,
+            if (processed.state.status.in(Refunded)) txInfo.some else none
           ).some
         case None =>
           none
@@ -72,6 +67,7 @@ object RedeemDB {
       val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, RedeemEvaluation].getOption)
       Subset[Order.Any, RedeemV3].getOption(processed.order) match {
         case Some(redeem) =>
+          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
           RedeemDB(
             redeem.id,
             redeem.poolId,
@@ -85,12 +81,9 @@ object RedeemDB {
             ProtocolVersion(1),
             redeem.version,
             redeem.redeemer.value.some,
-            if (processed.state.status.in(Registered)) processed.state.txId.some else none,
-            if (processed.state.status.in(Registered)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Executed)) processed.state.txId.some else none,
-            if (processed.state.status.in(Executed)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.txId.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.timestamp.some else none
+            if (processed.state.status.in(Registered)) txInfo.some else none,
+            if (processed.state.status.in(Executed)) txInfo.some else none,
+            if (processed.state.status.in(Refunded)) txInfo.some else none
           ).some
         case None =>
           none
@@ -102,6 +95,7 @@ object RedeemDB {
       val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, RedeemEvaluation].getOption)
       Subset[Order.Any, RedeemLegacyV1].getOption(processed.order) match {
         case Some(redeem) =>
+          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
           RedeemDB(
             redeem.id,
             redeem.poolId,
@@ -115,12 +109,9 @@ object RedeemDB {
             ProtocolVersion(1),
             redeem.version,
             none,
-            if (processed.state.status.in(Registered)) processed.state.txId.some else none,
-            if (processed.state.status.in(Registered)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Executed)) processed.state.txId.some else none,
-            if (processed.state.status.in(Executed)) processed.state.timestamp.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.txId.some else none,
-            if (processed.state.status.in(Refunded)) processed.state.timestamp.some else none
+            if (processed.state.status.in(Registered)) txInfo.some else none,
+            if (processed.state.status.in(Executed)) txInfo.some else none,
+            if (processed.state.status.in(Refunded)) txInfo.some else none
           ).some
         case None =>
           none

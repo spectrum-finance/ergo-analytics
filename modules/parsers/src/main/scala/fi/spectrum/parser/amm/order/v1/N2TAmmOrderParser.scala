@@ -42,7 +42,6 @@ class N2TAmmOrderParser extends AmmOrderParser[V1, N2T] {
       params = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV1(
       box,
-      ERG(0),
       poolId,
       PublicKeyRedeemer(redeemer),
       params,
@@ -66,7 +65,6 @@ class N2TAmmOrderParser extends AmmOrderParser[V1, N2T] {
       params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV1(
       box,
-      ERG(0),
       poolId,
       PublicKeyRedeemer(redeemer),
       params,
