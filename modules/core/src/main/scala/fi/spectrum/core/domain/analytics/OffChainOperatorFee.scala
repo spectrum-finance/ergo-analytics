@@ -4,8 +4,9 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.{BoxId, PubKey}
 import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
+import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder)
+@derive(encoder, decoder, loggable)
 final case class OffChainOperatorFee(
   poolId: PoolId,
   orderId: OrderId,

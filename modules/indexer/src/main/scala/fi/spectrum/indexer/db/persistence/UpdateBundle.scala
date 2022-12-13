@@ -4,7 +4,6 @@ import cats.{Applicative, FlatMap}
 import fi.spectrum.indexer.db.schema.OrderSchema._
 import fi.spectrum.indexer.models.{DepositDB, RedeemDB, SwapDB}
 import tofu.doobie.LiftConnectionIO
-import tofu.doobie.log.EmbeddableLogHandler
 import tofu.doobie.transactor.Txr
 
 final case class UpdateBundle[F[_]](
@@ -16,7 +15,6 @@ final case class UpdateBundle[F[_]](
 object UpdateBundle {
 
   def make[D[_]: FlatMap: LiftConnectionIO, F[_]: Applicative](implicit
-    elh: EmbeddableLogHandler[D],
     txr: Txr[F, D],
     persistBundle: PersistBundle[F]
   ): UpdateBundle[F] =

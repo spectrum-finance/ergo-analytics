@@ -8,6 +8,7 @@ import cats.syntax.show._
 import doobie.util.{Get, Put}
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
+import tofu.logging.Loggable
 
 sealed trait Version
 
@@ -85,4 +86,10 @@ object Version {
     case s if s == make.legacyV2.show => make.legacyV2.asRight[String]
     case err                          => s"Invalid contract version: $err".asLeft[Version]
   }
+
+  implicit val loggableV1: Loggable[V1]             = Loggable.show
+  implicit val loggableV2: Loggable[V2]             = Loggable.show
+  implicit val loggableV3: Loggable[V3]             = Loggable.show
+  implicit val loggableLegacyV1: Loggable[LegacyV1] = Loggable.show
+  implicit val loggableLegacyV2: Loggable[LegacyV2] = Loggable.show
 }

@@ -10,11 +10,30 @@ import fi.spectrum.parser.domain.AmmType
 import fi.spectrum.parser.domain.AmmType._
 import sigmastate.Values
 
+/** Parser which parse any amm operation. Depends on amm operation version and amm type.
+  *
+  * Gives access to parse swap/redeem/deposit using appropriate methods operation
+  * or any of them using 'order' method.
+  *
+  * @tparam V - operation version, e.g. Swap v1, Swap v2 etc.
+  * @tparam T - amm type, e.g. N2T or T2T
+  */
 trait AmmOrderParser[+V <: Version, +T <: AmmType] { self =>
+
+  /** Parse exactly swap order
+    */
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V, AMM]]
+
+  /** Parse exactly deposit order
+    */
   def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit[V, AMM]]
+
+  /** Parse exactly redeem order
+    */
   def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem[V, AMM]]
 
+  /** Parse any order of V version and T type
+    */
   def order(box: Output, tree: Values.ErgoTree): Option[Order[V, AMM, Operation]] =
     swap(box, tree) orElse deposit(box, tree) orElse redeem(box, tree)
 

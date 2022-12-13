@@ -4,7 +4,6 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.Get
 import doobie.util.Put
-import fi.spectrum.core.domain.order.PoolId
 import io.estatico.newtype.macros.newtype
 
 package object pool {

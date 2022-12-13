@@ -12,7 +12,7 @@ import tofu.doobie.log.EmbeddableLogHandler
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.RepresentableK
 
-/** Takes batch of T elements and persists them into indexes storage.
+/** Takes batch of T elements and persists them into analytics storage.
   */
 trait Persist[T, F[_]] {
   def persist(inputs: NonEmptyList[T]): F[Int]

@@ -3,12 +3,12 @@ package fi.spectrum.core.domain
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.{Get, Put}
-import fi.spectrum.core.domain.order.OrderId
 import io.estatico.newtype.macros.newtype
+import tofu.logging.derivation.{loggable, show}
 
 package object order {
 
-  @derive(encoder, decoder)
+  @derive(encoder, decoder, loggable, show)
   @newtype final case class OrderId(value: String)
 
   object OrderId {
@@ -16,7 +16,7 @@ package object order {
     implicit val put: Put[OrderId] = deriving
   }
 
-  @derive(encoder, decoder)
+  @derive(encoder, decoder, loggable, show)
   @newtype final case class PoolId(value: TokenId)
 
   object PoolId {

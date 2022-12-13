@@ -7,7 +7,11 @@ import cats.syntax.functor._
 import cats.syntax.show._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
+import tofu.logging.Loggable
 
+/** Represents order operation ,e.g. Swap, Deposit, Redeem, Lock, Reward.
+  * Doesn't depend on order type.
+  */
 sealed trait Operation
 
 object Operation {
@@ -32,10 +36,10 @@ object Operation {
     case invalid                     => s"Invalid operation ${r.show} decoder: $invalid".asLeft
   }
 
-  implicit val swapDecoder: Decoder[Swap] = anyDecoder(make.swap)
+  implicit val swapDecoder: Decoder[Swap]       = anyDecoder(make.swap)
   implicit val depositDecoder: Decoder[Deposit] = anyDecoder(make.deposit)
-  implicit val redeemDecoder: Decoder[Redeem] = anyDecoder(make.redeem)
-  implicit val lockDecoder: Decoder[Lock] = anyDecoder(make.lock)
+  implicit val redeemDecoder: Decoder[Redeem]   = anyDecoder(make.redeem)
+  implicit val lockDecoder: Decoder[Lock]       = anyDecoder(make.lock)
 
   implicit val operationEncoder: Encoder[Operation] = {
     case swap: Swap       => swap.asJson
@@ -61,4 +65,9 @@ object Operation {
 
     def lock: Lock = new Lock {}
   }
+
+  implicit val loggableRedeem: Loggable[Redeem]   = Loggable.show
+  implicit val loggableSwap: Loggable[Swap]       = Loggable.show
+  implicit val loggableLock: Loggable[Lock]       = Loggable.show
+  implicit val loggableDeposit: Loggable[Deposit] = Loggable.show
 }

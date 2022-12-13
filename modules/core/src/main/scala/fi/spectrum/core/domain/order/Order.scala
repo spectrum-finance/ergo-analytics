@@ -1,22 +1,37 @@
 package fi.spectrum.core.domain.order
 
+import cats.Show
 import cats.syntax.functor._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import fi.spectrum.core.domain.AssetAmount
 import fi.spectrum.core.domain.analytics.Version
-import fi.spectrum.core.domain.{AssetAmount, BoxId, PubKey, SErgoTree}
+import fi.spectrum.core.domain.analytics.Version._
 import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
-import fi.spectrum.core.domain.order.Order.Deposit.{DepositLegacyV1, DepositLegacyV2, DepositV1, DepositV3}
 import fi.spectrum.core.domain.order.OrderType.{AMM, LOCK}
 import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
-import fi.spectrum.core.domain.analytics.Version._
 import fi.spectrum.core.domain.transaction.Output
-import glass.Subset
-import glass.classic.Lens
-import glass.macros.{ClassyOptics, GenSubset}
+import glass.macros.ClassyOptics
 import io.circe.derivation.{deriveDecoder, deriveEncoder}
 import io.circe.syntax._
+import cats.syntax.show._
 import io.circe.{Decoder, Encoder}
+import tofu.logging.Loggable
+import tofu.logging.derivation.{loggable, show}
+
+/** This abstraction represents any order that exists in our domain e.g.
+  * AMM orders like Deposit, Redeem, Swap or
+  * LM orders like Deposit, Redeem, Reward or
+  * Lock order.
+  *
+  * Keeps knowledge about the order version, the order type, and the operation
+  *
+  * Every order tries to keep information about its params, fee, pool and its output.
+  *
+  * @tparam V - version of the order e.g. v1, v2, v3. Supports legacy(during tests) versions - legacy v1, legacy v2
+  * @tparam T - order type e.g. AMM, LOCK, LM
+  * @tparam O - operation type, e.g., Redeem, Deposit, Swap, Lock, Reward
+  */
 
 sealed trait Order[+V <: Version, +T <: OrderType, +O <: Operation] {
   val box: Output
@@ -52,6 +67,20 @@ object Order {
       Decoder[Lock[Version]].widen
     ).reduceLeft(_ or _)
 
+  implicit def orderLoggable: Loggable[Order.Any] = Loggable.show
+
+  implicit def orderShow: Show[Order.Any] = {
+    case deposit: Order.AnyDeposit => deposit.show
+    case redeem: Order.AnyRedeem   => redeem.show
+    case swap: Order.AnySwap       => swap.show
+    case lock: Order.AnyLock       => lock.show
+  }
+
+  /** It's any deposit order that exists in our domain.
+    *
+    * @tparam V - Supported versions are V3, V1, Legacy v1, Legacy v2
+    * @tparam T - Supported types are AMM, LM
+    */
   sealed abstract class Deposit[+V <: Version, +T <: OrderType] extends Order[V, T, Operation.Deposit] {
     val poolId: PoolId
     val fee: Fee
@@ -62,8 +91,17 @@ object Order {
     implicit def depositEncoder: Encoder[Deposit[Version, OrderType]] = deriveEncoder
     implicit def depositDecoder: Decoder[Deposit[Version, OrderType]] = deriveDecoder
 
+    implicit def depositLoggable: Loggable[Order.AnyDeposit] = Loggable.show
+
+    implicit def depositShow: Show[Order.AnyDeposit] = {
+      case d: DepositV3       => d.show
+      case d: DepositV1       => d.show
+      case d: DepositLegacyV2 => d.show
+      case d: DepositLegacyV1 => d.show
+    }
+
     @ClassyOptics
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class DepositV3(
       box: Output,
       fee: SPF,
@@ -79,7 +117,7 @@ object Order {
     object DepositV3
 
     @ClassyOptics
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class DepositV1(
       box: Output,
       fee: ERG,
@@ -94,8 +132,7 @@ object Order {
 
     object DepositV1
 
-    @ClassyOptics
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class DepositLegacyV2(
       box: Output,
       fee: ERG,
@@ -109,7 +146,7 @@ object Order {
 
     object DepositLegacyV2
 
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class DepositLegacyV1(
       box: Output,
       fee: ERG,
@@ -122,6 +159,11 @@ object Order {
     ) extends Deposit[LegacyV1, AMM]
   }
 
+  /** It's any redeem order that exists in our domain.
+    *
+    * @tparam V - Supported versions are V3, V1, Legacy v1
+    * @tparam T - Supported types are AMM, LM
+    */
   sealed abstract class Redeem[+V <: Version, +T <: OrderType] extends Order[V, T, Operation.Redeem] {
     val poolId: PoolId
     val fee: Fee
@@ -129,10 +171,18 @@ object Order {
 
   object Redeem {
 
+    implicit def redeemLoggable: Loggable[Order.AnyRedeem] = Loggable.show
+
+    implicit def redeemShow: Show[Order.AnyRedeem] = {
+      case r: RedeemV3       => r.show
+      case r: RedeemV1       => r.show
+      case r: RedeemLegacyV1 => r.show
+    }
+
     implicit def redeemEncoder: Encoder[Redeem[Version, OrderType]] = deriveEncoder
     implicit def redeemDecoder: Decoder[Redeem[Version, OrderType]] = deriveDecoder
 
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class RedeemV3(
       box: Output,
       fee: SPF,
@@ -145,7 +195,7 @@ object Order {
       orderOperation: Operation.Redeem
     ) extends Redeem[V3, AMM]
 
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class RedeemV1(
       box: Output,
       fee: ERG,
@@ -158,7 +208,7 @@ object Order {
       orderOperation: Operation.Redeem
     ) extends Redeem[V1, AMM]
 
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class RedeemLegacyV1(
       box: Output,
       fee: ERG,
@@ -171,16 +221,31 @@ object Order {
     ) extends Redeem[LegacyV1, AMM]
   }
 
+  /** It's any swap order that exists in our domain.
+    *
+    * @tparam V - Supported versions are V3, V2, V1, Legacy v1
+    * @tparam T - Supported types are AMM
+    */
   sealed abstract class Swap[+V <: Version, +T <: OrderType] extends Order[V, T, Operation.Swap] {
     val poolId: PoolId
   }
 
   object Swap {
+
+    implicit def swapLoggable: Loggable[Order.AnySwap] = Loggable.show
+
+    implicit def swapShow: Show[Order.AnySwap] = {
+      case s: SwapV3       => s.show
+      case s: SwapV2       => s.show
+      case s: SwapV1       => s.show
+      case s: SwapLegacyV1 => s.show
+    }
+
     implicit def swapEncoder: Encoder[Swap[Version, OrderType]] = deriveEncoder
 
     implicit def swapDecoder: Decoder[Swap[Version, OrderType]] = deriveDecoder
 
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class SwapV3(
       box: Output,
       poolId: PoolId,
@@ -193,7 +258,7 @@ object Order {
       orderOperation: Operation.Swap
     ) extends Swap[V3, AMM]
 
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class SwapV2(
       box: Output,
       poolId: PoolId,
@@ -205,7 +270,7 @@ object Order {
       orderOperation: Operation.Swap
     ) extends Swap[V2, AMM]
 
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class SwapV1(
       box: Output,
       poolId: PoolId,
@@ -217,7 +282,7 @@ object Order {
       orderOperation: Operation.Swap
     ) extends Swap[V1, AMM]
 
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class SwapLegacyV1(
       box: Output,
       poolId: PoolId,
@@ -229,15 +294,25 @@ object Order {
     ) extends Swap[LegacyV1, AMM]
   }
 
+  /** It's any lock order that exists in our domain.
+    *
+    * @tparam V - Supported version is V1
+    */
   sealed abstract class Lock[+V <: Version] extends Order[V, LOCK, Operation.Lock]
 
   object Lock {
+
+    implicit def lockLoggable: Loggable[Order.AnyLock] = Loggable.show
+
+    implicit def lockShow: Show[Order.AnyLock] = { case l: LockV1 =>
+      l.show
+    }
 
     implicit def lockEncoder: Encoder[Lock[Version]] = deriveEncoder
 
     implicit def lockDecoder: Decoder[Lock[Version]] = deriveDecoder
 
-    @derive(encoder, decoder)
+    @derive(encoder, decoder, loggable, show)
     final case class LockV1(
       box: Output,
       deadline: Int,

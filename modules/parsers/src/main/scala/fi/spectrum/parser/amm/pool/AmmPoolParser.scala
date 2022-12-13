@@ -7,6 +7,10 @@ import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.parser.domain.AmmType
 import fi.spectrum.parser.domain.AmmType.{N2T, T2T}
 
+/** Parse any amm pool
+  * @tparam V - pool version
+  * @tparam T - pool type
+  */
 trait AmmPoolParser[+V <: Version, +T <: AmmType] { self =>
   def pool(output: Output): Option[AmmPool]
 

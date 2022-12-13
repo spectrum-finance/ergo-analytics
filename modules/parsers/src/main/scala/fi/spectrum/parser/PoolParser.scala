@@ -8,6 +8,9 @@ import fi.spectrum.parser.amm.pool.v1.N2TPoolParser._
 import fi.spectrum.parser.amm.pool.v1.T2TPoolParser._
 import fi.spectrum.parser.domain.AmmType
 
+/**
+ * Parses any pool no matter what version or type it has.
+ */
 trait PoolParser { self =>
   def parse(box: Output): Option[Pool[Version, PoolType]]
 

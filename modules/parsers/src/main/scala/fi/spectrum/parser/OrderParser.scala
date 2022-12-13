@@ -19,6 +19,9 @@ import fi.spectrum.parser.domain.AmmType
 import fi.spectrum.parser.lock.LockOrderParser
 import fi.spectrum.parser.lock.v1.LockParser._
 
+/**
+ * Parses any order no matter what version, type, or operation it has.
+ */
 trait OrderParser { self =>
   def parse(box: Output): Option[Order[Version, OrderType, Operation]]
 

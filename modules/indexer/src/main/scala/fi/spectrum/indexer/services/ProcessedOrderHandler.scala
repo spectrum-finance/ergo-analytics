@@ -33,25 +33,12 @@ object ProcessedOrderHandler {
       optional
         .getOption(processed)
         .traverse { order =>
+          def orderState = UpdateState(TxInfo(processed.state.txId, processed.state.timestamp), order.id)
           processed.state.status match {
-            case Registered =>
-              processed.transform match {
-                case Some(value) => update.persist(NonEmptyList.one(value)).void
-                case None        => unit
-              }
-            case Executed =>
-              update
-                .updateExecuted(
-                  NonEmptyList.one(UpdateState(TxInfo(processed.state.txId, processed.state.timestamp), order.id))
-                )
-                .void
-            case Refunded =>
-              update
-                .updateRefunded(
-                  NonEmptyList.one(UpdateState(TxInfo(processed.state.txId, processed.state.timestamp), order.id))
-                )
-                .void
-            case _ => unit
+            case Registered => processed.transform.fold(unit)(o => update.persist(NonEmptyList.one(o)).void)
+            case Executed   => update.updateExecuted(NonEmptyList.one(orderState)).void
+            case Refunded   => update.updateRefunded(NonEmptyList.one(orderState)).void
+            case _          => unit
           }
         }
         .void

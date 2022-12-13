@@ -5,6 +5,7 @@ import doobie.{Get, Meta}
 import io.circe.Json
 import io.circe.parser.parse
 import org.postgresql.util.PGobject
+
 package object db {
 
   implicit val getBigInt: Get[BigInt] = implicitly[Get[BigDecimal]]

@@ -6,6 +6,9 @@ import Version.V1
 import fi.spectrum.core.domain.transaction.Output
 import sigmastate.Values
 
+/** Parse any lock operation
+  * @tparam V - operation version
+  */
 trait LockOrderParser[+V <: Version] { self =>
   def lock(box: Output, tree: Values.ErgoTree): Option[Lock[V]]
 

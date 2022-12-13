@@ -1,11 +1,9 @@
 package fi.spectrum.core.domain.order
 
 import fi.spectrum.core.domain.AssetAmount
-import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order.Deposit._
 import fi.spectrum.core.domain.order.Order.Redeem._
 import fi.spectrum.core.domain.order.Order.Swap._
-import fi.spectrum.core.domain.order.Order._
 import glass.classic.Optional
 import glass.macros.{GenContains, GenSubset}
 

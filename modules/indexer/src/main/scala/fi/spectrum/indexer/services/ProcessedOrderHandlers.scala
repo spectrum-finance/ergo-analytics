@@ -11,7 +11,9 @@ final case class ProcessedOrderHandlers[F[_]](
   swaps: ProcessedOrderHandler[F],
   redeems: ProcessedOrderHandler[F],
   deposits: ProcessedOrderHandler[F]
-)
+) {
+  def toList: List[ProcessedOrderHandler[F]] = List(swaps, redeems, deposits)
+}
 
 object ProcessedOrderHandlers {
 

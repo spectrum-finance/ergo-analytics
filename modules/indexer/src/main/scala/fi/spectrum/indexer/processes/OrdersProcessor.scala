@@ -1,18 +1,13 @@
 package fi.spectrum.indexer.processes
 
-import cats.data.NonEmptyList
-import cats.{Foldable, Functor, Monad}
-import fi.spectrum.core.domain.analytics.ProcessedOrder
-import fi.spectrum.indexer.classes.Handle
-import tofu.streams.{Chunks, Evals}
-import tofu.syntax.streams.all._
 import cats.syntax.foldable._
 import cats.syntax.traverse._
-import fi.spectrum.indexer.db.persistence.{PersistBundle, UpdateBundle}
+import cats.{Foldable, Functor, Monad}
 import fi.spectrum.indexer.services.ProcessedOrderHandler
 import fi.spectrum.streaming.OrderEventsConsumer
 import fi.spectrum.streaming.domain.OrderEvent
-import tofu.syntax.monadic._
+import tofu.streams.{Chunks, Evals}
+import tofu.syntax.streams.all._
 
 trait OrdersProcessor[S[_]] {
   def run: S[Unit]

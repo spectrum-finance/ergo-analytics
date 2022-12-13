@@ -1,12 +1,20 @@
 package fi.spectrum.parser.evaluation
 
+import cats.syntax.option._
+import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.ProcessedOrder
 import fi.spectrum.core.domain.order.{OrderState, OrderStatus}
-import cats.syntax.option._
 import fi.spectrum.core.domain.transaction.Transaction
 import fi.spectrum.parser.{OrderParser, PoolParser}
+import org.ergoplatform.ErgoAddressEncoder
 import tofu.syntax.monadic._
 
+/** Parse order evaluation result
+  * @param orderParser - initial order parser
+  * @param feeParser - off-chain fee parser
+  * @param poolParser - pool parser
+  * @param evalParser - order evaluation result
+  */
 class ProcessedOrderParser(implicit
   orderParser: OrderParser,
   feeParser: OffChainFeeParser,
@@ -43,10 +51,9 @@ class ProcessedOrderParser(implicit
 
 object ProcessedOrderParser {
 
-  implicit def make(implicit
-    orderParser: OrderParser,
-    feeParser: OffChainFeeParser,
-    poolParser: PoolParser,
-    evalParser: OrderEvaluationParser
-  ): ProcessedOrderParser = new ProcessedOrderParser
+  def make(spf: TokenId)(implicit e: ErgoAddressEncoder): ProcessedOrderParser = {
+    implicit val fee   = OffChainFeeParser.make(spf)
+    implicit val pools = PoolParser.make
+    new ProcessedOrderParser
+  }
 }

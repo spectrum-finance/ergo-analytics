@@ -7,7 +7,10 @@ import cats.syntax.functor._
 import cats.syntax.show._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
+import tofu.logging.Loggable
 
+/** Represents order type ,e.g. AMM, LOCK, LM
+  */
 sealed trait OrderType
 
 object OrderType {
@@ -50,4 +53,8 @@ object OrderType {
     def lock: LOCK = new LOCK {}
     def lm: LM     = new LM {}
   }
+
+  implicit val loggableAMM: Loggable[AMM]   = Loggable.show
+  implicit val loggableLOCK: Loggable[LOCK] = Loggable.show
+  implicit val loggableLM: Loggable[LM]     = Loggable.show
 }

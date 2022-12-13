@@ -11,6 +11,9 @@ import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.constants.predefinedErgoTrees
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 
+/**
+ * Tries to find output for off-chain operator.
+ */
 trait OffChainFeeParser {
   def parse(outputs: List[Output], order: Order.Any, poolId: PoolId): Option[OffChainOperatorFee]
 }

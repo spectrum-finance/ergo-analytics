@@ -12,6 +12,9 @@ import fi.spectrum.core.domain.{AssetAmount, SErgoTree, TokenId}
 import glass.Label
 import glass.classic.Optional
 
+/**
+ * Parse order evaluation result
+ */
 final class OrderEvaluationParser {
 
   def parse(order: Order.Any, outputs: List[Output], pool: Pool.Any): Option[OrderEvaluation] = {
