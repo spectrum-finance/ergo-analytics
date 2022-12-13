@@ -1,6 +1,6 @@
 package fi.spectrum.core.domain.order
 
-import cats.Show
+import cats.{Eq, Show}
 import cats.syntax.either._
 import cats.syntax.eq._
 import cats.syntax.functor._
@@ -70,4 +70,9 @@ object Operation {
   implicit val loggableSwap: Loggable[Swap]       = Loggable.show
   implicit val loggableLock: Loggable[Lock]       = Loggable.show
   implicit val loggableDeposit: Loggable[Deposit] = Loggable.show
+
+  implicit val eqSwap: Eq[Swap]       = (x: Swap, y: Swap) => x.show === y.show
+  implicit val eqRedeem: Eq[Redeem]   = (x: Redeem, y: Redeem) => x.show === y.show
+  implicit val eqDeposit: Eq[Deposit] = (x: Deposit, y: Deposit) => x.show === y.show
+  implicit val eqLock: Eq[Lock]       = (x: Lock, y: Lock) => x.show === y.show
 }

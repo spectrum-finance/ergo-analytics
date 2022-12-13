@@ -21,7 +21,6 @@ import sigmastate.Values
 
 final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
 
-
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V1, AMM]] =
     Either
       .cond(
@@ -39,7 +38,8 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
         } yield SwapV1(
           box,
-          poolId, PublicKeyRedeemer(redeemer),
+          poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v1,
@@ -55,17 +55,18 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositV1,
         for {
-          poolId      <- tree.constants.parseBytea(12).map(PoolId.fromBytes)
-          maxMinerFee <- tree.constants.parseLong(22)
-          inX         <- tree.constants.parseLong(16).map(AssetAmount.native)
-          inY         <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
+          poolId      <- tree.constants.parseBytea(13).map(PoolId.fromBytes)
+          maxMinerFee <- tree.constants.parseLong(25)
+          inX         <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
+          inY         <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- tree.constants.parseLong(15)
           redeemer    <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
           params = DepositParams(inX, inY)
         } yield DepositV1(
           box,
           ERG(dexFee),
-          poolId, PublicKeyRedeemer(redeemer),
+          poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v1,
@@ -90,7 +91,8 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
         } yield RedeemV1(
           box,
           ERG(dexFee),
-          poolId, PublicKeyRedeemer(redeemer),
+          poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.make.v1,

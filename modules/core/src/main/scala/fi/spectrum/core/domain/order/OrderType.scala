@@ -1,6 +1,6 @@
 package fi.spectrum.core.domain.order
 
-import cats.Show
+import cats.{Eq, Show}
 import cats.syntax.either._
 import cats.syntax.eq._
 import cats.syntax.functor._
@@ -57,4 +57,8 @@ object OrderType {
   implicit val loggableAMM: Loggable[AMM]   = Loggable.show
   implicit val loggableLOCK: Loggable[LOCK] = Loggable.show
   implicit val loggableLM: Loggable[LM]     = Loggable.show
+
+  implicit val eqAMM: Eq[AMM]   = (x: AMM, y: AMM) => x.show === y.show
+  implicit val eqLOCK: Eq[LOCK] = (x: LOCK, y: LOCK) => x.show === y.show
+  implicit val eqLM: Eq[LM]     = (x: LM, y: LM) => x.show === y.show
 }

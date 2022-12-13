@@ -95,7 +95,8 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
         } yield DepositLegacyV1(
           box,
           ERG(dexFee),
-          poolId, PublicKeyRedeemer(redeemer),
+          poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,
@@ -118,7 +119,8 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
         } yield RedeemLegacyV1(
           box,
           ERG(dexFee),
-          poolId, PublicKeyRedeemer(redeemer),
+          poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,

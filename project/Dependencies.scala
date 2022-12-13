@@ -14,6 +14,15 @@ object Dependencies {
     val mouse          = "1.2.1"
     val doobiePostgres = "1.0.0-RC2"
     val fs2Kafka       = "2.5.0"
+    val doobieVersion  = "0.13.4"
+
+    val scalaCheckVersion             = "1.14.1"
+    val scalaCheckShapelessVersion    = "1.2.5"
+    val testContainersPostgresVersion = "1.7.3"
+    val testContainersScalaVersion    = "0.40.11"
+    val scalaTestVersion              = "3.2.14"
+    val scalaTestPlusVersion          = "3.2.2.0"
+    val flywayVersion                 = "9.8.3"
 
     val sigma = "7.7.7"
 
@@ -60,6 +69,16 @@ object Dependencies {
     "tf.tofu" %% "derevo-cats-tagless" % Version.derevo,
     "tf.tofu" %% "derevo-circe"        % Version.derevo,
     "tf.tofu" %% "derevo-pureconfig"   % Version.derevo
+  )
+
+  val tests = List(
+    "org.flywaydb"                % "flyway-core"                     % Version.flywayVersion              % Test,
+    "org.tpolecat"               %% "doobie-scalatest"                % Version.doobieVersion              % Test,
+    "org.scalatest"              %% "scalatest"                       % Version.scalaTestVersion           % Test,
+    "org.scalatestplus"          %% "scalacheck-1-14"                 % Version.scalaTestPlusVersion       % Test,
+    "com.dimafeng"               %% "testcontainers-scala-postgresql" % Version.testContainersScalaVersion % Test,
+    "com.dimafeng"               %% "testcontainers-scala"            % Version.testContainersScalaVersion % Test,
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.14"       % Version.scalaCheckShapelessVersion % Test
   )
 
   val sigma = "org.scorexfoundation" %% "sigma-state" % Version.sigma

@@ -1,5 +1,6 @@
 package fi.spectrum.core.domain.transaction
 
+import derevo.cats.eqv
 import derevo.circe.encoder
 import derevo.derive
 import eu.timepit.refined.api.Refined
@@ -11,24 +12,24 @@ import io.circe.Decoder
 import io.circe.refined._
 import tofu.logging.derivation.{loggable, show}
 
-@derive(encoder, loggable, show)
+@derive(encoder, loggable, show, eqv)
 sealed trait SConstant
 
 object SConstant {
 
-  @derive(encoder, loggable, show)
+  @derive(encoder, loggable, show, eqv)
   final case class IntConstant(value: Int) extends SConstant
 
-  @derive(encoder, loggable, show)
+  @derive(encoder, loggable, show, eqv)
   final case class LongConstant(value: Long) extends SConstant
 
-  @derive(encoder, loggable, show)
+  @derive(encoder, loggable, show, eqv)
   final case class ByteaConstant(value: HexString) extends SConstant
 
-  @derive(encoder, loggable, show)
+  @derive(encoder, loggable, show, eqv)
   final case class SigmaPropConstant(value: PubKey) extends SConstant
 
-  @derive(encoder, loggable, show)
+  @derive(encoder, loggable, show, eqv)
   final case class UnresolvedConstant(raw: String) extends SConstant
 
   implicit val decoder: Decoder[SConstant] = { c =>

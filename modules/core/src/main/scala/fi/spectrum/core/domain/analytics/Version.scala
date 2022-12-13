@@ -1,6 +1,6 @@
 package fi.spectrum.core.domain.analytics
 
-import cats.Show
+import cats.{Eq, Show}
 import cats.syntax.either._
 import cats.syntax.eq._
 import cats.syntax.functor._
@@ -92,4 +92,10 @@ object Version {
   implicit val loggableV3: Loggable[V3]             = Loggable.show
   implicit val loggableLegacyV1: Loggable[LegacyV1] = Loggable.show
   implicit val loggableLegacyV2: Loggable[LegacyV2] = Loggable.show
+
+  implicit val eqV1: Eq[V1]             = (x: V1, y: V1) => x.show === y.show
+  implicit val eqV2: Eq[V2]             = (x: V2, y: V2) => x.show === y.show
+  implicit val eqV3: Eq[V3]             = (x: V3, y: V3) => x.show === y.show
+  implicit val eqLegacyV1: Eq[LegacyV1] = (x: LegacyV1, y: LegacyV1) => x.show === y.show
+  implicit val eqLegacyV2: Eq[LegacyV2] = (x: LegacyV2, y: LegacyV2) => x.show === y.show
 }

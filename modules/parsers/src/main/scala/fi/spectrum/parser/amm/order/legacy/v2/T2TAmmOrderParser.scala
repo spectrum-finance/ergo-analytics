@@ -25,10 +25,10 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV2, T2T] {
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositLegacyV2,
         for {
-          poolId   <- tree.constants.parseBytea(9).map(PoolId.fromBytes)
+          poolId   <- tree.constants.parseBytea(13).map(PoolId.fromBytes)
           inX      <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           inY      <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
-          dexFee   <- tree.constants.parseLong(11)
+          dexFee   <- tree.constants.parseLong(15)
           redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
           params = DepositParams(inX, inY)
         } yield DepositLegacyV2(

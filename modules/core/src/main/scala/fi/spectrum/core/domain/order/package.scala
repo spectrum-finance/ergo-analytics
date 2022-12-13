@@ -1,5 +1,6 @@
 package fi.spectrum.core.domain
 
+import derevo.cats.eqv
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.{Get, Put}
@@ -16,13 +17,15 @@ package object order {
     implicit val put: Put[OrderId] = deriving
   }
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, eqv)
   @newtype final case class PoolId(value: TokenId)
 
   object PoolId {
 
     implicit val get: Get[PoolId] = deriving
     implicit val put: Put[PoolId] = deriving
+
+    def unsafeFromString(s: String): PoolId = PoolId(TokenId.unsafeFromString(s))
 
     def fromBytes(bytes: Array[Byte]): PoolId =
       PoolId(TokenId.fromBytes(bytes))

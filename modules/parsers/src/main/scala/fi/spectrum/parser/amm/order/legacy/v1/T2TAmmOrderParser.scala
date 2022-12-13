@@ -37,7 +37,8 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
         } yield SwapLegacyV1(
           box,
-          poolId, PublicKeyRedeemer(redeemer),
+          poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,
@@ -61,7 +62,8 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
         } yield DepositLegacyV1(
           box,
           ERG(dexFee),
-          poolId, PublicKeyRedeemer(redeemer),
+          poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,
@@ -84,7 +86,8 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
         } yield RedeemLegacyV1(
           box,
           ERG(dexFee),
-          poolId, PublicKeyRedeemer(redeemer),
+          poolId,
+          PublicKeyRedeemer(redeemer),
           params,
           Version.make.legacyV1,
           OrderType.make.amm,

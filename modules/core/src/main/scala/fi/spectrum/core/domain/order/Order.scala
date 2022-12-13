@@ -1,6 +1,6 @@
 package fi.spectrum.core.domain.order
 
-import cats.Show
+import cats.{Eq, Show}
 import cats.syntax.functor._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
@@ -15,6 +15,9 @@ import glass.macros.ClassyOptics
 import io.circe.derivation.{deriveDecoder, deriveEncoder}
 import io.circe.syntax._
 import cats.syntax.show._
+import cats.syntax.eq._
+import derevo.cats.eqv
+import fi.spectrum.core.domain.order.Order.Swap.{SwapLegacyV1, SwapV1, SwapV2, SwapV3}
 import io.circe.{Decoder, Encoder}
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
@@ -100,8 +103,17 @@ object Order {
       case d: DepositLegacyV1 => d.show
     }
 
+    implicit def eqAnySwap: Eq[Order.AnyDeposit] = (x: AnyDeposit, y: AnyDeposit) =>
+      (x, y) match {
+        case (x1: DepositV1, y1: DepositV1)             => x1 === y1
+        case (x1: DepositV3, y1: DepositV3)             => x1 === y1
+        case (x1: DepositLegacyV1, y1: DepositLegacyV1) => x1 === y1
+        case (x1: DepositLegacyV2, y1: DepositLegacyV2) => x1 === y1
+        case (_, _)                                     => false
+      }
+
     @ClassyOptics
-    @derive(encoder, decoder, loggable, show)
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class DepositV3(
       box: Output,
       fee: SPF,
@@ -117,7 +129,7 @@ object Order {
     object DepositV3
 
     @ClassyOptics
-    @derive(encoder, decoder, loggable, show)
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class DepositV1(
       box: Output,
       fee: ERG,
@@ -132,7 +144,7 @@ object Order {
 
     object DepositV1
 
-    @derive(encoder, decoder, loggable, show)
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class DepositLegacyV2(
       box: Output,
       fee: ERG,
@@ -146,7 +158,7 @@ object Order {
 
     object DepositLegacyV2
 
-    @derive(encoder, decoder, loggable, show)
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class DepositLegacyV1(
       box: Output,
       fee: ERG,
@@ -182,7 +194,15 @@ object Order {
     implicit def redeemEncoder: Encoder[Redeem[Version, OrderType]] = deriveEncoder
     implicit def redeemDecoder: Decoder[Redeem[Version, OrderType]] = deriveDecoder
 
-    @derive(encoder, decoder, loggable, show)
+    implicit def eqAnyRedeem: Eq[Order.AnyRedeem] = (x: AnyRedeem, y: AnyRedeem) =>
+      (x, y) match {
+        case (x1: RedeemV1, y1: RedeemV1)             => x1 === y1
+        case (x1: RedeemV3, y1: RedeemV3)             => x1 === y1
+        case (x1: RedeemLegacyV1, y1: RedeemLegacyV1) => x1 === y1
+        case (_, _)                                   => false
+      }
+
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class RedeemV3(
       box: Output,
       fee: SPF,
@@ -195,7 +215,7 @@ object Order {
       orderOperation: Operation.Redeem
     ) extends Redeem[V3, AMM]
 
-    @derive(encoder, decoder, loggable, show)
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class RedeemV1(
       box: Output,
       fee: ERG,
@@ -208,7 +228,7 @@ object Order {
       orderOperation: Operation.Redeem
     ) extends Redeem[V1, AMM]
 
-    @derive(encoder, decoder, loggable, show)
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class RedeemLegacyV1(
       box: Output,
       fee: ERG,
@@ -245,7 +265,16 @@ object Order {
 
     implicit def swapDecoder: Decoder[Swap[Version, OrderType]] = deriveDecoder
 
-    @derive(encoder, decoder, loggable, show)
+    implicit def eqAnySwap: Eq[Order.AnySwap] = (x: AnySwap, y: AnySwap) =>
+      (x, y) match {
+        case (x1: SwapV1, y1: SwapV1)             => x1 === y1
+        case (x1: SwapV2, y1: SwapV2)             => x1 === y1
+        case (x1: SwapV3, y1: SwapV3)             => x1 === y1
+        case (x1: SwapLegacyV1, y1: SwapLegacyV1) => x1 === y1
+        case (_, _)                               => false
+      }
+
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class SwapV3(
       box: Output,
       poolId: PoolId,
@@ -258,7 +287,7 @@ object Order {
       orderOperation: Operation.Swap
     ) extends Swap[V3, AMM]
 
-    @derive(encoder, decoder, loggable, show)
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class SwapV2(
       box: Output,
       poolId: PoolId,
@@ -270,7 +299,7 @@ object Order {
       orderOperation: Operation.Swap
     ) extends Swap[V2, AMM]
 
-    @derive(encoder, decoder, loggable, show)
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class SwapV1(
       box: Output,
       poolId: PoolId,
@@ -282,7 +311,7 @@ object Order {
       orderOperation: Operation.Swap
     ) extends Swap[V1, AMM]
 
-    @derive(encoder, decoder, loggable, show)
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class SwapLegacyV1(
       box: Output,
       poolId: PoolId,

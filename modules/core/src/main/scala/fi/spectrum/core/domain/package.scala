@@ -1,6 +1,7 @@
 package fi.spectrum.core
 
-import cats.Show
+import cats.{Eq, Show}
+import derevo.cats.eqv
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.util.{Get, Put}
@@ -15,6 +16,7 @@ import io.estatico.newtype.macros.newtype
 import scorex.util.encode.Base16
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
+import cats.syntax.eq._
 
 package object domain {
 
@@ -31,6 +33,8 @@ package object domain {
 
     implicit val show: Show[HexString]         = _.unwrapped
     implicit val loggable: Loggable[HexString] = Loggable.show
+
+    implicit val eq: Eq[HexString] = (x: HexString, y: HexString) => x.value.value === y.value.value
 
     implicit val get: Get[HexString] =
       Get[String]
@@ -54,7 +58,7 @@ package object domain {
     implicit val put: Put[ProtocolVersion] = deriving
   }
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, eqv)
   @newtype final case class TxId(value: String)
 
   object TxId {
@@ -62,7 +66,7 @@ package object domain {
     implicit val put: Put[TxId] = deriving
   }
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, eqv)
   @newtype final case class BoxId(value: String)
 
   object BoxId {
@@ -70,7 +74,7 @@ package object domain {
     implicit val put: Put[BoxId] = deriving
   }
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, eqv)
   @newtype final case class SErgoTree(value: HexString) {
     def toBytea: Array[Byte] = value.toBytes
   }
@@ -88,7 +92,7 @@ package object domain {
     )
   }
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, eqv)
   @newtype final case class TokenId(value: HexString)
 
   object TokenId {
@@ -98,9 +102,12 @@ package object domain {
     implicit val put: Put[TokenId] = deriving
 
     def fromBytes(bytes: Array[Byte]): TokenId = TokenId(HexString.fromBytes(bytes))
+
+    def unsafeFromString(s: String): TokenId = TokenId(HexString.unsafeFromString(s))
+
   }
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, eqv)
   @newtype final case class PubKey(value: HexString) {
     def toBytes: Array[Byte] = value.toBytes
 
