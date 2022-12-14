@@ -3,6 +3,7 @@ package fi.spectrum.parser.amm.order.v1
 import cats.syntax.eq._
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order
+import fi.spectrum.core.domain.order.Order.Swap.SwapV1
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.CatsPlatform
 import fi.spectrum.parser.amm.order.AmmOrderParser
@@ -24,7 +25,7 @@ class N2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
   property("Parse n2t swap sell v1 contract") {
     val box = N2T.swap.swapN2TSell
     val swapResult: Order.AnySwap =
-      parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
+      parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get.asInstanceOf[SwapV1]
     (swapResult eqv (N2T.swap.swapN2TSellOrder: Order.AnySwap)) shouldBe true
   }
 

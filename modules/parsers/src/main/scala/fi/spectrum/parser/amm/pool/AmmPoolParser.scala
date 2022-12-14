@@ -28,5 +28,5 @@ object AmmPoolParser {
     n2tV1: AmmPoolParser[V1, N2T],
     t2tV1: AmmPoolParser[V1, T2T]
   ): AmmPoolParser[Version, AmmType] =
-    List[AmmPoolParser[Version, AmmType]](n2tV1, t2tV1).reduceLeft(_ or _)
+    List[AmmPoolParser[Version, AmmType]](t2tV1, n2tV1).reduceLeft(_ or _)
 }

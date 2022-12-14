@@ -1,7 +1,10 @@
 package fi.spectrum.core.domain.order
 
-import cats.{Eq, Show}
+import cats.syntax.eq._
 import cats.syntax.functor._
+import cats.syntax.show._
+import cats.{Eq, Show}
+import derevo.cats.eqv
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.AssetAmount
@@ -14,10 +17,6 @@ import fi.spectrum.core.domain.transaction.Output
 import glass.macros.ClassyOptics
 import io.circe.derivation.{deriveDecoder, deriveEncoder}
 import io.circe.syntax._
-import cats.syntax.show._
-import cats.syntax.eq._
-import derevo.cats.eqv
-import fi.spectrum.core.domain.order.Order.Swap.{SwapLegacyV1, SwapV1, SwapV2, SwapV3}
 import io.circe.{Decoder, Encoder}
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
@@ -78,6 +77,15 @@ object Order {
     case swap: Order.AnySwap       => swap.show
     case lock: Order.AnyLock       => lock.show
   }
+
+  implicit def orderEqv: Eq[Order.Any] = (x: Any, y: Any) =>
+    (x, y) match {
+      case (x1: Order.AnySwap, y1: Order.AnySwap)       => x1 === y1
+      case (x1: Order.AnyRedeem, y1: Order.AnyRedeem)   => x1 === y1
+      case (x1: Order.AnyDeposit, y1: Order.AnyDeposit) => x1 === y1
+      case (x1: Order.AnyLock, y1: Order.AnyLock)       => x1 === y1
+      case (_, _)                                       => false
+    }
 
   /** It's any deposit order that exists in our domain.
     *
@@ -341,7 +349,13 @@ object Order {
 
     implicit def lockDecoder: Decoder[Lock[Version]] = deriveDecoder
 
-    @derive(encoder, decoder, loggable, show)
+    implicit def eqAnyLock: Eq[Order.AnyLock] = (x: AnyLock, y: AnyLock) =>
+      (x, y) match {
+        case (x1: LockV1, y1: LockV1) => x1 === y1
+        case (_, _)                   => false
+      }
+
+    @derive(encoder, decoder, loggable, show, eqv)
     final case class LockV1(
       box: Output,
       deadline: Int,

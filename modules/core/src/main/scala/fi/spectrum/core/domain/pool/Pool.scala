@@ -12,6 +12,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.syntax._
 import cats.syntax.functor._
 import cats.syntax.show._
+import derevo.cats.eqv
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
 
@@ -43,7 +44,7 @@ object Pool {
       Decoder[AmmPool].widen
     ).reduceLeft(_ or _)
 
-  @derive(encoder, decoder, show, loggable)
+  @derive(encoder, decoder, show, loggable, eqv)
   final case class AmmPool(
     poolId: PoolId,
     lp: AssetAmount,
