@@ -41,13 +41,15 @@ object OffChainFeeParser {
           val feeOpt = order match {
             case deposit: Order.Deposit[_, _] => deposit.fee.some
             case redeem: Order.Redeem[_, _]   => redeem.fee.some
-            case _: Order.Swap[_, _]          => SPF(0).some
+            case swap: Order.Swap[_, _] if swap.version.in          => swap
             case _: Order.Lock[_]             => none
           }
 
           val pkOpt = address.collect { case address: P2PKAddress =>
             PubKey.fromBytes(address.pubkeyBytes)
           }
+
+          println(s"Next fee: ${!orderRedeemer}, ${!predefinedErgoTrees.contains(template)}, $feeOpt, $pkOpt")
 
           (feeOpt, pkOpt) match {
             case (Some(SPF(_)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>

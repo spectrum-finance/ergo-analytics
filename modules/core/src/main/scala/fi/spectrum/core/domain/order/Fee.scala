@@ -1,5 +1,6 @@
 package fi.spectrum.core.domain.order
 
+import derevo.cats.eqv
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.Read
@@ -8,17 +9,17 @@ import tofu.logging.derivation.{loggable, show}
 
 /** Fee can be either in ergo or spf tokens
   */
-@derive(encoder, decoder, loggable, show)
+@derive(encoder, decoder, loggable, show, eqv)
 sealed trait Fee {
   val amount: Long
 }
 
 object Fee {
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, eqv)
   final case class SPF(amount: Long) extends Fee
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, eqv)
   final case class ERG(amount: Long) extends Fee
 
   implicit val put: Write[Fee] = Write[(Long, String)].contramap {

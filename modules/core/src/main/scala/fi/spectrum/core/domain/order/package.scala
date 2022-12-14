@@ -9,7 +9,7 @@ import tofu.logging.derivation.{loggable, show}
 
 package object order {
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, eqv)
   @newtype final case class OrderId(value: String)
 
   object OrderId {

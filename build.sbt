@@ -40,7 +40,7 @@ lazy val core = mkModule("core", "core")
       mouse,
       doobiePostgres,
       kafka
-    ) ++ tofu ++ derevo ++ enums ++ circe ++ tests
+    ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums
   )
 
 lazy val streaming = mkModule("streaming", "events-streaming")
@@ -55,6 +55,13 @@ lazy val streaming = mkModule("streaming", "events-streaming")
 
 lazy val parsers = mkModule("parsers", "order-parsers")
   .settings(libraryDependencies ++= tests)
+  .settings(scalacOptions ++= commonScalacOption)
+  .settings(
+    libraryDependencies ++= List(
+      CompilerPlugins.betterMonadicFor,
+      CompilerPlugins.kindProjector
+    )
+  )
   .dependsOn(core)
 
 lazy val indexer = mkModule("indexer", "indexer")
