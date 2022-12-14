@@ -1,7 +1,7 @@
 package fi.spectrum.parser.evaluation
 
 import fi.spectrum.core.domain.TokenId
-import fi.spectrum.parser.evaluation.OffChain._
+import fi.spectrum.parser.evaluation.Processed._
 import fi.spectrum.parser.{CatsPlatform, OrderParser, PoolParser}
 import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.matchers.should.Matchers
@@ -16,9 +16,9 @@ class OffChainFeeParserSpec extends AnyPropSpec with Matchers with CatsPlatform 
   val feeParser   = OffChainFeeParser.make(TokenId.unsafeFromString(""))
 
   property("Parse off-chain fee") {
-    val order = transaction.inputs.toList.map(i => orderParser.parse(i.output)).collectFirst { case Some(v) => v }.get
-    val pool  = transaction.outputs.toList.map(poolParser.parse).collectFirst { case Some(v) => v }.get
-    val fee   = feeParser.parse(transaction.outputs.toList, order, pool.poolId).get
+    val order = transactionSwap.inputs.toList.map(i => orderParser.parse(i.output)).collectFirst { case Some(v) => v }.get
+    val pool  = transactionSwap.outputs.toList.map(poolParser.parse).collectFirst { case Some(v) => v }.get
+    val fee   = feeParser.parse(transactionSwap.outputs.toList, order, pool.poolId).get
     fee shouldEqual expectedFee
   }
 }

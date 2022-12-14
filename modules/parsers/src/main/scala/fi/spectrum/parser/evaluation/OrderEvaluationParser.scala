@@ -4,7 +4,7 @@ import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.OrderEvaluation
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, RedeemEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.order.OrderOptics._
-import fi.spectrum.core.domain.order.{Order, Redeemer}
+import fi.spectrum.core.domain.order.{Operation, Order, OrderType, Redeemer}
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.pool.PoolOptics._
 import fi.spectrum.core.domain.transaction.Output
@@ -12,9 +12,8 @@ import fi.spectrum.core.domain.{AssetAmount, SErgoTree, TokenId}
 import glass.Label
 import glass.classic.Optional
 
-/**
- * Parse order evaluation result
- */
+/** Parse order evaluation result
+  */
 final class OrderEvaluationParser {
 
   def parse(order: Order.Any, outputs: List[Output], pool: Pool.Any): Option[OrderEvaluation] = {
@@ -24,7 +23,12 @@ final class OrderEvaluationParser {
     }
     outputs
       .map { output =>
-        redeem(redeemer, output, pool) orElse swap(redeemer, order, output) orElse deposit(redeemer, output, pool)
+        order.orderOperation match {
+          case Operation.Swap    => swap(redeemer, order, output)
+          case Operation.Deposit => deposit(redeemer, output, pool)
+          case Operation.Redeem  => redeem(redeemer, output, pool)
+          case Operation.Lock    => none
+        }
       }
       .collectFirst { case Some(v) => v }
   }
