@@ -13,34 +13,40 @@ import fi.spectrum.indexer.models.{TxInfo, UpdateState}
 import glass.classic.Optional
 import tofu.syntax.monadic._
 
-trait ProcessedOrderHandler[F[_]] {
-  def handle(order: ProcessedOrder): F[Unit]
+trait InsertOrder[F[_]] {
+  def insert(order: ProcessedOrder): F[Int]
 }
 
-object ProcessedOrderHandler {
+object InsertOrder {
 
-  def make[O <: Order.Any, B, F[_]: Applicative](update: Update[B, F])(implicit
+  def make[O <: Order.Any, B, D[_]: Applicative](update: Update[B, D])(implicit
     optional: Optional[ProcessedOrder, O],
     toSchema: ToSchema[ProcessedOrder, Option[B]]
-  ): ProcessedOrderHandler[F] = new Live[O, B, F](update)
+  ): InsertOrder[D] = new Live[O, B, D](update)
 
-  final private class Live[O <: Order.Any, B, F[_]: Applicative](update: Update[B, F])(implicit
+  final private class Live[O <: Order.Any, B, D[_]: Applicative](
+    update: Update[B, D]
+  )(implicit
     optional: Optional[ProcessedOrder, O],
     toSchema: ToSchema[ProcessedOrder, Option[B]]
-  ) extends ProcessedOrderHandler[F] {
+  ) extends InsertOrder[D] {
 
-    def handle(processed: ProcessedOrder): F[Unit] =
+    def insert(processed: ProcessedOrder): D[Int] =
       optional
         .getOption(processed)
         .traverse { order =>
           def orderState = UpdateState(TxInfo(processed.state.txId, processed.state.timestamp), order.id)
           processed.state.status match {
-            case Registered => processed.transform.fold(unit)(o => update.persist(NonEmptyList.one(o)).void)
-            case Executed   => update.updateExecuted(NonEmptyList.one(orderState)).void
-            case Refunded   => update.updateRefunded(NonEmptyList.one(orderState)).void
-            case _          => unit
+            case Registered =>
+              processed.transform.map(NonEmptyList.one) match {
+                case Some(value) => update.persist(value)
+                case None        => 0.pure
+              }
+            case Executed => update.updateExecuted(orderState)
+            case Refunded => update.updateRefunded(orderState)
+            case _        => 0.pure
           }
         }
-        .void
+        .map(_.getOrElse(0))
   }
 }

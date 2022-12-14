@@ -15,4 +15,8 @@ object ProcessedOrderOptics {
 
   implicit val depositOptional: Optional[ProcessedOrder, Order.AnyDeposit] =
     GenContains[ProcessedOrder](_.order)  >> depositPrism
+
+  implicit val lockOptional: Optional[ProcessedOrder, Order.AnyLock] =
+    GenContains[ProcessedOrder](_.order) >> lockPrism
+
 }

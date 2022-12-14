@@ -2,9 +2,10 @@ package fi.spectrum.indexer
 
 import cats.{FlatMap, Monad}
 import fi.spectrum.core.domain.TokenId
+import fi.spectrum.core.domain.analytics.ProcessedOrder
 import fi.spectrum.indexer.db.persistence.{PersistBundle, UpdateBundle}
 import fi.spectrum.indexer.processes.{OrdersProcessor, TransactionsProcessor}
-import fi.spectrum.indexer.services.ProcessedOrderHandlers
+import fi.spectrum.indexer.services.InsertOrderBundle
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.streaming.{OrderEventsConsumer, OrderEventsProducer, TxEventsConsumer}
 import fs2.Chunk
@@ -15,10 +16,11 @@ import tofu.doobie.transactor.Txr
 import tofu.logging.Logs
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.monadic._
+import fi.spectrum.indexer.services.{ProcessOrder => PO}
 
 object Main {
 
-  def run[S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad, F[_]: Monad, D[_]: FlatMap: LiftConnectionIO](spf: TokenId)(
+  def run[S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad, F[_]: Monad, D[_]: Monad: LiftConnectionIO](spf: TokenId)(
     implicit
     elh: EmbeddableLogHandler[D],
     txr: Txr[F, D],
@@ -29,10 +31,11 @@ object Main {
     implicit val events: TxEventsConsumer[S, F]     = ???
     implicit val orders: OrderEventsProducer[S]     = ???
     implicit val orders2: OrderEventsConsumer[S, F] = ???
-    implicit val persistBundle: PersistBundle[F]    = PersistBundle.make[D, F]
-    implicit val updateBundle: UpdateBundle[F]      = UpdateBundle.make[D, F]
-    val processors: ProcessedOrderHandlers[F]       = ProcessedOrderHandlers.make[F](updateBundle)
-    val ordersProcessor: OrdersProcessor[S]         = OrdersProcessor.make[Chunk, F, S](orders2, processors.toList)
+    implicit val persistBundle: PersistBundle[D]    = PersistBundle.make[D]
+    implicit val updateBundle: UpdateBundle[D]      = UpdateBundle.make[D]
+    implicit val insertBundle: InsertOrderBundle[D] = InsertOrderBundle.make[D]
+    implicit val processors: PO[F]                  = PO.make[F, D](insertBundle.toList, persistBundle.offChainFee)
+    val ordersProcessor: OrdersProcessor[S]         = OrdersProcessor.make[Chunk, F, S](orders2, processors)
     for {
       tx <- TransactionsProcessor.make[Chunk, F, S]
     } yield (tx, ordersProcessor)

@@ -1,6 +1,5 @@
 package fi.spectrum.indexer.models
 
-import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.{ProcessedOrder, Version}
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.{Order, OrderId}
@@ -21,17 +20,14 @@ object LockDB {
 
   val ___V1: ToSchema[ProcessedOrder, Option[LockDB]] =
     processed => {
-      Subset[Order.Any, LockV1].getOption(processed.order) match {
-        case Some(lock) =>
-          LockDB(
-            lock.id,
-            lock.deadline,
-            lock.amount,
-            lock.redeemer.value,
-            lock.version
-          ).some
-        case None =>
-          none
+      Subset[Order.Any, LockV1].getOption(processed.order) map { lock =>
+        LockDB(
+          lock.id,
+          lock.deadline,
+          lock.amount,
+          lock.redeemer.value,
+          lock.version
+        )
       }
     }
 }

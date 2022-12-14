@@ -32,6 +32,12 @@ object Persist {
   ): Persist[T, F] =
     elh.embed(implicit __ => new Impl[T].mapK(LiftConnectionIO[D].liftF)).mapK(txr.trans)
 
+  def create[T: Write, D[_]: FlatMap: LiftConnectionIO](implicit
+    schema: Schema[T],
+    elh: EmbeddableLogHandler[D]
+  ): Persist[T, D] =
+    elh.embed(implicit __ => new Impl[T].mapK(LiftConnectionIO[D].liftF))
+
   final private class Impl[T: Write](implicit
     schema: Schema[T],
     lh: LogHandler

@@ -1,52 +1,64 @@
 package fi.spectrum.indexer.db.persistence
 
 import cats.data.NonEmptyList
-import cats.{Applicative, FlatMap}
-import derevo.derive
+import cats.{FlatMap, Monad}
 import doobie.util.log.LogHandler
-import fi.spectrum.indexer.db.schema.OrderSchema
+import fi.spectrum.core.domain.TxId
+import fi.spectrum.indexer.db.schema.UpdateSchema
 import fi.spectrum.indexer.models.UpdateState
-import mouse.all._
 import tofu.doobie.LiftConnectionIO
-import tofu.doobie.transactor.Txr
-import tofu.higherKind.derived.representableK
+import tofu.doobie.log.EmbeddableLogHandler
+import tofu.higherKind.RepresentableK
+import tofu.syntax.monadic._
+import doobie.implicits._
 
-/** Keeps both persist and update api. Persists api is used to insert orders with Register status.
-  * Update methods is used to update appropriate order status.
+/** Keeps api for entities which can be inserted or updated.
   */
-@derive(representableK)
 trait Update[T, F[_]] extends Persist[T, F] {
 
   /** Updates order status to executed
     */
-  def updateExecuted(o: NonEmptyList[UpdateState]): F[Int]
+  def updateExecuted(o: UpdateState): F[Int]
 
   /** Updates order status to refunded
     */
-  def updateRefunded(o: NonEmptyList[UpdateState]): F[Int]
+  def updateRefunded(o: UpdateState): F[Int]
+
 }
 
 object Update {
 
-  def make[O, D[_]: FlatMap: LiftConnectionIO, F[_]: Applicative](persist: Persist[O, F])(implicit
-    schema: OrderSchema[UpdateState, O],
-    txr: Txr[F, D]
-  ): Update[O, F] =
-    new Live[O, F, D](persist)
+  implicit def repK[T]: RepresentableK[Update[T, *[_]]] = {
+    type Repr[F[_]] = Update[T, F]
+    tofu.higherKind.derived.genRepresentableK[Repr]
+  }
 
-  final private class Live[O, F[_], D[_]: LiftConnectionIO](persist: Persist[O, F])(implicit
-    schema: OrderSchema[UpdateState, O],
-    txr: Txr[F, D]
-  ) extends Update[O, F] {
+  def make[O, D[_]: FlatMap: LiftConnectionIO](persist: Persist[O, D])(implicit
+    schema: UpdateSchema[UpdateState, O],
+    elh: EmbeddableLogHandler[D]
+  ): Update[O, D] =
+    elh.embedLift(implicit __ => new Live[O, D](persist): Update[O, D])
 
-    implicit val lh: LogHandler = LogHandler.nop
+  def makeNonUpdatable[O, D[_]: Monad](p: Persist[O, D]): Update[O, D] =
+    new Update[O, D] {
+      def updateExecuted(o: UpdateState): D[Int] = 0.pure[D]
 
-    def updateExecuted(o: NonEmptyList[UpdateState]): F[Int] =
-      LiftConnectionIO[D].lift(schema.updateExecuted.updateMany(o)) ||> txr.trans
+      def updateRefunded(o: UpdateState): D[Int] = 0.pure[D]
 
-    def updateRefunded(o: NonEmptyList[UpdateState]): F[Int] =
-      LiftConnectionIO[D].lift(schema.updateRefunded.updateMany(o)) ||> txr.trans
+      def persist(inputs: NonEmptyList[O]): D[Int] = p.persist(inputs)
+    }
 
-    def persist(inputs: NonEmptyList[O]): F[Int] = persist.persist(inputs)
+  final private class Live[O, D[_]: LiftConnectionIO](persist: Persist[O, D])(implicit
+    schema: UpdateSchema[UpdateState, O],
+    lh: LogHandler
+  ) extends Update[O, D] {
+
+    def updateExecuted(o: UpdateState): D[Int] =
+      LiftConnectionIO[D].lift(schema.updateExecuted.toUpdate0(o).run)
+
+    def updateRefunded(o: UpdateState): D[Int] =
+      LiftConnectionIO[D].lift(schema.updateRefunded.toUpdate0(o).run)
+
+    def persist(inputs: NonEmptyList[O]): D[Int] = persist.persist(inputs)
   }
 }

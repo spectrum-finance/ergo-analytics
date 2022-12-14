@@ -32,118 +32,108 @@ final case class DepositDB(
 object DepositDB {
 
   implicit val toSchema: ToSchema[ProcessedOrder, Option[DepositDB]] = processed =>
-    ___V1.transform(processed) orElse ___V3.transform(processed) orElse
-    ___LegacyV1.transform(processed) orElse ___LegacyV2.transform(processed)
+    ___V1.transform(processed) orElse
+    ___V3.transform(processed) orElse
+    ___LegacyV1.transform(processed) orElse
+    ___LegacyV2.transform(processed)
 
   val ___V1: ToSchema[ProcessedOrder, Option[DepositDB]] =
     processed => {
       val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
-      Subset[Order.Any, DepositV1].getOption(processed.order) match {
-        case Some(deposit) =>
-          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-          DepositDB(
-            deposit.id,
-            deposit.poolId,
-            processed.pool.map(_.box.boxId),
-            deposit.maxMinerFee.some,
-            deposit.params.inX,
-            deposit.params.inY,
-            depositEval.map(_.outputLP),
-            deposit.fee,
-            deposit.redeemer.value.some,
-            ProtocolVersion(1),
-            deposit.version,
-            none,
-            if (processed.state.status.in(Registered)) txInfo.some else none,
-            if (processed.state.status.in(Executed)) txInfo.some else none,
-            if (processed.state.status.in(Refunded)) txInfo.some else none
-          ).some
-        case None =>
-          none
+      Subset[Order.Any, DepositV1].getOption(processed.order).map { deposit =>
+        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
+        DepositDB(
+          deposit.id,
+          deposit.poolId,
+          processed.pool.map(_.box.boxId),
+          deposit.maxMinerFee.some,
+          deposit.params.inX,
+          deposit.params.inY,
+          depositEval.map(_.outputLP),
+          deposit.fee,
+          deposit.redeemer.value.some,
+          ProtocolVersion.init,
+          deposit.version,
+          none,
+          if (processed.state.status.in(Registered)) txInfo.some else none,
+          if (processed.state.status.in(Executed)) txInfo.some else none,
+          if (processed.state.status.in(Refunded)) txInfo.some else none
+        )
       }
     }
 
   val ___V3: ToSchema[ProcessedOrder, Option[DepositDB]] =
     processed => {
       val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
-      Subset[Order.Any, DepositV3].getOption(processed.order) match {
-        case Some(deposit) =>
-          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-          DepositDB(
-            deposit.id,
-            deposit.poolId,
-            processed.pool.map(_.box.boxId),
-            deposit.maxMinerFee.some,
-            deposit.params.inX,
-            deposit.params.inY,
-            depositEval.map(_.outputLP),
-            deposit.fee,
-            none,
-            ProtocolVersion(1),
-            deposit.version,
-            deposit.redeemer.value.some,
-            if (processed.state.status.in(Registered)) txInfo.some else none,
-            if (processed.state.status.in(Executed)) txInfo.some else none,
-            if (processed.state.status.in(Refunded)) txInfo.some else none
-          ).some
-        case None =>
-          none
+      Subset[Order.Any, DepositV3].getOption(processed.order) map { deposit =>
+        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
+        DepositDB(
+          deposit.id,
+          deposit.poolId,
+          processed.pool.map(_.box.boxId),
+          deposit.maxMinerFee.some,
+          deposit.params.inX,
+          deposit.params.inY,
+          depositEval.map(_.outputLP),
+          deposit.fee,
+          none,
+          ProtocolVersion.init,
+          deposit.version,
+          deposit.redeemer.value.some,
+          if (processed.state.status.in(Registered)) txInfo.some else none,
+          if (processed.state.status.in(Executed)) txInfo.some else none,
+          if (processed.state.status.in(Refunded)) txInfo.some else none
+        )
       }
     }
 
   val ___LegacyV1: ToSchema[ProcessedOrder, Option[DepositDB]] =
     processed => {
       val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
-      Subset[Order.Any, DepositLegacyV1].getOption(processed.order) match {
-        case Some(deposit) =>
-          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-          DepositDB(
-            deposit.id,
-            deposit.poolId,
-            processed.pool.map(_.box.boxId),
-            none,
-            deposit.params.inX,
-            deposit.params.inY,
-            depositEval.map(_.outputLP),
-            deposit.fee,
-            deposit.redeemer.value.some,
-            ProtocolVersion(1),
-            deposit.version,
-            none,
-            if (processed.state.status.in(Registered)) txInfo.some else none,
-            if (processed.state.status.in(Executed)) txInfo.some else none,
-            if (processed.state.status.in(Refunded)) txInfo.some else none
-          ).some
-        case None =>
-          none
+      Subset[Order.Any, DepositLegacyV1].getOption(processed.order) map { deposit =>
+        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
+        DepositDB(
+          deposit.id,
+          deposit.poolId,
+          processed.pool.map(_.box.boxId),
+          none,
+          deposit.params.inX,
+          deposit.params.inY,
+          depositEval.map(_.outputLP),
+          deposit.fee,
+          deposit.redeemer.value.some,
+          ProtocolVersion.init,
+          deposit.version,
+          none,
+          if (processed.state.status.in(Registered)) txInfo.some else none,
+          if (processed.state.status.in(Executed)) txInfo.some else none,
+          if (processed.state.status.in(Refunded)) txInfo.some else none
+        )
       }
     }
 
   val ___LegacyV2: ToSchema[ProcessedOrder, Option[DepositDB]] =
     processed => {
       val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
-      Subset[Order.Any, DepositLegacyV2].getOption(processed.order) match {
-        case Some(deposit) =>
-          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-          DepositDB(
-            deposit.id,
-            deposit.poolId,
-            processed.pool.map(_.box.boxId),
-            none,
-            deposit.params.inX,
-            deposit.params.inY,
-            depositEval.map(_.outputLP),
-            deposit.fee,
-            deposit.redeemer.value.some,
-            ProtocolVersion(1),
-            deposit.version,
-            none,
-            if (processed.state.status.in(Registered)) txInfo.some else none,
-            if (processed.state.status.in(Executed)) txInfo.some else none,
-            if (processed.state.status.in(Refunded)) txInfo.some else none
-          ).some
-        case None =>
-          none
+      Subset[Order.Any, DepositLegacyV2].getOption(processed.order) map { deposit =>
+        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
+        DepositDB(
+          deposit.id,
+          deposit.poolId,
+          processed.pool.map(_.box.boxId),
+          none,
+          deposit.params.inX,
+          deposit.params.inY,
+          depositEval.map(_.outputLP),
+          deposit.fee,
+          deposit.redeemer.value.some,
+          ProtocolVersion.init,
+          deposit.version,
+          none,
+          if (processed.state.status.in(Registered)) txInfo.some else none,
+          if (processed.state.status.in(Executed)) txInfo.some else none,
+          if (processed.state.status.in(Refunded)) txInfo.some else none
+        )
       }
     }
 }

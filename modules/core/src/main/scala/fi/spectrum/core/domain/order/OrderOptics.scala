@@ -12,6 +12,7 @@ object OrderOptics {
   val depositPrism = GenSubset[Order.Any, Order.AnyDeposit]
   val swapPrism    = GenSubset[Order.Any, Order.AnySwap]
   val redeemPrism  = GenSubset[Order.Any, Order.AnyRedeem]
+  val lockPrism    = GenSubset[Order.Any, Order.AnyLock]
 
   val swapV1       = swapPrism >> GenSubset[Order.AnySwap, SwapV1]
   val swapV2       = swapPrism >> GenSubset[Order.AnySwap, SwapV2]

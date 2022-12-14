@@ -54,6 +54,9 @@ package object domain {
   @newtype final case class ProtocolVersion(value: Int)
 
   object ProtocolVersion {
+
+    val init = ProtocolVersion(1)
+
     implicit val get: Get[ProtocolVersion] = deriving
     implicit val put: Put[ProtocolVersion] = deriving
   }

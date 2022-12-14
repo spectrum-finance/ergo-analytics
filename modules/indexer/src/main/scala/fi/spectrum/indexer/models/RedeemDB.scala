@@ -37,84 +37,75 @@ object RedeemDB {
   val ___V1: ToSchema[ProcessedOrder, Option[RedeemDB]] =
     processed => {
       val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, RedeemEvaluation].getOption)
-      Subset[Order.Any, RedeemV1].getOption(processed.order) match {
-        case Some(redeem) =>
-          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-          RedeemDB(
-            redeem.id,
-            redeem.poolId,
-            processed.pool.map(_.box.boxId),
-            redeem.maxMinerFee.some,
-            redeem.params.lp,
-            redeemEval.map(_.outputX),
-            redeemEval.map(_.outputY),
-            redeem.fee,
-            redeem.redeemer.value.some,
-            ProtocolVersion(1),
-            redeem.version,
-            none,
-            if (processed.state.status.in(Registered)) txInfo.some else none,
-            if (processed.state.status.in(Executed)) txInfo.some else none,
-            if (processed.state.status.in(Refunded)) txInfo.some else none
-          ).some
-        case None =>
-          none
+      Subset[Order.Any, RedeemV1].getOption(processed.order) map { redeem =>
+        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
+        RedeemDB(
+          redeem.id,
+          redeem.poolId,
+          processed.pool.map(_.box.boxId),
+          redeem.maxMinerFee.some,
+          redeem.params.lp,
+          redeemEval.map(_.outputX),
+          redeemEval.map(_.outputY),
+          redeem.fee,
+          redeem.redeemer.value.some,
+          ProtocolVersion(1),
+          redeem.version,
+          none,
+          if (processed.state.status.in(Registered)) txInfo.some else none,
+          if (processed.state.status.in(Executed)) txInfo.some else none,
+          if (processed.state.status.in(Refunded)) txInfo.some else none
+        )
       }
     }
 
   val ___V3: ToSchema[ProcessedOrder, Option[RedeemDB]] =
     processed => {
       val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, RedeemEvaluation].getOption)
-      Subset[Order.Any, RedeemV3].getOption(processed.order) match {
-        case Some(redeem) =>
-          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-          RedeemDB(
-            redeem.id,
-            redeem.poolId,
-            processed.pool.map(_.box.boxId),
-            redeem.maxMinerFee.some,
-            redeem.params.lp,
-            redeemEval.map(_.outputX),
-            redeemEval.map(_.outputY),
-            redeem.fee,
-            none,
-            ProtocolVersion(1),
-            redeem.version,
-            redeem.redeemer.value.some,
-            if (processed.state.status.in(Registered)) txInfo.some else none,
-            if (processed.state.status.in(Executed)) txInfo.some else none,
-            if (processed.state.status.in(Refunded)) txInfo.some else none
-          ).some
-        case None =>
-          none
+      Subset[Order.Any, RedeemV3].getOption(processed.order) map { redeem =>
+        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
+        RedeemDB(
+          redeem.id,
+          redeem.poolId,
+          processed.pool.map(_.box.boxId),
+          redeem.maxMinerFee.some,
+          redeem.params.lp,
+          redeemEval.map(_.outputX),
+          redeemEval.map(_.outputY),
+          redeem.fee,
+          none,
+          ProtocolVersion(1),
+          redeem.version,
+          redeem.redeemer.value.some,
+          if (processed.state.status.in(Registered)) txInfo.some else none,
+          if (processed.state.status.in(Executed)) txInfo.some else none,
+          if (processed.state.status.in(Refunded)) txInfo.some else none
+        )
       }
     }
 
   val ___LegacyV1: ToSchema[ProcessedOrder, Option[RedeemDB]] =
     processed => {
       val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, RedeemEvaluation].getOption)
-      Subset[Order.Any, RedeemLegacyV1].getOption(processed.order) match {
-        case Some(redeem) =>
-          val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-          RedeemDB(
-            redeem.id,
-            redeem.poolId,
-            processed.pool.map(_.box.boxId),
-            none,
-            redeem.params.lp,
-            redeemEval.map(_.outputX),
-            redeemEval.map(_.outputY),
-            redeem.fee,
-            redeem.redeemer.value.some,
-            ProtocolVersion(1),
-            redeem.version,
-            none,
-            if (processed.state.status.in(Registered)) txInfo.some else none,
-            if (processed.state.status.in(Executed)) txInfo.some else none,
-            if (processed.state.status.in(Refunded)) txInfo.some else none
-          ).some
-        case None =>
-          none
+      Subset[Order.Any, RedeemLegacyV1].getOption(processed.order) map { redeem =>
+        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
+        RedeemDB(
+          redeem.id,
+          redeem.poolId,
+          processed.pool.map(_.box.boxId),
+          none,
+          redeem.params.lp,
+          redeemEval.map(_.outputX),
+          redeemEval.map(_.outputY),
+          redeem.fee,
+          redeem.redeemer.value.some,
+          ProtocolVersion(1),
+          redeem.version,
+          none,
+          if (processed.state.status.in(Registered)) txInfo.some else none,
+          if (processed.state.status.in(Executed)) txInfo.some else none,
+          if (processed.state.status.in(Refunded)) txInfo.some else none
+        )
       }
     }
 
