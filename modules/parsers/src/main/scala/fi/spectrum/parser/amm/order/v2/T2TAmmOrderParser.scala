@@ -45,9 +45,9 @@ final class T2TAmmOrderParser extends AmmOrderParser[V2, T2T] {
           ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.make.v2,
-          OrderType.make.amm,
-          Operation.make.swap
+          Version.V2,
+          OrderType.AMM,
+          Operation.Swap
         ),
         none
       )

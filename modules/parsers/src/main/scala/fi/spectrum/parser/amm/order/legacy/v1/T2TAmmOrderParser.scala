@@ -40,9 +40,9 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.make.legacyV1,
-          OrderType.make.amm,
-          Operation.make.swap
+          Version.LegacyV1,
+          OrderType.AMM,
+          Operation.Swap
         ),
         none
       )
@@ -65,9 +65,9 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.make.legacyV1,
-          OrderType.make.amm,
-          Operation.make.deposit
+          Version.LegacyV1,
+          OrderType.AMM,
+          Operation.Deposit
         ),
         none
       )
@@ -89,9 +89,9 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.make.legacyV1,
-          OrderType.make.amm,
-          Operation.make.redeem
+          Version.LegacyV1,
+          OrderType.AMM,
+          Operation.Redeem
         ),
         none
       )

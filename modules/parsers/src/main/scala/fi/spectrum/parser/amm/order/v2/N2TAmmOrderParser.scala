@@ -49,9 +49,9 @@ class N2TAmmOrderParser extends AmmOrderParser[V2, N2T] {
       ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
-      Version.make.v2,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V2,
+      OrderType.AMM,
+      Operation.Swap
     )
 
   private def swapBuy(box: Output, tree: Values.ErgoTree): Option[Swap[V2, AMM]] =
@@ -77,9 +77,9 @@ class N2TAmmOrderParser extends AmmOrderParser[V2, N2T] {
       ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
-      Version.make.v2,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V2,
+      OrderType.AMM,
+      Operation.Swap
     )
 
   def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit[V2, AMM]] = none

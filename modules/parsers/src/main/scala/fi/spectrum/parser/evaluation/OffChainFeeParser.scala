@@ -2,6 +2,7 @@ package fi.spectrum.parser.evaluation
 
 import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.OffChainOperatorFee
+import fi.spectrum.core.domain.analytics.Version.{LegacyV1, V1, V2}
 import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
 import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
 import fi.spectrum.core.domain.order.{Order, PoolId}
@@ -11,9 +12,8 @@ import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.constants.predefinedErgoTrees
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 
-/**
- * Tries to find output for off-chain operator.
- */
+/** Tries to find output for off-chain operator.
+  */
 trait OffChainFeeParser {
   def parse(outputs: List[Output], order: Order.Any, poolId: PoolId): Option[OffChainOperatorFee]
 }
@@ -39,17 +39,16 @@ object OffChainFeeParser {
           }
 
           val feeOpt = order match {
-            case deposit: Order.Deposit[_, _] => deposit.fee.some
-            case redeem: Order.Redeem[_, _]   => redeem.fee.some
-            case swap: Order.Swap[_, _] if swap.version.in          => swap
-            case _: Order.Lock[_]             => none
+            case deposit: Order.AnyDeposit                                => deposit.fee.some
+            case redeem: Order.AnyRedeem                                  => redeem.fee.some
+            case swap: Order.AnySwap if swap.version.in(LegacyV1, V1, V2) => ERG(0).some
+            case _: Order.AnySwap                                         => SPF(0).some
+            case _: Order.AnyLock                                         => none
           }
 
           val pkOpt = address.collect { case address: P2PKAddress =>
             PubKey.fromBytes(address.pubkeyBytes)
           }
-
-          println(s"Next fee: ${!orderRedeemer}, ${!predefinedErgoTrees.contains(template)}, $feeOpt, $pkOpt")
 
           (feeOpt, pkOpt) match {
             case (Some(SPF(_)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>

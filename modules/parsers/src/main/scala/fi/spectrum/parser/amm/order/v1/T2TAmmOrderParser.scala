@@ -42,9 +42,9 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.make.v1,
-          OrderType.make.amm,
-          Operation.make.swap
+          Version.V1,
+          OrderType.AMM,
+          Operation.Swap
         ),
         none
       )
@@ -69,9 +69,9 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.make.v1,
-          OrderType.make.amm,
-          Operation.make.deposit
+          Version.V1,
+          OrderType.AMM,
+          Operation.Deposit
         ),
         none
       )
@@ -95,9 +95,9 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.make.v1,
-          OrderType.make.amm,
-          Operation.make.redeem
+          Version.V1,
+          OrderType.AMM,
+          Operation.Redeem
         ),
         none
       )

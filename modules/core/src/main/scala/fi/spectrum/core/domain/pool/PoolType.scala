@@ -1,48 +1,32 @@
 package fi.spectrum.core.domain.pool
 
 import cats.Show
-import io.circe.{Decoder, Encoder}
-import cats.syntax.show._
-import cats.syntax.functor._
-import cats.syntax.eq._
 import cats.syntax.either._
-import io.circe.syntax._
+import derevo.circe.{decoder, encoder}
+import derevo.derive
+import doobie.util.{Get, Put}
+import enumeratum.{CirceEnum, Enum, EnumEntry}
+import tofu.logging.Loggable
+import tofu.logging.derivation.{loggable, show}
 
-sealed trait PoolType
+sealed abstract class PoolType(override val entryName: String) extends EnumEntry
 
-object PoolType {
-  sealed trait AMM extends PoolType
+object PoolType extends Enum[PoolType] with CirceEnum[PoolType] {
 
-  sealed trait LM extends PoolType
+  type AMM = AMM.type
+  type LM = LM.type
 
-  implicit val ammShow: Show[AMM] = _ => "amm"
-  implicit val lmShow: Show[LM]   = _ => "lm"
+  @derive(encoder, decoder, loggable, show)
+  case object AMM extends PoolType("amm")
 
-  implicit val ammEncoder: Encoder[AMM] = Encoder[String].contramap(_ => make.amm.show)
-  implicit val lmEncoder: Encoder[LM]   = Encoder[String].contramap(_ => make.lm.show)
+  @derive(encoder, decoder, loggable, show)
+  case object LM extends PoolType("lm")
 
-  def anyDecoder[R: Show](r: R): Decoder[R] = Decoder[String].emap {
-    case result if result === r.show => r.asRight
-    case invalid                     => s"Invalid order type ${r.show} decoder: $invalid".asLeft
-  }
+  def values: IndexedSeq[PoolType] = findValues
 
-  implicit val ammDecoder: Decoder[AMM] = anyDecoder[AMM](make.amm)
-  implicit val lmDecoder: Decoder[LM]   = anyDecoder[LM](make.lm)
+  implicit val put: Put[PoolType] = Put[String].contramap(_.entryName)
+  implicit val get: Get[PoolType] = Get[String].temap(s => withNameInsensitiveEither(s).leftMap(_.getMessage()))
 
-  implicit val poolTypeEncoder: Encoder[PoolType] = {
-    case amm: AMM => amm.asJson
-    case lm: LM   => lm.asJson
-  }
-
-  implicit val orderTypeDecoder: Decoder[PoolType] =
-    List[Decoder[PoolType]](
-      Decoder[AMM].widen,
-      Decoder[LM].widen
-    ).reduceLeft(_ or _)
-
-  object make {
-    def amm: AMM = new AMM {}
-
-    def lm: LM = new LM {}
-  }
+  implicit val poolTypeShow: Show[PoolType]         = _.entryName
+  implicit val poolTypeLoggable: Loggable[PoolType] = Loggable.show
 }

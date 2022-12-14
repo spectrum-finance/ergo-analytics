@@ -32,14 +32,14 @@ class N2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val box = N2T.swap.outputBuy
     val swapResult: Order.AnySwap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (swapResult eqv (N2T.swap.swapBuy: Order.AnySwap)) shouldBe true
+    (swapResult shouldEqual (N2T.swap.swapBuy: Order.AnySwap))
   }
 
   property("Parse n2t swap sell v2 contract") {
     val box = N2T.swap.outputSell
     val swapResult: Order.AnySwap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (swapResult eqv (N2T.swap.swapSell: Order.AnySwap)) shouldBe true
+    (swapResult shouldEqual (N2T.swap.swapSell: Order.AnySwap))
   }
 
 }

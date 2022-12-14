@@ -88,9 +88,9 @@ object T2T {
         5L
       ),
       10000000,
-      Version.make.v2,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V2,
+      OrderType.AMM,
+      Operation.Swap
     )
   }
 }

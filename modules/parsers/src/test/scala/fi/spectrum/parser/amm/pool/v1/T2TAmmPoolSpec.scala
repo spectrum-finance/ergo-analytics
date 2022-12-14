@@ -17,6 +17,6 @@ class T2TAmmPoolSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val box                      = T2T.output
     val poolResult: Pool.AmmPool = parser.pool(box).get
     poolResult shouldEqual T2T.pool
-    (poolResult eqv T2T.pool) shouldBe true
+    (poolResult shouldEqual T2T.pool)
   }
 }

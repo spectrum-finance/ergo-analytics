@@ -14,6 +14,6 @@ class LockSpec extends AnyPropSpec with Matchers with CatsPlatform {
   property("Parse lock v1 contract") {
     val box    = Lock.output
     val result = parser.lock(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get.asInstanceOf[LockV1]
-    (result eqv Lock.lock) shouldBe true
+    (result shouldEqual Lock.lock)
   }
 }

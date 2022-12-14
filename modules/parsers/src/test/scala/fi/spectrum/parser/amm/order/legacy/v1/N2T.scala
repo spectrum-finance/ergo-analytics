@@ -48,9 +48,9 @@ object N2T {
         16304347826086956L,
         1000000000000L
       ),
-      Version.make.legacyV1,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.LegacyV1,
+      OrderType.AMM,
+      Operation.Swap
     )
 
     val outputBuy = decode[Output](
@@ -96,9 +96,9 @@ object N2T {
         24315702389894413L,
         1000000000000000000L
       ),
-      Version.make.legacyV1,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.LegacyV1,
+      OrderType.AMM,
+      Operation.Swap
     )
   }
 
@@ -148,9 +148,9 @@ object N2T {
             1000
           )
         ),
-        Version.make.legacyV1,
-        OrderType.make.amm,
-        Operation.make.redeem
+        Version.LegacyV1,
+        OrderType.AMM,
+        Operation.Redeem
       )
 
   }

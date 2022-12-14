@@ -1,6 +1,5 @@
 package fi.spectrum.parser.amm.order.legacy.v1
 
-import cats.implicits.catsSyntaxEq
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order
 import fi.spectrum.core.protocol.ErgoTreeSerializer
@@ -18,14 +17,14 @@ class N2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val box = N2T.swap.outputBuy
     val swapResult: Order.AnySwap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (swapResult eqv (N2T.swap.buyOrder: Order.AnySwap)) shouldBe true
+    (swapResult shouldEqual (N2T.swap.buyOrder: Order.AnySwap))
   }
 
   property("Parse n2t swap sell legacy v1 contract") {
     val box = N2T.swap.outputSell
     val swapResult: Order.AnySwap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (swapResult eqv (N2T.swap.sellOrder: Order.AnySwap)) shouldBe true
+    (swapResult shouldEqual (N2T.swap.sellOrder: Order.AnySwap))
   }
 
   property("Parse n2t redeem legacy v1 contract") {
@@ -33,6 +32,6 @@ class N2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val redeemResult: Order.AnyRedeem =
       parser.redeem(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
     val expected: Order.AnyRedeem = N2T.redeem.redeem
-    (redeemResult eqv expected) shouldBe true
+    (redeemResult shouldEqual expected)
   }
 }

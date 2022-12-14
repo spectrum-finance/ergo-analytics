@@ -67,9 +67,9 @@ object T2T {
       ),
       777777,
       1400,
-      Version.make.v3,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V3,
+      OrderType.AMM,
+      Operation.Swap
     )
 
     val outputNoSpf = decode[Output](
@@ -124,9 +124,9 @@ object T2T {
       ),
       777777,
       1400,
-      Version.make.v3,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V3,
+      OrderType.AMM,
+      Operation.Swap
     )
   }
 
@@ -188,9 +188,9 @@ object T2T {
         )
       ),
       777777,
-      Version.make.v3,
-      OrderType.make.amm,
-      Operation.make.deposit
+      Version.V3,
+      OrderType.AMM,
+      Operation.Deposit
     )
 
     val outputSpfIsX = decode[Output](
@@ -249,9 +249,9 @@ object T2T {
         )
       ),
       777777,
-      Version.make.v3,
-      OrderType.make.amm,
-      Operation.make.deposit
+      Version.V3,
+      OrderType.AMM,
+      Operation.Deposit
     )
   }
 
@@ -309,9 +309,9 @@ object T2T {
         )
       ),
       777777,
-      Version.make.v3,
-      OrderType.make.amm,
-      Operation.make.redeem
+      Version.V3,
+      OrderType.AMM,
+      Operation.Redeem
     )
   }
 }

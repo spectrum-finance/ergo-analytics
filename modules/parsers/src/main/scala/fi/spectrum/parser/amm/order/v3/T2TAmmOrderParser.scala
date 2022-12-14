@@ -50,9 +50,9 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
           params,
           maxMinerFee,
           reservedExFee,
-          Version.make.v3,
-          OrderType.make.amm,
-          Operation.make.swap
+          Version.V3,
+          OrderType.AMM,
+          Operation.Swap
         ),
         none
       )
@@ -82,9 +82,9 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
           ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.make.v3,
-          OrderType.make.amm,
-          Operation.make.deposit
+          Version.V3,
+          OrderType.AMM,
+          Operation.Deposit
         ),
         none
       )
@@ -108,9 +108,9 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
           ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.make.v3,
-          OrderType.make.amm,
-          Operation.make.redeem
+          Version.V3,
+          OrderType.AMM,
+          Operation.Redeem
         ),
         none
       )

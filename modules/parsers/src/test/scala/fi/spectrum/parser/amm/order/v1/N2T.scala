@@ -51,9 +51,9 @@ object N2T {
         1000000000000000000L
       ),
       2000000,
-      Version.make.v1,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V1,
+      OrderType.AMM,
+      Operation.Swap
     )
 
     val swapN2TBuy: Output = decode[Output](
@@ -100,9 +100,9 @@ object N2T {
         1000000000000000000L
       ),
       2000000,
-      Version.make.v1,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V1,
+      OrderType.AMM,
+      Operation.Swap
     )
   }
 
@@ -151,9 +151,9 @@ object N2T {
         )
       ),
       2000000,
-      Version.make.v1,
-      OrderType.make.amm,
-      Operation.make.deposit
+      Version.V1,
+      OrderType.AMM,
+      Operation.Deposit
     )
   }
 
@@ -204,9 +204,9 @@ object N2T {
           )
         ),
         2000000,
-        Version.make.v1,
-        OrderType.make.amm,
-        Operation.make.redeem
+        Version.V1,
+        OrderType.AMM,
+        Operation.Redeem
       )
 
   }

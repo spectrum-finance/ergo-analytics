@@ -13,4 +13,4 @@ import tofu.logging.derivation.loggable
 @derive(encoder, decoder, loggable)
 final case class OrderState(txId: TxId, timestamp: Long, status: OrderStatus)
 
-object OrderState {}
+object OrderState

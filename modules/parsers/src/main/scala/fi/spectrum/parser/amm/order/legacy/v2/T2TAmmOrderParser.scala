@@ -37,9 +37,9 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV2, T2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.make.legacyV2,
-          OrderType.make.amm,
-          Operation.make.deposit
+          Version.LegacyV2,
+          OrderType.AMM,
+          Operation.Deposit
         ),
         none
       )

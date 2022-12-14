@@ -30,6 +30,6 @@ class T2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val box = T2T.swap.output
     val swapResult: Order.AnySwap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (swapResult eqv (T2T.swap.swap: Order.AnySwap)) shouldBe true
+    (swapResult shouldEqual (T2T.swap.swap: Order.AnySwap))
   }
 }

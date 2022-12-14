@@ -1,7 +1,7 @@
 package fi.spectrum.core
 
 import cats.{Eq, Show}
-import derevo.cats.eqv
+
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.util.{Get, Put}
@@ -58,7 +58,7 @@ package object domain {
     implicit val put: Put[ProtocolVersion] = deriving
   }
 
-  @derive(encoder, decoder, loggable, show, eqv)
+  @derive(encoder, decoder, loggable, show)
   @newtype final case class TxId(value: String)
 
   object TxId {
@@ -66,7 +66,7 @@ package object domain {
     implicit val put: Put[TxId] = deriving
   }
 
-  @derive(encoder, decoder, loggable, show, eqv)
+  @derive(encoder, decoder, loggable, show)
   @newtype final case class BoxId(value: String)
 
   object BoxId {
@@ -74,7 +74,7 @@ package object domain {
     implicit val put: Put[BoxId] = deriving
   }
 
-  @derive(encoder, decoder, loggable, show, eqv)
+  @derive(encoder, decoder, loggable, show)
   @newtype final case class SErgoTree(value: HexString) {
     def toBytea: Array[Byte] = value.toBytes
   }
@@ -92,7 +92,7 @@ package object domain {
     )
   }
 
-  @derive(encoder, decoder, loggable, show, eqv)
+  @derive(encoder, decoder, loggable, show)
   @newtype final case class TokenId(value: HexString)
 
   object TokenId {
@@ -107,7 +107,7 @@ package object domain {
 
   }
 
-  @derive(encoder, decoder, loggable, show, eqv)
+  @derive(encoder, decoder, loggable, show)
   @newtype final case class PubKey(value: HexString) {
     def toBytes: Array[Byte] = value.toBytes
 

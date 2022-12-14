@@ -28,9 +28,9 @@ class LockParser extends LockOrderParser[V1] {
           deadline,
           amount,
           PublicKeyRedeemer(redeemer),
-          Version.make.v1,
-          OrderType.make.lock,
-          Operation.make.lock
+          Version.V1,
+          OrderType.LOCK,
+          Operation.Lock
         ),
         none
       )

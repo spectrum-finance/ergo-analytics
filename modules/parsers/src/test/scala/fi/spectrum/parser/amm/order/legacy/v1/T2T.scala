@@ -60,9 +60,9 @@ object T2T {
         293080115074409L,
         1000000000000000000L
       ),
-      Version.make.legacyV1,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.LegacyV1,
+      OrderType.AMM,
+      Operation.Swap
     )
   }
 
@@ -112,9 +112,9 @@ object T2T {
             18555857
           )
         ),
-        Version.make.legacyV1,
-        OrderType.make.amm,
-        Operation.make.redeem
+        Version.LegacyV1,
+        OrderType.AMM,
+        Operation.Redeem
       )
 
   }

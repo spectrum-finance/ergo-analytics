@@ -65,9 +65,9 @@ object T2T {
           278984
         )
       ),
-      Version.make.legacyV2,
-      OrderType.make.amm,
-      Operation.make.deposit
+      Version.LegacyV2,
+      OrderType.AMM,
+      Operation.Deposit
     )
   }
 }

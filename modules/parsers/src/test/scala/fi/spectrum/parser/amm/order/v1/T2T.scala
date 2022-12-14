@@ -62,9 +62,9 @@ object T2T {
         10000000000000L
       ),
       2000000,
-      Version.make.v1,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V1,
+      OrderType.AMM,
+      Operation.Swap
     )
   }
 
@@ -124,9 +124,9 @@ object T2T {
         )
       ),
       2000000,
-      Version.make.v1,
-      OrderType.make.amm,
-      Operation.make.deposit
+      Version.V1,
+      OrderType.AMM,
+      Operation.Deposit
     )
   }
 
@@ -176,9 +176,9 @@ object T2T {
         )
       ),
       2000000,
-      Version.make.v1,
-      OrderType.make.amm,
-      Operation.make.redeem
+      Version.V1,
+      OrderType.AMM,
+      Operation.Redeem
     )
   }
 

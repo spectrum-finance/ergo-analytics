@@ -60,8 +60,8 @@ object Lock {
       59642
     ),
     PublicKeyRedeemer(PubKey.unsafeFromString("03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec")),
-    Version.make.v1,
-    OrderType.make.lock,
-    Operation.make.lock
+    Version.V1,
+    OrderType.LOCK,
+    Operation.Lock
   )
 }

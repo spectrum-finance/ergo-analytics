@@ -1,78 +1,44 @@
 package fi.spectrum.core.domain.order
 
-import cats.{Eq, Show}
+import cats.Show
 import cats.syntax.either._
-import cats.syntax.eq._
-import cats.syntax.functor._
-import cats.syntax.show._
-import io.circe.syntax._
-import io.circe.{Decoder, Encoder}
+
+import derevo.circe.{decoder, encoder}
+import derevo.derive
+import doobie.util.{Get, Put}
+import enumeratum.{CirceEnum, Enum, EnumEntry}
 import tofu.logging.Loggable
+import tofu.logging.derivation.{loggable, show}
 
 /** Represents order operation ,e.g. Swap, Deposit, Redeem, Lock, Reward.
   * Doesn't depend on order type.
   */
-sealed trait Operation
+sealed abstract class Operation(override val entryName: String) extends EnumEntry
 
-object Operation {
+object Operation extends Enum[Operation] with CirceEnum[Operation] {
 
-  sealed trait Swap extends Operation
-  sealed trait Deposit extends Operation
-  sealed trait Redeem extends Operation
-  sealed trait Lock extends Operation
+  type Swap    = Swap.type
+  type Deposit = Deposit.type
+  type Redeem  = Redeem.type
+  type Lock    = Lock.type
 
-  implicit val swapShow: Show[Swap]       = _ => "swap"
-  implicit val depositShow: Show[Deposit] = _ => "deposit"
-  implicit val redeemShow: Show[Redeem]   = _ => "redeem"
-  implicit val lockShow: Show[Lock]       = _ => "lock"
+  @derive(encoder, decoder, show, loggable)
+  case object Swap extends Operation("swap")
 
-  implicit val swapEncoder: Encoder[Swap]       = Encoder[String].contramap(_ => make.swap.show)
-  implicit val depositEncoder: Encoder[Deposit] = Encoder[String].contramap(_ => make.deposit.show)
-  implicit val redeemEncoder: Encoder[Redeem]   = Encoder[String].contramap(_ => make.redeem.show)
-  implicit val lockEncoder: Encoder[Lock]       = Encoder[String].contramap(_ => make.lock.show)
+  @derive(encoder, decoder, show, loggable)
+  case object Deposit extends Operation("deposit")
 
-  def anyDecoder[R: Show](r: R): Decoder[R] = Decoder[String].emap {
-    case result if result === r.show => r.asRight
-    case invalid                     => s"Invalid operation ${r.show} decoder: $invalid".asLeft
-  }
+  @derive(encoder, decoder, show, loggable)
+  case object Redeem extends Operation("redeem")
 
-  implicit val swapDecoder: Decoder[Swap]       = anyDecoder(make.swap)
-  implicit val depositDecoder: Decoder[Deposit] = anyDecoder(make.deposit)
-  implicit val redeemDecoder: Decoder[Redeem]   = anyDecoder(make.redeem)
-  implicit val lockDecoder: Decoder[Lock]       = anyDecoder(make.lock)
+  @derive(encoder, decoder, show, loggable)
+  case object Lock extends Operation("lock")
 
-  implicit val operationEncoder: Encoder[Operation] = {
-    case swap: Swap       => swap.asJson
-    case redeem: Redeem   => redeem.asJson
-    case deposit: Deposit => deposit.asJson
-    case lock: Lock       => lock.asJson
-  }
+  def values: IndexedSeq[Operation] = findValues
 
-  implicit val operationDecoder: Decoder[Operation] =
-    List[Decoder[Operation]](
-      Decoder[Swap].widen,
-      Decoder[Redeem].widen,
-      Decoder[Deposit].widen,
-      Decoder[Lock].widen
-    ).reduceLeft(_ or _)
+  implicit val put: Put[Operation] = Put[String].contramap(_.entryName)
+  implicit val get: Get[Operation] = Get[String].temap(s => withNameInsensitiveEither(s).leftMap(_.getMessage()))
 
-  object make {
-    def deposit: Deposit = new Deposit {}
-
-    def redeem: Redeem = new Redeem {}
-
-    def swap: Swap = new Swap {}
-
-    def lock: Lock = new Lock {}
-  }
-
-  implicit val loggableRedeem: Loggable[Redeem]   = Loggable.show
-  implicit val loggableSwap: Loggable[Swap]       = Loggable.show
-  implicit val loggableLock: Loggable[Lock]       = Loggable.show
-  implicit val loggableDeposit: Loggable[Deposit] = Loggable.show
-
-  implicit val eqSwap: Eq[Swap]       = (x: Swap, y: Swap) => x.show === y.show
-  implicit val eqRedeem: Eq[Redeem]   = (x: Redeem, y: Redeem) => x.show === y.show
-  implicit val eqDeposit: Eq[Deposit] = (x: Deposit, y: Deposit) => x.show === y.show
-  implicit val eqLock: Eq[Lock]       = (x: Lock, y: Lock) => x.show === y.show
+  implicit val operationShow: Show[Operation]         = _.entryName
+  implicit val operationLoggable: Loggable[Operation] = Loggable.show
 }

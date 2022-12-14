@@ -72,9 +72,9 @@ object N2T {
         5L
       ),
       10000000,
-      Version.make.v2,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V2,
+      OrderType.AMM,
+      Operation.Swap
     )
 
     def outputSell: Output =
@@ -128,9 +128,9 @@ object N2T {
         105L
       ),
       10000000,
-      Version.make.v2,
-      OrderType.make.amm,
-      Operation.make.swap
+      Version.V2,
+      OrderType.AMM,
+      Operation.Swap
     )
   }
 

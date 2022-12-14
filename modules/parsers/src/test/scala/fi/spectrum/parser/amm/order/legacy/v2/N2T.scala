@@ -55,9 +55,9 @@ object N2T {
           3426
         )
       ),
-      Version.make.legacyV2,
-      OrderType.make.amm,
-      Operation.make.deposit
+      Version.LegacyV2,
+      OrderType.AMM,
+      Operation.Deposit
     )
   }
 }
