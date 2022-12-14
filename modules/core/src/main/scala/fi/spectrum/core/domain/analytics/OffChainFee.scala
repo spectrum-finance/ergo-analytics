@@ -7,7 +7,7 @@ import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
 import tofu.logging.derivation.loggable
 
 @derive(encoder, decoder, loggable)
-final case class OffChainOperatorFee(
+final case class OffChainFee(
   poolId: PoolId,
   orderId: OrderId,
   outputId: BoxId,

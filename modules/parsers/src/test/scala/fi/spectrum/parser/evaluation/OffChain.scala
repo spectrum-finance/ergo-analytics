@@ -1,13 +1,13 @@
 package fi.spectrum.parser.evaluation
 
-import fi.spectrum.core.domain.analytics.OffChainOperatorFee
+import fi.spectrum.core.domain.analytics.OffChainFee
 import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.order.{OrderId, PoolId}
 import fi.spectrum.core.domain.{BoxId, PubKey}
 import fi.spectrum.parser.models.TransactionTest
 import io.circe.parser.decode
 
-object OffChainFee {
+object OffChain {
 
   val transaction = decode[TransactionTest](
     """
@@ -221,7 +221,7 @@ object OffChainFee {
       |""".stripMargin
   ).toOption.get.toTransaction
 
-  val expectedFee = OffChainOperatorFee(
+  val expectedFee = OffChainFee(
     PoolId.unsafeFromString("f1fb942ebd039dc782fd9109acdb60aabea4dc7e75e9c813b6528c62692fc781"),
     OrderId("b7510c7cd1ff26bd61aec41a6ecb19fbbbcc38900f4451af3fcc127d424a24eb"),
     BoxId("096252e7c50b88403477849193d87966def51e3e38d71a3007b1578218b94db9"),

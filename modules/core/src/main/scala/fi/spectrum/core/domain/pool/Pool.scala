@@ -39,7 +39,7 @@ object Pool {
     amm.show
   }
 
-  implicit def orderDecoder: Decoder[Pool[Version, PoolType]] =
+  implicit def poolDecoder: Decoder[Pool[Version, PoolType]] =
     List[Decoder[Pool[Version, PoolType]]](
       Decoder[AmmPool].widen
     ).reduceLeft(_ or _)

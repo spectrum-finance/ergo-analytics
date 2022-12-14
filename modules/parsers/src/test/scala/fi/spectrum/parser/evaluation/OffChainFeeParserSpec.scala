@@ -1,7 +1,7 @@
 package fi.spectrum.parser.evaluation
 
 import fi.spectrum.core.domain.TokenId
-import fi.spectrum.parser.evaluation.OffChainFee._
+import fi.spectrum.parser.evaluation.OffChain._
 import fi.spectrum.parser.{CatsPlatform, OrderParser, PoolParser}
 import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.matchers.should.Matchers

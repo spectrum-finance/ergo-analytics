@@ -1,7 +1,7 @@
 package fi.spectrum.parser.evaluation
 
 import cats.syntax.option._
-import fi.spectrum.core.domain.analytics.OffChainOperatorFee
+import fi.spectrum.core.domain.analytics.OffChainFee
 import fi.spectrum.core.domain.analytics.Version.{LegacyV1, V1, V2}
 import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
 import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
@@ -15,7 +15,7 @@ import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 /** Tries to find output for off-chain operator.
   */
 trait OffChainFeeParser {
-  def parse(outputs: List[Output], order: Order.Any, poolId: PoolId): Option[OffChainOperatorFee]
+  def parse(outputs: List[Output], order: Order.Any, poolId: PoolId): Option[OffChainFee]
 }
 
 object OffChainFeeParser {
@@ -24,7 +24,7 @@ object OffChainFeeParser {
 
   final private class Live(spf: TokenId)(implicit e: ErgoAddressEncoder) extends OffChainFeeParser {
 
-    def parse(outputs: List[Output], order: Order.Any, poolId: PoolId): Option[OffChainOperatorFee] =
+    def parse(outputs: List[Output], order: Order.Any, poolId: PoolId): Option[OffChainFee] =
       outputs
         .map { box =>
           val tree     = ErgoTreeSerializer.default.deserialize(box.ergoTree)
@@ -46,19 +46,17 @@ object OffChainFeeParser {
             case _: Order.AnyLock                                         => none
           }
 
-          val pkOpt = address.collect { case address: P2PKAddress =>
-            PubKey.fromBytes(address.pubkeyBytes)
-          }
+          val pkOpt = address.collect { case address: P2PKAddress => PubKey.fromBytes(address.pubkeyBytes) }
 
           (feeOpt, pkOpt) match {
             case (Some(SPF(_)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>
               box.assets.find(_.tokenId == spf) match {
                 case Some(value) =>
-                  OffChainOperatorFee(poolId, order.id, box.boxId, pk, SPF(value.amount)).some
+                  OffChainFee(poolId, order.id, box.boxId, pk, SPF(value.amount)).some
                 case None => none
               }
             case (Some(ERG(_)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>
-              OffChainOperatorFee(poolId, order.id, box.boxId, pk, ERG(box.value)).some
+              OffChainFee(poolId, order.id, box.boxId, pk, ERG(box.value)).some
             case _ => none
           }
         }

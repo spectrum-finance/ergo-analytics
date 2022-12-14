@@ -13,7 +13,7 @@ final case class ProcessedOrder(
   order: Order[Version, OrderType, Operation],
   state: OrderState,
   evaluation: Option[OrderEvaluation],
-  offChainFee: Option[OffChainOperatorFee],
+  offChainFee: Option[OffChainFee],
   pool: Option[Pool.Any]
 )
 

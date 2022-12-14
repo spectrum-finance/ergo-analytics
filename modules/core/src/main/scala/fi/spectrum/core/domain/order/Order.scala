@@ -51,28 +51,28 @@ object Order {
   type AnyRedeem  = Redeem[Version, OrderType]
   type AnyLock    = Lock[Version]
 
-  implicit def orderEncoder: Encoder[Order.Any] = {
-    case deposit: Deposit[Version, OrderType] => deposit.asJson
-    case redeem: Redeem[Version, OrderType]   => redeem.asJson
-    case swap: Swap[Version, OrderType]       => swap.asJson
-    case lock: Lock[Version]                  => lock.asJson
+  implicit def orderEncoder: Encoder[Any] = {
+    case deposit: AnyDeposit => deposit.asJson
+    case redeem: AnyRedeem   => redeem.asJson
+    case swap: AnySwap       => swap.asJson
+    case lock: AnyLock       => lock.asJson
   }
 
-  implicit def orderDecoder: Decoder[Order.Any] =
-    List[Decoder[Order[Version, OrderType, Operation]]](
-      Decoder[Deposit[Version, OrderType]].widen,
-      Decoder[Redeem[Version, OrderType]].widen,
-      Decoder[Swap[Version, OrderType]].widen,
-      Decoder[Lock[Version]].widen
+  implicit def orderDecoder: Decoder[Any] =
+    List[Decoder[Any]](
+      Decoder[AnyDeposit].widen,
+      Decoder[AnyRedeem].widen,
+      Decoder[AnySwap].widen,
+      Decoder[AnyLock].widen
     ).reduceLeft(_ or _)
 
-  implicit def orderLoggable: Loggable[Order.Any] = Loggable.show
+  implicit def orderLoggable: Loggable[Any] = Loggable.show
 
   implicit def orderShow: Show[Order.Any] = {
-    case deposit: Order.AnyDeposit => deposit.show
-    case redeem: Order.AnyRedeem   => redeem.show
-    case swap: Order.AnySwap       => swap.show
-    case lock: Order.AnyLock       => lock.show
+    case deposit: AnyDeposit => deposit.show
+    case redeem: AnyRedeem   => redeem.show
+    case swap: AnySwap       => swap.show
+    case lock: AnyLock       => lock.show
   }
 
   /** It's any deposit order that exists in our domain.
@@ -308,7 +308,6 @@ object Order {
     implicit def lockEncoder: Encoder[Lock[Version]] = deriveEncoder
 
     implicit def lockDecoder: Decoder[Lock[Version]] = deriveDecoder
-
 
     @derive(encoder, decoder, loggable, show)
     final case class LockV1(

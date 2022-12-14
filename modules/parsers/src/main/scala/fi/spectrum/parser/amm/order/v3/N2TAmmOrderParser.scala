@@ -43,7 +43,8 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       reserveExFee <- tree.constants.parseLong(1)
     } yield SwapV3(
       box,
-      poolId, ErgoTreeRedeemer(redeemer),
+      poolId,
+      ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
       reserveExFee,
@@ -69,7 +70,8 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       params     = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV3(
       box,
-      poolId, ErgoTreeRedeemer(redeemer),
+      poolId,
+      ErgoTreeRedeemer(redeemer),
       params,
       maxMinerFee,
       reserveExFee,
@@ -94,7 +96,8 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
         } yield DepositV3(
           box,
           SPF(dexFee),
-          poolId, ErgoTreeRedeemer(redeemer),
+          poolId,
+          ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
           Version.V3,
