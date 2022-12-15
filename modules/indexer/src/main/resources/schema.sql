@@ -77,7 +77,7 @@ create table if not exists public.deposits (
 );
 
 create table if not exists public.lq_locks (
-    id public.hash32type primary key,
+    order_id public.hash32type primary key,
     deadline integer not null,
     token_id public.hash32type not null,
     amount bigint not null,

@@ -11,6 +11,7 @@ import fi.spectrum.indexer.models.OffChainFeeDB._
 import tofu.doobie.transactor.Txr
 import tofu.syntax.monadic._
 
+//todo pools
 trait ProcessOrder[F[_]] {
   def process(processedOrders: NonEmptyList[ProcessedOrder]): F[Unit]
 }
@@ -31,9 +32,7 @@ object ProcessOrder {
     def process(processedOrders: NonEmptyList[ProcessedOrder]): F[Unit] = {
 
       def orders: D[List[Int]] =
-        processedOrders
-          .traverse(processed => inserts.traverse(_.insert(processed)))
-          .map(_.toList.flatten)
+        inserts.traverse(_.insert(processedOrders.toList))
 
       def fee: D[Int] =
         NonEmptyList.fromList(processedOrders.toList.flatMap(_.offChainFee).map(_.transform)) match {

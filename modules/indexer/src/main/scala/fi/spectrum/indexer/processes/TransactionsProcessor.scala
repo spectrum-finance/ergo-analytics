@@ -58,10 +58,9 @@ object TransactionsProcessor {
                   .map(OrderEvent.Apply)
                   .map(Record(tx.id, _))
               case TxEvent.Unapply(_) =>
-                OrderEvent
-                  .Unapply(tx.id)
-                  .some
-                  .widen[OrderEvent]
+                parser
+                  .parse(tx, 0)
+                  .map(OrderEvent.Unapply)
                   .map(Record(tx.id, _))
             }
           }

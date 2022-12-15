@@ -4,6 +4,7 @@ import cats.{FlatMap, Monad}
 import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.ProcessedOrder
 import fi.spectrum.indexer.db.persistence.{PersistBundle, UpdateBundle}
+import fi.spectrum.indexer.db.v2.Fork
 import fi.spectrum.indexer.processes.{OrdersProcessor, TransactionsProcessor}
 import fi.spectrum.indexer.services.InsertOrderBundle
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
@@ -17,6 +18,8 @@ import tofu.logging.Logs
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.monadic._
 import fi.spectrum.indexer.services.{ProcessOrder => PO}
+import fi.spectrum.indexer.db.v2.{PersistBundle => PO2}
+
 
 object Main {
 
@@ -35,7 +38,9 @@ object Main {
     implicit val updateBundle: UpdateBundle[D]      = UpdateBundle.make[D]
     implicit val insertBundle: InsertOrderBundle[D] = InsertOrderBundle.make[D]
     implicit val processors: PO[F]                  = PO.make[F, D](insertBundle.toList, persistBundle.offChainFee)
-    val ordersProcessor: OrdersProcessor[S]         = OrdersProcessor.make[Chunk, F, S](orders2, processors)
+    implicit val pb = PO2.make
+    val fork = Fork.make[F, D]
+    val ordersProcessor: OrdersProcessor[S]         = OrdersProcessor.make[Chunk, F, S](orders2, processors, fork)
     for {
       tx <- TransactionsProcessor.make[Chunk, F, S]
     } yield (tx, ordersProcessor)

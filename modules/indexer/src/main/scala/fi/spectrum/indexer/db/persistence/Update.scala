@@ -18,11 +18,11 @@ trait Update[T, F[_]] extends Persist[T, F] {
 
   /** Updates order status to executed
     */
-  def updateExecuted(o: UpdateState): F[Int]
+  def updateExecuted(o: NonEmptyList[UpdateState]): F[Int]
 
   /** Updates order status to refunded
     */
-  def updateRefunded(o: UpdateState): F[Int]
+  def updateRefunded(o: NonEmptyList[UpdateState]): F[Int]
 
 }
 
@@ -41,9 +41,9 @@ object Update {
 
   def makeNonUpdatable[O, D[_]: Monad](p: Persist[O, D]): Update[O, D] =
     new Update[O, D] {
-      def updateExecuted(o: UpdateState): D[Int] = 0.pure[D]
+      def updateExecuted(o: NonEmptyList[UpdateState]): D[Int] = 0.pure[D]
 
-      def updateRefunded(o: UpdateState): D[Int] = 0.pure[D]
+      def updateRefunded(o: NonEmptyList[UpdateState]): D[Int] = 0.pure[D]
 
       def persist(inputs: NonEmptyList[O]): D[Int] = p.persist(inputs)
     }
@@ -53,11 +53,11 @@ object Update {
     lh: LogHandler
   ) extends Update[O, D] {
 
-    def updateExecuted(o: UpdateState): D[Int] =
-      LiftConnectionIO[D].lift(schema.updateExecuted.toUpdate0(o).run)
+    def updateExecuted(o: NonEmptyList[UpdateState]): D[Int] =
+      LiftConnectionIO[D].lift(schema.updateExecuted.updateMany(o))
 
-    def updateRefunded(o: UpdateState): D[Int] =
-      LiftConnectionIO[D].lift(schema.updateRefunded.toUpdate0(o).run)
+    def updateRefunded(o: NonEmptyList[UpdateState]): D[Int] =
+      LiftConnectionIO[D].lift(schema.updateRefunded.updateMany(o))
 
     def persist(inputs: NonEmptyList[O]): D[Int] = persist.persist(inputs)
   }
