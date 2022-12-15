@@ -11,7 +11,7 @@ import fi.spectrum.parser.domain.AmmType.T2T
 
 class T2TPoolParser extends AmmPoolParser[V1, T2T] {
 
-  def pool(output: Output): Option[AmmPool] =
+  def pool(output: Output, timestamp: Long): Option[AmmPool] =
     for {
       nft <- output.assets.lift(constants.t2t.IndexNFT)
       lp  <- output.assets.lift(constants.t2t.IndexLP)
@@ -24,6 +24,7 @@ class T2TPoolParser extends AmmPoolParser[V1, T2T] {
       AssetAmount.fromBoxAsset(x),
       AssetAmount.fromBoxAsset(y),
       fee,
+      timestamp,
       output
     )
 }

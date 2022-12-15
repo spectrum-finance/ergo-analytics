@@ -16,19 +16,19 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse swap evaluation") {
     val order = transactionSwap.inputs.toList.map(i => orderParser.parse(i.output)).collectFirst { case Some(v) => v }.get
-    val pool = transactionSwap.outputs.toList.map(poolParser.parse).collectFirst { case Some(v) => v }.get
+    val pool = transactionSwap.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
     parser.parse(order, transactionSwap.outputs.toList, pool).get shouldEqual OrderEval.swap.eval
   }
 
   property("Parse redeem evaluation") {
     val order = transactionRedeem.inputs.toList.map(i => orderParser.parse(i.output)).collectFirst { case Some(v) => v }.get
-    val pool = transactionRedeem.outputs.toList.map(poolParser.parse).collectFirst { case Some(v) => v }.get
+    val pool = transactionRedeem.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
     parser.parse(order, transactionRedeem.outputs.toList, pool).get shouldEqual OrderEval.redeem.eval
   }
 
   property("Parse deposit evaluation") {
     val order = transactionDeposit.inputs.toList.map(i => orderParser.parse(i.output)).collectFirst { case Some(v) => v }.get
-    val pool = transactionDeposit.outputs.toList.map(poolParser.parse).collectFirst { case Some(v) => v }.get
+    val pool = transactionDeposit.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
     parser.parse(order, transactionDeposit.outputs.toList, pool).get shouldEqual OrderEval.deposit.eval
   }
 

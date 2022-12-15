@@ -32,7 +32,7 @@ class ProcessedOrderParser(implicit
       .map(in => orderParser.parse(in.output))
       .collectFirst { case Some(order) => order }
       .map { order =>
-        val pool = tx.outputs.toList.map(poolParser.parse).collectFirst { case Some(v) => v }
+        val pool = tx.outputs.toList.map(poolParser.parse(_, timestamp)).collectFirst { case Some(v) => v }
         val fee  = pool >>= { p => feeParser.parse(tx.outputs.toList, order, p.poolId) }
         val eval = pool >>= { p => evalParser.parse(order, tx.outputs.toList, p) }
         ProcessedOrder(

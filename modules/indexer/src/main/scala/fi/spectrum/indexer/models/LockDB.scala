@@ -16,7 +16,6 @@ final case class LockDB(
 )
 
 object LockDB {
-  implicit val toSchemaV2: ToSchema[Order.AnyLock, Option[LockDB]] = processed => ???
   implicit val toSchema: ToSchema[ProcessedOrder, Option[LockDB]] = processed => ___V1.transform(processed)
 
   val ___V1: ToSchema[ProcessedOrder, Option[LockDB]] =

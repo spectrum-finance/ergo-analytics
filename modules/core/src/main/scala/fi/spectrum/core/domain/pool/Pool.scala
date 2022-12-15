@@ -51,6 +51,7 @@ object Pool {
     x: AssetAmount,
     y: AssetAmount,
     feeNum: Int,
+    timestamp: Long,
     box: Output
   ) extends Pool[V1, PoolType.AMM]
 }

@@ -4,6 +4,21 @@ create domain public.pubkey as varchar(66);
 
 create domain public.ticker as varchar;
 
+create table if not exists public.pools (
+    pool_state_id public.hash32type primary key,
+    pool_id public.hash32type not null,
+    lp_id public.hash32type not null,
+    lp_amount bigint not null,
+    x_id public.hash32type not null,
+    x_amount bigint not null,
+    y_id public.hash32type not null,
+    y_amount bigint not null,
+    fee_num integer not null,
+    timestamp bigint not null,
+    height bigint not null,
+    protocol_version integer not null
+);
+
 CREATE TABLE IF NOT EXISTS public.swaps (
     order_id public.hash32type PRIMARY KEY,
     pool_id public.hash32type NOT NULL,

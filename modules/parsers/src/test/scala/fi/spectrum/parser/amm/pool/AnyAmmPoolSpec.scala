@@ -18,8 +18,8 @@ class AnyAmmPoolSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
     val n2tBox                  = N2T.output
     val t2tBox                  = T2T.output
-    val n2tResult: Pool.AmmPool = parser.pool(n2tBox).get
-    val t2tResult: Pool.AmmPool = parser.pool(t2tBox).get
+    val n2tResult: Pool.AmmPool = parser.pool(n2tBox, N2T.pool.timestamp).get
+    val t2tResult: Pool.AmmPool = parser.pool(t2tBox, T2T.pool.timestamp).get
     n2tResult shouldEqual N2T.pool
     t2tResult shouldEqual T2T.pool
   }
@@ -29,8 +29,8 @@ class AnyAmmPoolSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
     val n2tBox = N2T.output
     val t2tBox = T2T.output
-    val n2tResult: Pool.AmmPool = parser.parse(n2tBox).get.asInstanceOf[Pool.AmmPool]
-    val t2tResult: Pool.AmmPool = parser.parse(t2tBox).get.asInstanceOf[Pool.AmmPool]
+    val n2tResult: Pool.AmmPool = parser.parse(n2tBox, N2T.pool.timestamp).get.asInstanceOf[Pool.AmmPool]
+    val t2tResult: Pool.AmmPool = parser.parse(t2tBox, T2T.pool.timestamp).get.asInstanceOf[Pool.AmmPool]
     n2tResult shouldEqual N2T.pool
     t2tResult shouldEqual T2T.pool
   }

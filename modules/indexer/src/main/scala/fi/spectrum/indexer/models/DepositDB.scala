@@ -30,9 +30,7 @@ final case class DepositDB(
 )
 
 object DepositDB {
-
-  implicit val toSchemaV2: ToSchema[Order.AnyDeposit, Option[DepositDB]] = processed => ???
-
+  
   implicit val toSchema: ToSchema[ProcessedOrder, Option[DepositDB]] = processed =>
     ___V1.transform(processed) orElse
     ___V3.transform(processed) orElse

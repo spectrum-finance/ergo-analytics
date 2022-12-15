@@ -31,8 +31,6 @@ final case class RedeemDB(
 
 object RedeemDB {
 
-  implicit val toSchemaV2: ToSchema[Order.AnyRedeem, Option[RedeemDB]] = processed => ???
-
   implicit val toSchema: ToSchema[ProcessedOrder, Option[RedeemDB]] = processed =>
     ___V1.transform(processed) orElse ___V3.transform(processed) orElse ___LegacyV1.transform(processed)
 

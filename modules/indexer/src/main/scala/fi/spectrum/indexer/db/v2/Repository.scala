@@ -8,4 +8,5 @@ object Repository {
   implicit val depositsRepository: DepositRepository        = new DepositRepository
   implicit val locksRepository: LockRepository              = new LockRepository
   implicit val offChainFeeRepository: OffChainFeeRepository = new OffChainFeeRepository
+  implicit val poolsRepository: PoolRepository              = new PoolRepository
 }

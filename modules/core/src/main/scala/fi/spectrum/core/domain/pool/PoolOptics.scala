@@ -2,13 +2,13 @@ package fi.spectrum.core.domain.pool
 
 import fi.spectrum.core.domain.pool.Pool.AmmPool
 import fi.spectrum.core.domain.{AssetAmount, TokenId}
-import glass.Label
+import glass.{Label, Subset}
 import glass.classic.Optional
 import glass.macros.{GenContains, GenSubset}
 
 object PoolOptics {
 
-  implicit val ammPool = GenSubset[Pool.Any, AmmPool]
+  implicit val ammPool: Subset[Pool.Any, AmmPool] = GenSubset[Pool.Any, AmmPool]
 
   implicit val poolLP: Optional[Pool.Any, TokenId] =
     ammPool >> GenContains[AmmPool](_.lp.tokenId)

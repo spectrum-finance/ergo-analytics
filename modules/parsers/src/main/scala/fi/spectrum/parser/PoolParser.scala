@@ -8,16 +8,15 @@ import fi.spectrum.parser.amm.pool.v1.N2TPoolParser._
 import fi.spectrum.parser.amm.pool.v1.T2TPoolParser._
 import fi.spectrum.parser.domain.AmmType
 
-/**
- * Parses any pool no matter what version or type it has.
- */
+/** Parses any pool no matter what version or type it has.
+  */
 trait PoolParser { self =>
-  def parse(box: Output): Option[Pool[Version, PoolType]]
+  def parse(box: Output, timestamp: Long): Option[Pool[Version, PoolType]]
 
-  def or(that: => PoolParser): PoolParser = (box: Output) =>
-    self.parse(box) match {
+  def or(that: => PoolParser): PoolParser = (box: Output, timestamp: Long) =>
+    self.parse(box, timestamp) match {
       case r @ Some(_) => r
-      case None        => that.parse(box)
+      case None        => that.parse(box, timestamp)
     }
 }
 
@@ -27,6 +26,6 @@ object PoolParser {
 
   private def ammPoolParser: PoolParser = {
     val poolParser: AmmPoolParser[Version, AmmType] = AmmPoolParser.make
-    (box: Output) => poolParser.pool(box)
+    (box: Output, timestamp: Long) => poolParser.pool(box, timestamp)
   }
 }

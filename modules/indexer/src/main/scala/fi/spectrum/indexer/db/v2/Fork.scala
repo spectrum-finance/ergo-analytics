@@ -33,6 +33,7 @@ object Fork {
       } yield ()
     }.trans
 
+    //todo drop Order.AnySwap
     private def process[O](
       elems: NonEmptyList[ProcessedOrder],
       persist: Persist[O, OrderId, D]
