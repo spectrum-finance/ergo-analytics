@@ -54,13 +54,14 @@ object Dependencies {
     )
 
   val tofu = List(
-    "tf.tofu" %% "tofu-core-ce3"        % Version.tofu,
-    "tf.tofu" %% "tofu-doobie-ce3"      % Version.tofu,
-    "tf.tofu" %% "tofu-fs2-ce3-interop" % Version.tofu,
-    "tf.tofu" %% "tofu-derivation"      % Version.tofu,
-    "tf.tofu" %% "tofu-streams"         % Version.tofu,
-    "tf.tofu" %% "tofu-logging"         % Version.tofu,
-    "tf.tofu" %% "glass"                % Version.glass
+    "tf.tofu" %% "tofu-core-ce3"           % Version.tofu,
+    "tf.tofu" %% "tofu-doobie-ce3"         % Version.tofu,
+    "tf.tofu" %% "tofu-fs2-ce3-interop"    % Version.tofu,
+    "tf.tofu" %% "tofu-derivation"         % Version.tofu,
+    "tf.tofu" %% "tofu-streams"            % Version.tofu,
+    "tf.tofu" %% "tofu-logging"            % Version.tofu,
+    "tf.tofu" %% "tofu-doobie-logging-ce3" % Version.tofu,
+    "tf.tofu" %% "glass"                   % Version.glass
   )
 
   val derevo = List(

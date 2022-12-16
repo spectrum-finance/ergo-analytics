@@ -8,8 +8,8 @@ import fi.spectrum.core.domain.analytics.{OrderEvaluation, ProcessedOrder, Versi
 import fi.spectrum.core.domain.order.Order.Swap._
 import fi.spectrum.core.domain.order.OrderStatus.{Executed, Refunded, Registered}
 import fi.spectrum.core.domain.order.{Order, OrderId, PoolId}
+import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
-import fi.spectrum.indexer.classes.{ToDB, ToSchema}
 import glass.Subset
 
 final case class SwapDB(
@@ -33,7 +33,7 @@ final case class SwapDB(
 
 object SwapDB {
 
-  implicit val toSchema: ToSchema[ProcessedOrder[Order.AnySwap], SwapDB] = processed => {
+  implicit val toDB: ToDB[ProcessedOrder[Order.AnySwap], SwapDB] = processed => {
     processed.order match {
       case swap: SwapV3       => processed.widen(swap).toDB
       case swap: SwapV2       => processed.widen(swap).toDB

@@ -24,7 +24,7 @@ trait Repository[T, I] {
 }
 
 object Repository {
-  implicit val swapsRepository: SwapRepository               = new SwapRepository
+  implicit val swapsRepository: AmmSwapRepository               = new AmmSwapRepository
   implicit val redeemsRepository: RedeemRepository           = new RedeemRepository
   implicit val depositsRepository: DepositRepository         = new DepositRepository
   implicit val locksRepository: LockRepository               = new LockRepository

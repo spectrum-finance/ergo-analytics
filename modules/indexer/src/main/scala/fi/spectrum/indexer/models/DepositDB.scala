@@ -9,7 +9,7 @@ import fi.spectrum.core.domain.order.Order.Deposit._
 import fi.spectrum.core.domain.order.OrderStatus.{Executed, Refunded, Registered}
 import fi.spectrum.core.domain.order.{Fee, Order, OrderId, PoolId}
 import fi.spectrum.indexer.classes.syntax._
-import fi.spectrum.indexer.classes.{ToDB, ToSchema}
+import fi.spectrum.indexer.classes.ToDB
 import glass.Subset
 
 final case class DepositDB(
@@ -32,7 +32,7 @@ final case class DepositDB(
 
 object DepositDB {
 
-  implicit val toSchema: ToSchema[ProcessedOrder[Order.AnyDeposit], DepositDB] = processed => {
+  implicit val toDB: ToDB[ProcessedOrder[Order.AnyDeposit], DepositDB] = processed => {
     processed.order match {
       case deposit: DepositV3       => processed.widen(deposit).toDB
       case deposit: DepositV1       => processed.widen(deposit).toDB

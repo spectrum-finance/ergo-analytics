@@ -9,7 +9,7 @@ import fi.spectrum.core.domain.order.Order.Redeem.{RedeemLegacyV1, RedeemV1, Red
 import fi.spectrum.core.domain.order.OrderStatus.{Executed, Refunded, Registered}
 import fi.spectrum.core.domain.order.{Fee, Order, OrderId, PoolId}
 import fi.spectrum.indexer.classes.syntax._
-import fi.spectrum.indexer.classes.{ToDB, ToSchema}
+import fi.spectrum.indexer.classes.ToDB
 import glass.Subset
 
 final case class RedeemDB(
@@ -32,7 +32,7 @@ final case class RedeemDB(
 
 object RedeemDB {
 
-  implicit val toSchema: ToSchema[ProcessedOrder[Order.AnyRedeem], RedeemDB] = processed => {
+  implicit val toDB: ToDB[ProcessedOrder[Order.AnyRedeem], RedeemDB] = processed => {
     processed.order match {
       case redeem: RedeemV3       => processed.widen(redeem).toDB
       case redeem: RedeemV1       => processed.widen(redeem).toDB

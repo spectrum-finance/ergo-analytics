@@ -9,7 +9,7 @@ import doobie.util.log.LogHandler
 import fi.spectrum.core.domain.analytics.ProcessedOrder
 import fi.spectrum.core.domain.order.OrderStatus.{Executed, Refunded, Registered}
 import fi.spectrum.core.domain.order.{Order, OrderId}
-import fi.spectrum.indexer.classes.ToSchema
+import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
 import fi.spectrum.indexer.db.repositories.Repository
 import fi.spectrum.indexer.foldNel
@@ -37,7 +37,7 @@ object Persist {
   def makeUpdatable[D[_]: LiftConnectionIO: FlatMap, O <: Order.Any, B: Write](implicit
     elh: EmbeddableLogHandler[D],
     prism: Prism[Order.Any, O],
-    toSchema: ToSchema[ProcessedOrder[O], B],
+    toDB: ToDB[ProcessedOrder[O], B],
     repository: Repository[B, OrderId]
   ): Persist[ProcessedOrder.Any, D] =
     elh.embed(implicit __ => new LiveUpdatable[O, B].mapK(LiftConnectionIO[D].liftF))
@@ -46,14 +46,14 @@ object Persist {
     elh: EmbeddableLogHandler[D],
     optional: Optional[O, S],
     lens: Lens[S, T],
-    toSchema: ToSchema[S, B],
+    toDB: ToDB[S, B],
     repository: Repository[B, T]
   ): Persist[O, D] =
     elh.embed(implicit __ => new LiveNonUpdatable[O, S, B, T].mapK(LiftConnectionIO[D].liftF))
 
   final private class LiveUpdatable[O <: Order.Any, B: Write](implicit
     prism: Prism[Order.Any, O],
-    toSchema: ToSchema[ProcessedOrder[O], B],
+    toDB: ToDB[ProcessedOrder[O], B],
     repository: Repository[B, OrderId],
     logHandler: LogHandler
   ) extends Persist[ProcessedOrder.Any, ConnectionIO] {
@@ -61,7 +61,7 @@ object Persist {
     def insert(nel: NonEmptyList[ProcessedOrder.Any]): ConnectionIO[Int] = {
       val (registered, executed, refunded) = {
         val (x, y, z) = accumulateByStatus(nel)
-        (x.map(_.transform), y.map(UpdateState.fromProcessed), z.map(UpdateState.fromProcessed))
+        (x.map(_.toDB), y.map(UpdateState.fromProcessed), z.map(UpdateState.fromProcessed))
       }
 
       for {
@@ -101,14 +101,14 @@ object Persist {
   final private class LiveNonUpdatable[O, S, B: Write, T: Write](implicit
     optional: Optional[O, S],
     lens: Lens[S, T],
-    toSchema: ToSchema[S, B],
+    toDB: ToDB[S, B],
     repository: Repository[B, T],
     logHandler: LogHandler
   ) extends Persist[O, ConnectionIO] {
 
     def insert(nel: NonEmptyList[O]): ConnectionIO[Int] =
       foldNel[ConnectionIO, Int, B](
-        nel.toList.flatMap(optional.getOption).map(_.transform),
+        nel.toList.flatMap(optional.getOption).map(_.toDB),
         repository.insertNoConflict.updateMany,
         0
       )

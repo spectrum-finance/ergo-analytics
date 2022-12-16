@@ -4,7 +4,7 @@ import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
 import fi.spectrum.indexer.models.SwapDB
 
-final class SwapRepository
+final class AmmSwapRepository
   extends Repository[SwapDB, OrderId]
   with DeleteRepository[SwapDB, OrderId]
   with UpdateRepository[SwapDB] {

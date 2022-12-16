@@ -70,6 +70,6 @@ lazy val indexer = mkModule("indexer", "indexer")
     libraryDependencies ++= List(
       CompilerPlugins.betterMonadicFor,
       CompilerPlugins.kindProjector
-    )
+    ) ++ tests ++ tofu
   )
   .dependsOn(core, parsers, streaming)

@@ -6,7 +6,7 @@ import fi.spectrum.core.domain.order.{Order, OrderId}
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.{AssetAmount, PubKey}
 import fi.spectrum.indexer.classes.syntax._
-import fi.spectrum.indexer.classes.{ToDB, ToSchema}
+import fi.spectrum.indexer.classes.ToDB
 
 final case class LockDB(
   orderId: OrderId,
@@ -18,7 +18,7 @@ final case class LockDB(
 
 object LockDB {
 
-  implicit val toSchema: ToSchema[ProcessedOrder[Order.AnyLock], LockDB] = processed => {
+  implicit val toDB: ToDB[ProcessedOrder[Order.AnyLock], LockDB] = processed => {
     processed.order match {
       case lock: LockV1 => processed.widen(lock).toDB
     }
