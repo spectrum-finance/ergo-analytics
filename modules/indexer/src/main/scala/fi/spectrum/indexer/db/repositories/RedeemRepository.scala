@@ -1,23 +1,29 @@
-package fi.spectrum.indexer.db.v2
+package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.models.{DepositDB, SwapDB}
+import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
+import fi.spectrum.indexer.models.RedeemDB
 
-final class SwapRepository extends Repository[SwapDB, OrderId] {
-  val tableName: String = "swaps"
+final class RedeemRepository
+  extends Repository[RedeemDB, OrderId]
+  with DeleteRepository[RedeemDB, OrderId]
+  with UpdateRepository[RedeemDB] {
+
+  val tableName: String = "redeems"
 
   val fields: List[String] = List(
     "order_id",
     "pool_id",
     "pool_state_id",
     "max_miner_fee",
-    "base_id",
-    "base_amount",
-    "min_quote_id",
-    "min_quote_amount",
-    "quote_amount",
-    "dex_fee_per_token_num",
-    "dex_fee_per_token_denom",
+    "lp_id",
+    "lp_amount",
+    "output_id_x",
+    "output_amount_x",
+    "output_id_y",
+    "output_amount_y",
+    "dex_fee",
+    "fee_type",
     "redeemer",
     "protocol_version",
     "contract_version",

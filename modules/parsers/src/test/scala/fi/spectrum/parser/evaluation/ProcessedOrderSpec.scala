@@ -16,7 +16,7 @@ class ProcessedOrderSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val ts = System.currentTimeMillis()
     val processed = processedParser.parse(transactionSwap, ts).get
 
-    processed.pool.nonEmpty shouldBe true
+    processed.poolBoxId.nonEmpty shouldBe true
     processed.evaluation.nonEmpty shouldBe true
     processed.offChainFee.nonEmpty shouldBe true
 
@@ -27,7 +27,7 @@ class ProcessedOrderSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val ts = System.currentTimeMillis()
     val processed = processedParser.parse(transactionSwapRegister, ts).get
 
-    processed.pool.nonEmpty shouldBe false
+    processed.poolBoxId.nonEmpty shouldBe false
     processed.evaluation.nonEmpty shouldBe false
     processed.offChainFee.nonEmpty shouldBe false
 
@@ -38,7 +38,7 @@ class ProcessedOrderSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val ts = System.currentTimeMillis()
     val processed = processedParser.parse(refundTx, ts).get
 
-    processed.pool.nonEmpty shouldBe false
+    processed.poolBoxId.nonEmpty shouldBe false
     processed.evaluation.nonEmpty shouldBe false
     processed.offChainFee.nonEmpty shouldBe false
 

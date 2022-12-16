@@ -22,17 +22,17 @@ class ProcessedOrderParser(implicit
   evalParser: OrderEvaluationParser
 ) {
 
-  def parse(tx: Transaction, timestamp: Long): Option[ProcessedOrder] = {
-    def registered: Option[ProcessedOrder] = tx.outputs
+  def parse(tx: Transaction, timestamp: Long): Option[ProcessedOrder.Any] = {
+    def registered: Option[ProcessedOrder.Any] = tx.outputs
       .map(out => orderParser.parse(out))
       .collectFirst { case Some(order) => order }
       .map(ProcessedOrder(_, OrderState(tx.id, timestamp, OrderStatus.Registered), none, none, none))
 
-    def executed: Option[ProcessedOrder] = tx.inputs
+    def executed: Option[ProcessedOrder.Any] = tx.inputs
       .map(in => orderParser.parse(in.output))
       .collectFirst { case Some(order) => order }
       .map { order =>
-        val pool = tx.outputs.toList.map(poolParser.parse(_, timestamp)).collectFirst { case Some(v) => v }
+        val pool = tx.inputs.map(_.output).toList.map(poolParser.parse(_, timestamp)).collectFirst { case Some(v) => v }
         val fee  = pool >>= { p => feeParser.parse(tx.outputs.toList, order, p.poolId) }
         val eval = pool >>= { p => evalParser.parse(order, tx.outputs.toList, p) }
         ProcessedOrder(
@@ -40,7 +40,7 @@ class ProcessedOrderParser(implicit
           OrderState(tx.id, timestamp, if (pool.isEmpty) OrderStatus.Refunded else OrderStatus.Executed),
           eval,
           fee,
-          pool
+          pool.map(_.box.boxId)
         )
       }
 

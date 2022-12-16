@@ -4,6 +4,8 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.{BoxId, PubKey}
 import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
+import glass.classic.Lens
+import glass.macros.{GenContains, Optics}
 import tofu.logging.derivation.loggable
 
 @derive(encoder, decoder, loggable)
@@ -14,3 +16,7 @@ final case class OffChainFee(
   pubKey: PubKey,
   fee: Fee
 )
+
+object OffChainFee {
+  implicit val lensOrderId: Lens[OffChainFee, OrderId] = GenContains[OffChainFee](_.orderId)
+}

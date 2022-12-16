@@ -8,7 +8,8 @@ import fi.spectrum.core.domain.analytics.{OrderEvaluation, ProcessedOrder, Versi
 import fi.spectrum.core.domain.order.Order.Swap._
 import fi.spectrum.core.domain.order.OrderStatus.{Executed, Refunded, Registered}
 import fi.spectrum.core.domain.order.{Order, OrderId, PoolId}
-import fi.spectrum.indexer.classes.ToSchema
+import fi.spectrum.indexer.classes.syntax._
+import fi.spectrum.indexer.classes.{ToDB, ToSchema}
 import glass.Subset
 
 final case class SwapDB(
@@ -32,111 +33,110 @@ final case class SwapDB(
 
 object SwapDB {
 
-  implicit val toSchema: ToSchema[ProcessedOrder, Option[SwapDB]] = processed =>
-    ___V1.transform(processed) orElse ___V2.transform(processed) orElse ___V3.transform(processed) orElse
-    ___LegacyV1.transform(processed)
+  implicit val toSchema: ToSchema[ProcessedOrder[Order.AnySwap], SwapDB] = processed => {
+    processed.order match {
+      case swap: SwapV3       => processed.widen(swap).toDB
+      case swap: SwapV2       => processed.widen(swap).toDB
+      case swap: SwapV1       => processed.widen(swap).toDB
+      case swap: SwapLegacyV1 => processed.widen(swap).toDB
+    }
+  }
 
-  val ___V1: ToSchema[ProcessedOrder, Option[SwapDB]] =
+  implicit val ___V1: ToDB[ProcessedOrder[SwapV1], SwapDB] =
     processed => {
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
-      Subset[Order.Any, SwapV1].getOption(processed.order) map { swap =>
-        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-        SwapDB(
-          swap.id,
-          swap.poolId,
-          processed.pool.map(_.box.boxId),
-          swap.maxMinerFee.some,
-          swap.params.base,
-          swap.params.minQuote,
-          swapEval.map(_.output.amount),
-          swap.params.dexFeePerTokenNum,
-          swap.params.dexFeePerTokenDenom,
-          swap.redeemer.value.some,
-          ProtocolVersion(1),
-          swap.version,
-          none,
-          if (processed.state.status.in(Registered)) txInfo.some else none,
-          if (processed.state.status.in(Executed)) txInfo.some else none,
-          if (processed.state.status.in(Refunded)) txInfo.some else none
-        )
-      }
+      val txInfo   = TxInfo(processed.state.txId, processed.state.timestamp)
+      SwapDB(
+        processed.order.id,
+        processed.order.poolId,
+        processed.poolBoxId,
+        processed.order.maxMinerFee.some,
+        processed.order.params.base,
+        processed.order.params.minQuote,
+        swapEval.map(_.output.amount),
+        processed.order.params.dexFeePerTokenNum,
+        processed.order.params.dexFeePerTokenDenom,
+        processed.order.redeemer.value.some,
+        ProtocolVersion(1),
+        processed.order.version,
+        none,
+        if (processed.state.status.in(Registered)) txInfo.some else none,
+        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Refunded)) txInfo.some else none
+      )
     }
 
-  val ___V2: ToSchema[ProcessedOrder, Option[SwapDB]] =
+  implicit val ___V2: ToDB[ProcessedOrder[SwapV2], SwapDB] =
     processed => {
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
-      Subset[Order.Any, SwapV2].getOption(processed.order) map { swap =>
-        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-        SwapDB(
-          swap.id,
-          swap.poolId,
-          processed.pool.map(_.box.boxId),
-          swap.maxMinerFee.some,
-          swap.params.base,
-          swap.params.minQuote,
-          swapEval.map(_.output.amount),
-          swap.params.dexFeePerTokenNum,
-          swap.params.dexFeePerTokenDenom,
-          none,
-          ProtocolVersion(1),
-          swap.version,
-          swap.redeemer.value.some,
-          if (processed.state.status.in(Registered)) txInfo.some else none,
-          if (processed.state.status.in(Executed)) txInfo.some else none,
-          if (processed.state.status.in(Refunded)) txInfo.some else none
-        )
-      }
+      val txInfo   = TxInfo(processed.state.txId, processed.state.timestamp)
+      SwapDB(
+        processed.order.id,
+        processed.order.poolId,
+        processed.poolBoxId,
+        processed.order.maxMinerFee.some,
+        processed.order.params.base,
+        processed.order.params.minQuote,
+        swapEval.map(_.output.amount),
+        processed.order.params.dexFeePerTokenNum,
+        processed.order.params.dexFeePerTokenDenom,
+        none,
+        ProtocolVersion(1),
+        processed.order.version,
+        processed.order.redeemer.value.some,
+        if (processed.state.status.in(Registered)) txInfo.some else none,
+        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Refunded)) txInfo.some else none
+      )
     }
 
-  val ___V3: ToSchema[ProcessedOrder, Option[SwapDB]] =
+  implicit val ___V3: ToDB[ProcessedOrder[SwapV3], SwapDB] =
     processed => {
+      val swap     = processed.order
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
-      Subset[Order.Any, SwapV3].getOption(processed.order) map { swap =>
-        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-        SwapDB(
-          swap.id,
-          swap.poolId,
-          processed.pool.map(_.box.boxId),
-          swap.maxMinerFee.some,
-          swap.params.base,
-          swap.params.minQuote,
-          swapEval.map(_.output.amount),
-          swap.params.dexFeePerTokenNum,
-          swap.params.dexFeePerTokenDenom,
-          none,
-          ProtocolVersion(1),
-          swap.version,
-          swap.redeemer.value.some,
-          if (processed.state.status.in(Registered)) txInfo.some else none,
-          if (processed.state.status.in(Executed)) txInfo.some else none,
-          if (processed.state.status.in(Refunded)) txInfo.some else none
-        )
-      }
+      val txInfo   = TxInfo(processed.state.txId, processed.state.timestamp)
+      SwapDB(
+        swap.id,
+        swap.poolId,
+        processed.poolBoxId,
+        swap.maxMinerFee.some,
+        swap.params.base,
+        swap.params.minQuote,
+        swapEval.map(_.output.amount),
+        swap.params.dexFeePerTokenNum,
+        swap.params.dexFeePerTokenDenom,
+        none,
+        ProtocolVersion(1),
+        swap.version,
+        swap.redeemer.value.some,
+        if (processed.state.status.in(Registered)) txInfo.some else none,
+        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Refunded)) txInfo.some else none
+      )
     }
 
-  val ___LegacyV1: ToSchema[ProcessedOrder, Option[SwapDB]] =
+  implicit val ___LegacyV1: ToDB[ProcessedOrder[SwapLegacyV1], SwapDB] =
     processed => {
+      val swap     = processed.order
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
-      Subset[Order.Any, SwapLegacyV1].getOption(processed.order) map { swap =>
-        val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
-        SwapDB(
-          swap.id,
-          swap.poolId,
-          processed.pool.map(_.box.boxId),
-          none,
-          swap.params.base,
-          swap.params.minQuote,
-          swapEval.map(_.output.amount),
-          swap.params.dexFeePerTokenNum,
-          swap.params.dexFeePerTokenDenom,
-          swap.redeemer.value.some,
-          ProtocolVersion(1),
-          swap.version,
-          none,
-          if (processed.state.status.in(Registered)) txInfo.some else none,
-          if (processed.state.status.in(Executed)) txInfo.some else none,
-          if (processed.state.status.in(Refunded)) txInfo.some else none
-        )
-      }
+      val txInfo   = TxInfo(processed.state.txId, processed.state.timestamp)
+      SwapDB(
+        swap.id,
+        swap.poolId,
+        processed.poolBoxId,
+        none,
+        swap.params.base,
+        swap.params.minQuote,
+        swapEval.map(_.output.amount),
+        swap.params.dexFeePerTokenNum,
+        swap.params.dexFeePerTokenDenom,
+        swap.redeemer.value.some,
+        ProtocolVersion(1),
+        swap.version,
+        none,
+        if (processed.state.status.in(Registered)) txInfo.some else none,
+        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Refunded)) txInfo.some else none
+      )
     }
 }

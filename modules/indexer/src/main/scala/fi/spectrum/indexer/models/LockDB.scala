@@ -1,11 +1,12 @@
 package fi.spectrum.indexer.models
 
-import fi.spectrum.core.domain.analytics.{OffChainFee, ProcessedOrder, Version}
+import fi.spectrum.core.domain.analytics.{ProcessedOrder, Version}
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.{Order, OrderId}
+import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.{AssetAmount, PubKey}
-import fi.spectrum.indexer.classes.ToSchema
-import glass.Subset
+import fi.spectrum.indexer.classes.syntax._
+import fi.spectrum.indexer.classes.{ToDB, ToSchema}
 
 final case class LockDB(
   orderId: OrderId,
@@ -16,18 +17,21 @@ final case class LockDB(
 )
 
 object LockDB {
-  implicit val toSchema: ToSchema[ProcessedOrder, Option[LockDB]] = processed => ___V1.transform(processed)
 
-  val ___V1: ToSchema[ProcessedOrder, Option[LockDB]] =
+  implicit val toSchema: ToSchema[ProcessedOrder[Order.AnyLock], LockDB] = processed => {
+    processed.order match {
+      case lock: LockV1 => processed.widen(lock).toDB
+    }
+  }
+
+  implicit val ___V1: ToDB[ProcessedOrder[LockV1], LockDB] =
     processed => {
-      Subset[Order.Any, LockV1].getOption(processed.order) map { lock =>
-        LockDB(
-          lock.id,
-          lock.deadline,
-          lock.amount,
-          lock.redeemer.value,
-          lock.version
-        )
-      }
+      LockDB(
+        processed.order.id,
+        processed.order.deadline,
+        processed.order.amount,
+        processed.order.redeemer.value,
+        processed.order.version
+      )
     }
 }

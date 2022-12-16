@@ -2,19 +2,27 @@ package fi.spectrum.core.domain.analytics
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import fi.spectrum.core.domain.order.{Operation, Order, OrderState, OrderType}
-import fi.spectrum.core.domain.pool.Pool
-import glass.macros.Optics
+import fi.spectrum.core.domain.BoxId
+import fi.spectrum.core.domain.order.{Order, OrderState}
+import glass.classic.Prism
+import glass.macros.POptics
 import tofu.logging.derivation.loggable
 
 @derive(encoder, decoder, loggable)
-@Optics
-final case class ProcessedOrder(
-  order: Order[Version, OrderType, Operation],
+@POptics
+final case class ProcessedOrder[O <: Order.Any](
+  order: O,
   state: OrderState,
   evaluation: Option[OrderEvaluation],
   offChainFee: Option[OffChainFee],
-  pool: Option[Pool.Any]
-)
+  poolBoxId: Option[BoxId]
+) {
+  def widen[O1 <: Order.Any](o: O1): ProcessedOrder[O1] = this.copy(order = o)
 
-object ProcessedOrder
+  def wined[O1 <: Order.Any](implicit prism: Prism[O, O1]): Option[ProcessedOrder[O1]] =
+    prism.getOption(order).map(widen)
+}
+
+object ProcessedOrder {
+  type Any = ProcessedOrder[Order.Any]
+}

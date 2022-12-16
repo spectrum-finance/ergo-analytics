@@ -1,12 +1,12 @@
-package fi.spectrum.indexer.db.v2
+package fi.spectrum.indexer.db.classes
 
 import doobie.Update
 import doobie.util.Write
 import doobie.util.log.LogHandler
 
-/** Describes the way to insert entity A
+/** Describes the way to insert entity T
   */
-trait Insert[T] {
+trait InsertRepository[T] {
 
   val tableName: String
 

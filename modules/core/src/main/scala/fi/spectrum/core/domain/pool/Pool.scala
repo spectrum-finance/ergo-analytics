@@ -3,7 +3,7 @@ package fi.spectrum.core.domain.pool
 import cats.Show
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import fi.spectrum.core.domain.AssetAmount
+import fi.spectrum.core.domain.{AssetAmount, BoxId}
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.analytics.Version.V1
 import fi.spectrum.core.domain.order.PoolId
@@ -12,7 +12,8 @@ import io.circe.{Decoder, Encoder}
 import io.circe.syntax._
 import cats.syntax.functor._
 import cats.syntax.show._
-
+import glass.classic.Lens
+import glass.macros.{GenContains, Optics}
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
 
@@ -54,4 +55,8 @@ object Pool {
     timestamp: Long,
     box: Output
   ) extends Pool[V1, PoolType.AMM]
+
+  object AmmPool {
+    implicit val lens: Lens[AmmPool, BoxId] = GenContains[AmmPool](_.box.boxId)
+  }
 }

@@ -1,8 +1,14 @@
-package fi.spectrum.indexer.db.schema
+package fi.spectrum.indexer.db.repositories
 
-import fi.spectrum.indexer.models.{DepositDB, UpdateState}
+import fi.spectrum.core.domain.order.OrderId
+import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
+import fi.spectrum.indexer.models.DepositDB
 
-class DepositSchema extends UpdateSchema[UpdateState, DepositDB] {
+final class DepositRepository
+  extends Repository[DepositDB, OrderId]
+  with DeleteRepository[DepositDB, OrderId]
+  with UpdateRepository[DepositDB] {
+
   val tableName: String = "deposits"
 
   val fields: List[String] = List(
@@ -29,4 +35,6 @@ class DepositSchema extends UpdateSchema[UpdateState, DepositDB] {
     "refunded_transaction_id",
     "refunded_transaction_timestamp"
   )
+
+  val field: String = "order_id"
 }
