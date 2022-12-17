@@ -34,9 +34,9 @@ object Persist {
     tofu.higherKind.derived.genRepresentableK[Repr]
   }
 
-  def makeUpdatable[D[_]: LiftConnectionIO: FlatMap, O <: Order.Any, B: Write](implicit
+  def makeUpdatable[D[_]: LiftConnectionIO: FlatMap, O <: Order, B: Write](implicit
     elh: EmbeddableLogHandler[D],
-    prism: Prism[Order.Any, O],
+    prism: Prism[Order, O],
     toDB: ToDB[ProcessedOrder[O], B],
     repository: Repository[B, OrderId]
   ): Persist[ProcessedOrder.Any, D] =
@@ -51,8 +51,8 @@ object Persist {
   ): Persist[O, D] =
     elh.embed(implicit __ => new LiveNonUpdatable[O, S, B, T].mapK(LiftConnectionIO[D].liftF))
 
-  final private class LiveUpdatable[O <: Order.Any, B: Write](implicit
-    prism: Prism[Order.Any, O],
+  final private class LiveUpdatable[O <: Order, B: Write](implicit
+    prism: Prism[Order, O],
     toDB: ToDB[ProcessedOrder[O], B],
     repository: Repository[B, OrderId],
     logHandler: LogHandler

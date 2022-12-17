@@ -15,23 +15,23 @@ class T2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse t2t swap v1 contract") {
     val box = T2T.swap.output
-    val swapResult: Order.AnySwap =
+    val swapResult: Order.Swap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (swapResult shouldEqual (T2T.swap.order: Order.AnySwap))
+    (swapResult shouldEqual (T2T.swap.order: Order.Swap))
   }
 
   property("Parse t2t deposit v1 contract") {
     val box = T2T.deposit.depositT2T
-    val depositResult: Order.AnyDeposit =
+    val depositResult: Order.Deposit =
       parser.deposit(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (depositResult shouldEqual (T2T.deposit.expectedT2TDepositV1: Order.AnyDeposit))
+    (depositResult shouldEqual (T2T.deposit.expectedT2TDepositV1: Order.Deposit))
   }
 
   property("Parse t2t redeem v1 contract") {
     val box = T2T.redeem.output
-    val redeemResult: Order.AnyRedeem =
+    val redeemResult: Order.Redeem =
       parser.redeem(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    val expected: Order.AnyRedeem = T2T.redeem.order
+    val expected: Order.Redeem = T2T.redeem.order
     (redeemResult shouldEqual expected)
   }
 }

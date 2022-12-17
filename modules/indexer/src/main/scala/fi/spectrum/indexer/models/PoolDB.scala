@@ -20,7 +20,7 @@ final case class PoolDB(
 
 object PoolDB {
 
-  implicit def pool: ToDB[Pool.Any, PoolDB] = { case pool: AmmPool =>
+  implicit def pool: ToDB[Pool, PoolDB] = { case pool: AmmPool =>
     PoolDB(
       pool.box.boxId,
       pool.poolId,

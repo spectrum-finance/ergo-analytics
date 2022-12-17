@@ -8,8 +8,8 @@ import fi.spectrum.core.domain.order.Order.Redeem.RedeemV1
 import fi.spectrum.core.domain.order.Order.Swap
 import fi.spectrum.core.domain.{AssetAmount, PubKey, TokenId}
 import fi.spectrum.core.domain.order.Order.Swap.SwapV1
-import fi.spectrum.core.domain.order.OrderType.AMM
-import fi.spectrum.core.domain.order.{DepositParams, Operation, OrderType, PoolId, RedeemParams, SwapParams}
+
+import fi.spectrum.core.domain.order.{DepositParams, PoolId, RedeemParams, SwapParams}
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.transaction.Output
 import io.circe.parser.decode
@@ -51,9 +51,7 @@ object N2T {
         1000000000000000000L
       ),
       2000000,
-      Version.V1,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V1
     )
 
     val swapN2TBuy: Output = decode[Output](
@@ -86,7 +84,7 @@ object N2T {
          |""".stripMargin
     ).toOption.get
 
-    val swapN2TBuyOrder: Swap[V1, AMM] = SwapV1(
+    val swapN2TBuyOrder: Swap = SwapV1(
       swapN2TBuy,
       PoolId.unsafeFromString("9916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec"),
       PublicKeyRedeemer(PubKey.unsafeFromString("03a9be85b303314dc03101d332a643bd60fdab055b9187200b5c29d11c23508e0f")),
@@ -100,9 +98,7 @@ object N2T {
         1000000000000000000L
       ),
       2000000,
-      Version.V1,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V1
     )
   }
 
@@ -151,9 +147,7 @@ object N2T {
         )
       ),
       2000000,
-      Version.V1,
-      OrderType.AMM,
-      Operation.Deposit
+      Version.V1
     )
   }
 
@@ -204,9 +198,7 @@ object N2T {
           )
         ),
         2000000,
-        Version.V1,
-        OrderType.AMM,
-        Operation.Redeem
+        Version.V1
       )
 
   }

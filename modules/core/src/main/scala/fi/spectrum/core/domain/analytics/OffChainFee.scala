@@ -2,10 +2,10 @@ package fi.spectrum.core.domain.analytics
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import fi.spectrum.core.domain.{BoxId, PubKey}
 import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
+import fi.spectrum.core.domain.{BoxId, PubKey}
 import glass.classic.Lens
-import glass.macros.{GenContains, Optics}
+import glass.macros.GenContains
 import tofu.logging.derivation.loggable
 
 @derive(encoder, decoder, loggable)

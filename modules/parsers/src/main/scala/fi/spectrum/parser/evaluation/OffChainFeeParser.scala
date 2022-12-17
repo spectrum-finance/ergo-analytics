@@ -4,6 +4,7 @@ import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.OffChainFee
 import fi.spectrum.core.domain.analytics.Version.{LegacyV1, V1, V2}
 import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
+import fi.spectrum.core.domain.order.Order.{Deposit, Lock, Redeem, Swap}
 import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
 import fi.spectrum.core.domain.order.{Order, PoolId}
 import fi.spectrum.core.domain.transaction.Output
@@ -15,7 +16,7 @@ import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 /** Tries to find output for off-chain operator.
   */
 trait OffChainFeeParser {
-  def parse(outputs: List[Output], order: Order.Any, poolId: PoolId): Option[OffChainFee]
+  def parse(outputs: List[Output], order: Order, poolId: PoolId): Option[OffChainFee]
 }
 
 object OffChainFeeParser {
@@ -24,7 +25,7 @@ object OffChainFeeParser {
 
   final private class Live(spf: TokenId)(implicit e: ErgoAddressEncoder) extends OffChainFeeParser {
 
-    def parse(outputs: List[Output], order: Order.Any, poolId: PoolId): Option[OffChainFee] =
+    def parse(outputs: List[Output], order: Order, poolId: PoolId): Option[OffChainFee] =
       outputs
         .map { box =>
           val tree     = ErgoTreeSerializer.default.deserialize(box.ergoTree)
@@ -39,11 +40,11 @@ object OffChainFeeParser {
           }
 
           val feeOpt = order match {
-            case deposit: Order.AnyDeposit                                => deposit.fee.some
-            case redeem: Order.AnyRedeem                                  => redeem.fee.some
-            case swap: Order.AnySwap if swap.version.in(LegacyV1, V1, V2) => ERG(0).some
-            case _: Order.AnySwap                                         => SPF(0).some
-            case _: Order.AnyLock                                         => none
+            case deposit: Deposit                                => deposit.fee.some
+            case redeem: Redeem                                  => redeem.fee.some
+            case swap: Swap if swap.version.in(LegacyV1, V1, V2) => ERG(0).some
+            case _: Swap                                         => SPF(0).some
+            case _: Lock                                         => none
           }
 
           val pkOpt = address.collect { case address: P2PKAddress => PubKey.fromBytes(address.pubkeyBytes) }

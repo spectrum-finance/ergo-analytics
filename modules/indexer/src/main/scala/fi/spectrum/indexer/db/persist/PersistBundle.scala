@@ -19,7 +19,7 @@ final case class PersistBundle[D[_]](
   redeems: Persist[ProcessedOrder.Any, D],
   locks: Persist[ProcessedOrder.Any, D],
   offChainFees: Persist[ProcessedOrder.Any, D],
-  pools: Persist[Pool.Any, D]
+  pools: Persist[Pool, D]
 ) {
 
   def insertAnyOrder: List[NonEmptyList[ProcessedOrder.Any] => D[Int]] =
@@ -33,11 +33,11 @@ object PersistBundle {
 
   def make[D[_]: LiftConnectionIO: FlatMap](implicit elh: EmbeddableLogHandler[D]): PersistBundle[D] =
     PersistBundle(
-      Persist.makeUpdatable[D, Order.AnySwap, SwapDB],
-      Persist.makeUpdatable[D, Order.AnyDeposit, DepositDB],
-      Persist.makeUpdatable[D, Order.AnyRedeem, RedeemDB],
-      Persist.makeUpdatable[D, Order.AnyLock, LockDB],
+      Persist.makeUpdatable[D, Order.Swap, SwapDB],
+      Persist.makeUpdatable[D, Order.Deposit, DepositDB],
+      Persist.makeUpdatable[D, Order.Redeem, RedeemDB],
+      Persist.makeUpdatable[D, Order.Lock, LockDB],
       Persist.makeNonUpdatable[D, ProcessedOrder.Any, OffChainFee, OffChainFeeDB, OrderId],
-      Persist.makeNonUpdatable[D, Pool.Any, AmmPool, PoolDB, BoxId]
+      Persist.makeNonUpdatable[D, Pool, AmmPool, PoolDB, BoxId]
     )
 }

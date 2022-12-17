@@ -1,7 +1,7 @@
 package fi.spectrum.parser.amm
 
 import fi.spectrum.core.domain.analytics.Version
-import fi.spectrum.core.domain.order.{Operation, Order, OrderType}
+import fi.spectrum.core.domain.order.{Order}
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.parser.amm.order.legacy.v1.{N2T => LV1N2T, T2T => LV1T2T}
 import fi.spectrum.parser.amm.order.legacy.v2.{N2T => LV2N2T, T2T => LV2T2T}
@@ -10,7 +10,7 @@ import fi.spectrum.parser.amm.order.v2.{N2T => V2N2T, T2T => V2T2T}
 import fi.spectrum.parser.amm.order.v3.{N2T => V3N2T, T2T => V3T2T}
 
 package object order {
-  val anyAmmOrder: List[(Output, Order[Version, OrderType, Operation])] = List(
+  val anyAmmOrder: List[(Output, Order)] = List(
     LV1N2T.swap.outputSell    -> LV1N2T.swap.sellOrder,
     LV1N2T.swap.outputBuy     -> LV1N2T.swap.buyOrder,
     LV1T2T.swap.output        -> LV1T2T.swap.order,

@@ -7,7 +7,7 @@ import fi.spectrum.core.domain.order.Order.Deposit.DepositV1
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV1
 import fi.spectrum.core.domain.order.Order.Swap.SwapV1
 import fi.spectrum.core.domain.order.Order._
-import fi.spectrum.core.domain.order.OrderType.AMM
+
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.analytics.Version.V1
 import fi.spectrum.core.domain.order._
@@ -21,7 +21,7 @@ import sigmastate.Values
 
 final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
 
-  def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V1, AMM]] =
+  def swap(box: Output, tree: Values.ErgoTree): Option[Swap] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == swapV1,
@@ -42,15 +42,13 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.V1,
-          OrderType.AMM,
-          Operation.Swap
+          Version.V1
         ),
         none
       )
       .merge
 
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit[V1, AMM]] =
+  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositV1,
@@ -69,15 +67,13 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.V1,
-          OrderType.AMM,
-          Operation.Deposit
+          Version.V1
         ),
         none
       )
       .merge
 
-  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem[V1, AMM]] =
+  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == redeemV1,
@@ -95,9 +91,7 @@ final class T2TAmmOrderParser extends AmmOrderParser[V1, T2T] {
           PublicKeyRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.V1,
-          OrderType.AMM,
-          Operation.Redeem
+          Version.V1
         ),
         none
       )

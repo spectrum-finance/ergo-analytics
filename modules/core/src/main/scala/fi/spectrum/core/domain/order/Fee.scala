@@ -9,7 +9,7 @@ import tofu.logging.derivation.{loggable, show}
 
 /** Fee can be either in ergo or spf tokens
   */
-@derive(encoder, decoder, loggable, show)
+@derive(encoder, decoder, loggable)
 sealed trait Fee {
   val amount: Long
 }

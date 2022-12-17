@@ -11,7 +11,7 @@ import fi.spectrum.parser.domain.AmmType
 /** Parses any pool no matter what version or type it has.
   */
 trait PoolParser { self =>
-  def parse(box: Output, timestamp: Long): Option[Pool[Version, PoolType]]
+  def parse(box: Output, timestamp: Long): Option[Pool]
 
   def or(that: => PoolParser): PoolParser = (box: Output, timestamp: Long) =>
     self.parse(box, timestamp) match {

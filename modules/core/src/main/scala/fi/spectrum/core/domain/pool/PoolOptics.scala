@@ -8,20 +8,20 @@ import glass.macros.{GenContains, GenSubset}
 
 object PoolOptics {
 
-  implicit val ammPool: Subset[Pool.Any, AmmPool] = GenSubset[Pool.Any, AmmPool]
+  implicit val ammPool: Subset[Pool, AmmPool] = GenSubset[Pool, AmmPool]
 
-  implicit val poolLP: Optional[Pool.Any, TokenId] =
+  implicit val poolLP: Optional[Pool, TokenId] =
     ammPool >> GenContains[AmmPool](_.lp.tokenId)
 
-  implicit val poolX: Optional[Pool.Any, AssetAmount] with Label["x"] =
+  implicit val poolX: Optional[Pool, AssetAmount] with Label["x"] =
     (ammPool>> GenContains[AmmPool](_.x)).label["x"]
 
-  implicit val poolY: Optional[Pool.Any, AssetAmount] with Label["y"] =
+  implicit val poolY: Optional[Pool, AssetAmount] with Label["y"] =
     (ammPool >> GenContains[AmmPool](_.y)).label["y"]
 
   implicit val poolBoxId: Optional[AmmPool, BoxId] =
     GenContains[AmmPool](_.box.boxId)
 
-  implicit val poolAnyBoxId: Optional[Pool.Any, BoxId] = ammPool >> poolBoxId
+  implicit val poolAnyBoxId: Optional[Pool, BoxId] = ammPool >> poolBoxId
 
 }

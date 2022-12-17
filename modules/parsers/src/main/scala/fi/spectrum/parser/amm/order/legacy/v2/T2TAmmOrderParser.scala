@@ -5,7 +5,7 @@ import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.order.Order.Deposit.DepositLegacyV2
 import fi.spectrum.core.domain.order.Order._
-import fi.spectrum.core.domain.order.OrderType.AMM
+
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.analytics.Version.LegacyV2
 import fi.spectrum.core.domain.order._
@@ -18,9 +18,9 @@ import fi.spectrum.parser.templates.T2T._
 import sigmastate.Values
 
 class T2TAmmOrderParser extends AmmOrderParser[LegacyV2, T2T] {
-  def swap(box: Output, tree: Values.ErgoTree): Option[Swap[LegacyV2, AMM]] = none
+  def swap(box: Output, tree: Values.ErgoTree): Option[Swap] = none
 
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit[LegacyV2, AMM]] =
+  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositLegacyV2,
@@ -37,15 +37,13 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV2, T2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.LegacyV2,
-          OrderType.AMM,
-          Operation.Deposit
+          Version.LegacyV2
         ),
         none
       )
       .merge
 
-  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem[LegacyV2, AMM]] = none
+  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] = none
 }
 
 object T2TAmmOrderParser {

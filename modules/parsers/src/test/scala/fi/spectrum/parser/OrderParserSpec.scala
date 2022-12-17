@@ -13,7 +13,7 @@ class OrderParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
   val parser: OrderParser = OrderParser.make
 
   property("Parse any order via OrderParser") {
-    val anyOrder: List[(Output, Order.Any)] = List(Lock.output -> Lock.lock) ::: anyAmmOrder
+    val anyOrder: List[(Output, Order)] = List(Lock.output -> Lock.lock) ::: anyAmmOrder
     anyOrder.foreach { case (output, expectedOrder) =>
       (parser.parse(output).get shouldEqual expectedOrder)
     }

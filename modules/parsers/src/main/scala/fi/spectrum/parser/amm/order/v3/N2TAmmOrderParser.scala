@@ -8,7 +8,7 @@ import fi.spectrum.core.domain.order.Order.Deposit.DepositV3
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV3
 import fi.spectrum.core.domain.order.Order.Swap.SwapV3
 import fi.spectrum.core.domain.order.Order._
-import fi.spectrum.core.domain.order.OrderType.AMM
+
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
 import fi.spectrum.core.domain.analytics.Version.V3
 import fi.spectrum.core.domain.order._
@@ -21,14 +21,14 @@ import sigmastate.Values
 
 class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
 
-  def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V3, AMM]] = {
+  def swap(box: Output, tree: Values.ErgoTree): Option[Swap] = {
     val template = ErgoTreeTemplate.fromBytes(tree.template)
     if (template == swapSellV3) swapSell(box, tree)
     else if (template == swapBuyV3) swapBuy(box, tree)
     else none
   }
 
-  private def swapSell(box: Output, tree: Values.ErgoTree): Option[Swap[V3, AMM]] =
+  private def swapSell(box: Output, tree: Values.ErgoTree): Option[Swap] =
     for {
       poolId       <- tree.constants.parseBytea(11).map(PoolId.fromBytes)
       maxMinerFee  <- tree.constants.parseLong(32)
@@ -48,12 +48,10 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       params,
       maxMinerFee,
       reserveExFee,
-      Version.V3,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V3
     )
 
-  private def swapBuy(box: Output, tree: Values.ErgoTree): Option[Swap[V3, AMM]] =
+  private def swapBuy(box: Output, tree: Values.ErgoTree): Option[Swap] =
     for {
       poolId         <- tree.constants.parseBytea(13).map(PoolId.fromBytes)
       maxMinerFee    <- tree.constants.parseLong(25)
@@ -75,12 +73,10 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       params,
       maxMinerFee,
       reserveExFee,
-      Version.V3,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V3
     )
 
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit[V3, AMM]] =
+  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositV3,
@@ -100,15 +96,13 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
           ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.V3,
-          OrderType.AMM,
-          Operation.Deposit
+          Version.V3
         ),
         none
       )
       .merge
 
-  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem[V3, AMM]] =
+  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == redeemV3,
@@ -126,9 +120,7 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
           ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.V3,
-          OrderType.AMM,
-          Operation.Redeem
+          Version.V3
         ),
         none
       )

@@ -1,5 +1,6 @@
 package fi.spectrum.parser.amm.pool.v1
 
+import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.{AssetAmount, TokenId}
 import fi.spectrum.core.domain.order.PoolId
 import fi.spectrum.core.domain.pool.Pool.AmmPool
@@ -76,7 +77,8 @@ object N2T {
     ),
     996,
     190,
-    output
+    output,
+    Version.V1
   )
 
 }

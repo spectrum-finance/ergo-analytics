@@ -32,7 +32,7 @@ final case class RedeemDB(
 
 object RedeemDB {
 
-  implicit val toDB: ToDB[ProcessedOrder[Order.AnyRedeem], RedeemDB] = processed => {
+  implicit val toDB: ToDB[ProcessedOrder[Order.Redeem], RedeemDB] = processed => {
     processed.order match {
       case redeem: RedeemV3       => processed.widen(redeem).toDB
       case redeem: RedeemV1       => processed.widen(redeem).toDB

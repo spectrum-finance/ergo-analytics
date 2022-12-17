@@ -1,12 +1,12 @@
 package fi.spectrum.parser.amm.order.legacy.v2
 
-import fi.spectrum.core.domain.{AssetAmount, PubKey, TokenId}
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.ERG
-import fi.spectrum.core.domain.order.Order.Deposit.{DepositLegacyV1, DepositLegacyV2}
-import fi.spectrum.core.domain.order.{DepositParams, Operation, OrderType, PoolId}
+import fi.spectrum.core.domain.order.Order.Deposit.DepositLegacyV2
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
+import fi.spectrum.core.domain.order.{DepositParams, PoolId}
 import fi.spectrum.core.domain.transaction.Output
+import fi.spectrum.core.domain.{AssetAmount, PubKey, TokenId}
 import io.circe.parser.decode
 
 object N2T {
@@ -56,8 +56,7 @@ object N2T {
         )
       ),
       Version.LegacyV2,
-      OrderType.AMM,
-      Operation.Deposit
+
     )
   }
 }

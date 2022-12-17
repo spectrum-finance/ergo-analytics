@@ -7,6 +7,6 @@ final case class UpdateState(info: TxInfo, orderId: OrderId)
 
 object UpdateState {
 
-  def fromProcessed[O <: Order.Any](processed: ProcessedOrder[O]): UpdateState =
+  def fromProcessed[O <: Order](processed: ProcessedOrder[O]): UpdateState =
     UpdateState(TxInfo(processed.state.txId, processed.state.timestamp), processed.order.id)
 }

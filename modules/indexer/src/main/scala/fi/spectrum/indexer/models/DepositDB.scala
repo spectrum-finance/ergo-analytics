@@ -32,7 +32,7 @@ final case class DepositDB(
 
 object DepositDB {
 
-  implicit val toDB: ToDB[ProcessedOrder[Order.AnyDeposit], DepositDB] = processed => {
+  implicit val toDB: ToDB[ProcessedOrder[Order.Deposit], DepositDB] = processed => {
     processed.order match {
       case deposit: DepositV3       => processed.widen(deposit).toDB
       case deposit: DepositV1       => processed.widen(deposit).toDB

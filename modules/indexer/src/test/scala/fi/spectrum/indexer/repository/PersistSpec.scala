@@ -7,7 +7,7 @@ import doobie.implicits._
 import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.ProcessedOrder
 import fi.spectrum.core.domain.order.Order
-import fi.spectrum.core.domain.order.Order.AnySwap
+import fi.spectrum.core.domain.order.Order.Swap
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.{Indexer, PGContainer}
@@ -28,11 +28,11 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     val register: ProcessedOrder.Any = parser.parse(Processed.transactionSwapRegister, 0).get
     val register2                    = parser.parse(Processed.transactionSwapRegisterToRefund, 0).get
     val expectedRegister: SwapDB =
-      implicitly[ToDB[ProcessedOrder[AnySwap], SwapDB]]
-        .toDB(register.asInstanceOf[ProcessedOrder[Order.AnySwap]])
+      implicitly[ToDB[ProcessedOrder[Swap], SwapDB]]
+        .toDB(register.asInstanceOf[ProcessedOrder[Order.Swap]])
     val expectedRegister2: SwapDB =
-      implicitly[ToDB[ProcessedOrder[AnySwap], SwapDB]]
-        .toDB(register2.asInstanceOf[ProcessedOrder[Order.AnySwap]])
+      implicitly[ToDB[ProcessedOrder[Swap], SwapDB]]
+        .toDB(register2.asInstanceOf[ProcessedOrder[Order.Swap]])
 
     def run = for {
       insertRegister  <- repo.swaps.insert(NonEmptyList.of(register, register2)).trans

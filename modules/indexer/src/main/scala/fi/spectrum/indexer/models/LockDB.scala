@@ -18,7 +18,7 @@ final case class LockDB(
 
 object LockDB {
 
-  implicit val toDB: ToDB[ProcessedOrder[Order.AnyLock], LockDB] = processed => {
+  implicit val toDB: ToDB[ProcessedOrder[Order.Lock], LockDB] = processed => {
     processed.order match {
       case lock: LockV1 => processed.widen(lock).toDB
     }

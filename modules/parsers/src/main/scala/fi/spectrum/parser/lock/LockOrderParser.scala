@@ -10,7 +10,7 @@ import sigmastate.Values
   * @tparam V - operation version
   */
 trait LockOrderParser[+V <: Version] { self =>
-  def lock(box: Output, tree: Values.ErgoTree): Option[Lock[V]]
+  def lock(box: Output, tree: Values.ErgoTree): Option[Lock]
 
   def or(that: => LockOrderParser[Version]): LockOrderParser[Version] = (box: Output, tree: Values.ErgoTree) =>
     self.lock(box, tree) orElse that.lock(box, tree)

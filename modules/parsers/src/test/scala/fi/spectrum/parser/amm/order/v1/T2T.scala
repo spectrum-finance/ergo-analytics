@@ -62,9 +62,7 @@ object T2T {
         10000000000000L
       ),
       2000000,
-      Version.V1,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V1
     )
   }
 
@@ -124,9 +122,7 @@ object T2T {
         )
       ),
       2000000,
-      Version.V1,
-      OrderType.AMM,
-      Operation.Deposit
+      Version.V1
     )
   }
 
@@ -176,9 +172,7 @@ object T2T {
         )
       ),
       2000000,
-      Version.V1,
-      OrderType.AMM,
-      Operation.Redeem
+      Version.V1
     )
   }
 

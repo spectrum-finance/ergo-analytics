@@ -3,7 +3,7 @@ package fi.spectrum.parser.amm.order.v2
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order.Swap.SwapV2
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
-import fi.spectrum.core.domain.order.{Operation, OrderType, PoolId, SwapParams}
+import fi.spectrum.core.domain.order.{PoolId, SwapParams}
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{AssetAmount, SErgoTree, TokenId}
 import io.circe.parser.decode
@@ -72,9 +72,7 @@ object N2T {
         5L
       ),
       10000000,
-      Version.V2,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V2
     )
 
     def outputSell: Output =
@@ -105,14 +103,14 @@ object N2T {
       ErgoTreeRedeemer(
         SErgoTree.unsafeFromString(
           "19b1031208cd033d6ab05cfb8a65938e116cb863cad577e560bb8e110113bf395fbe98649dbb590400040404060402040004040" +
-            "40005feffffffffffffffff01040204000e209916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec" +
-            "0580b6dc050e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815" +
-            "b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303" +
-            "830108cdeeac93b1a5730405000500058092f4010100d802d6017300d602b2a4730100eb027201d195ed93b1a4730293b1db6" +
-            "30872027303d806d603db63087202d604b2a5730400d605b2db63087204730500d606b27203730600d6077e8cb2db6308a773" +
-            "07000206d6087e9973088cb272037309000206ededededed938cb27203730a0001730b93c27204d07201938c7205018c72060" +
-            "1927e9a99c17204c1a7730c069d9c72077ec17202067208927e8c720502069d9c72077e8c72060206720890b0ada5d9010963" +
-            "9593c27209730dc17209730e730fd90109599a8c7209018c72090273107311"
+          "40005feffffffffffffffff01040204000e209916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec" +
+          "0580b6dc050e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815" +
+          "b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303" +
+          "830108cdeeac93b1a5730405000500058092f4010100d802d6017300d602b2a4730100eb027201d195ed93b1a4730293b1db6" +
+          "30872027303d806d603db63087202d604b2a5730400d605b2db63087204730500d606b27203730600d6077e8cb2db6308a773" +
+          "07000206d6087e9973088cb272037309000206ededededed938cb27203730a0001730b93c27204d07201938c7205018c72060" +
+          "1927e9a99c17204c1a7730c069d9c72077ec17202067208927e8c720502069d9c72077e8c72060206720890b0ada5d9010963" +
+          "9593c27209730dc17209730e730fd90109599a8c7209018c72090273107311"
         )
       ),
       SwapParams(
@@ -128,9 +126,7 @@ object N2T {
         105L
       ),
       10000000,
-      Version.V2,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V2
     )
   }
 

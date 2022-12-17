@@ -67,9 +67,7 @@ object N2T {
       ),
       777777,
       1400,
-      Version.V3,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V3
     )
 
     val outputSellSpf = decode[Output](
@@ -124,9 +122,7 @@ object N2T {
       ),
       777777,
       1400,
-      Version.V3,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V3
     )
 
     val outputBuyNoSpf = decode[Output](
@@ -178,9 +174,7 @@ object N2T {
       ),
       777777,
       1400,
-      Version.V3,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V3
     )
 
     val outputBuySpf = decode[Output](
@@ -232,9 +226,7 @@ object N2T {
       ),
       777777,
       1400,
-      Version.V3,
-      OrderType.AMM,
-      Operation.Swap
+      Version.V3
     )
   }
 
@@ -285,9 +277,7 @@ object N2T {
         )
       ),
       777777,
-      Version.V3,
-      OrderType.AMM,
-      Operation.Deposit
+      Version.V3
     )
 
     val outputSpfNotY = decode[Output](
@@ -335,9 +325,7 @@ object N2T {
         )
       ),
       777777,
-      Version.V3,
-      OrderType.AMM,
-      Operation.Deposit
+      Version.V3
     )
   }
 
@@ -395,9 +383,7 @@ object N2T {
         )
       ),
       777777,
-      Version.V3,
-      OrderType.AMM,
-      Operation.Redeem
+      Version.V3
     )
   }
 

@@ -14,7 +14,7 @@ class OrderJsonSpec extends AnyPropSpec with Matchers with CatsPlatform {
   property("Parse any order via OrderParser") {
     val anyOrder = List(Lock.output -> Lock.lock) ::: anyAmmOrder
     anyOrder.foreach { case (_, expectedOrder) =>
-      decode[Order.Any](expectedOrder.asJson.noSpaces).toOption.get shouldEqual expectedOrder
+      decode[Order](expectedOrder.asJson.noSpaces).toOption.get shouldEqual expectedOrder
     }
   }
 }

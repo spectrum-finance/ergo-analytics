@@ -7,14 +7,14 @@ import tofu.logging.derivation.loggable
 
 @derive(loggable, encoder, decoder)
 sealed trait PoolEvent {
-  val pool: Pool.Any
+  val pool: Pool
 }
 
 object PoolEvent {
 
   @derive(loggable, encoder, decoder)
-  final case class Apply(pool: Pool.Any) extends PoolEvent
+  final case class Apply(pool: Pool) extends PoolEvent
 
   @derive(loggable, encoder, decoder)
-  final case class Unapply(pool: Pool.Any) extends PoolEvent
+  final case class Unapply(pool: Pool) extends PoolEvent
 }

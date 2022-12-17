@@ -8,7 +8,7 @@ import fi.spectrum.core.domain.order.Order.Deposit.DepositV3
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV3
 import fi.spectrum.core.domain.order.Order.Swap.SwapV3
 import fi.spectrum.core.domain.order.Order._
-import fi.spectrum.core.domain.order.OrderType.AMM
+
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
 import fi.spectrum.core.domain.analytics.Version.V3
 import fi.spectrum.core.domain.order._
@@ -21,7 +21,7 @@ import sigmastate.Values
 
 class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
 
-  def swap(box: Output, tree: Values.ErgoTree): Option[Swap[V3, AMM]] =
+  def swap(box: Output, tree: Values.ErgoTree): Option[Swap] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == swapV3,
@@ -50,15 +50,13 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
           params,
           maxMinerFee,
           reservedExFee,
-          Version.V3,
-          OrderType.AMM,
-          Operation.Swap
+          Version.V3
         ),
         none
       )
       .merge
 
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit[V3, AMM]] =
+  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositV3,
@@ -82,15 +80,13 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
           ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.V3,
-          OrderType.AMM,
-          Operation.Deposit
+          Version.V3
         ),
         none
       )
       .merge
 
-  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem[V3, AMM]] =
+  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == redeemV3,
@@ -108,9 +104,7 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
           ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
-          Version.V3,
-          OrderType.AMM,
-          Operation.Redeem
+          Version.V3
         ),
         none
       )

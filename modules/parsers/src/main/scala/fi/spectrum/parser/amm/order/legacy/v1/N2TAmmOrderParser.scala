@@ -7,7 +7,7 @@ import fi.spectrum.core.domain.order.Order.Deposit.DepositLegacyV1
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemLegacyV1
 import fi.spectrum.core.domain.order.Order.Swap.SwapLegacyV1
 import fi.spectrum.core.domain.order.Order._
-import fi.spectrum.core.domain.order.OrderType.AMM
+
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.analytics.Version.LegacyV1
 import fi.spectrum.core.domain.order._
@@ -22,14 +22,14 @@ import sigmastate.Values.ErgoTree
 
 class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
 
-  def swap(box: Output, tree: Values.ErgoTree): Option[Swap[LegacyV1, AMM]] = {
+  def swap(box: Output, tree: Values.ErgoTree): Option[Swap] = {
     val template = ErgoTreeTemplate.fromBytes(tree.template)
     if (template == swapSellLegacyV1) swapSellV0(box, tree)
     else if (template == swapBuyLegacyV1) swapBuyV0(box, tree)
     else None
   }
 
-  private def swapSellV0(box: Output, tree: ErgoTree): Option[Swap[LegacyV1, AMM]] =
+  private def swapSellV0(box: Output, tree: ErgoTree): Option[Swap] =
     for {
       poolId       <- tree.constants.parseBytea(8).map(PoolId.fromBytes)
       baseAmount   <- tree.constants.parseLong(2).map(AssetAmount.native)
@@ -51,11 +51,10 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
       PublicKeyRedeemer(redeemer),
       params,
       Version.LegacyV1,
-      OrderType.AMM,
-      Operation.Swap
+
     )
 
-  private def swapBuyV0(box: Output, tree: ErgoTree): Option[Swap[LegacyV1, AMM]] =
+  private def swapBuyV0(box: Output, tree: ErgoTree): Option[Swap] =
     for {
       poolId       <- tree.constants.parseBytea(9).map(PoolId.fromBytes)
       inAmount     <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
@@ -77,11 +76,10 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
       PublicKeyRedeemer(redeemer),
       params,
       Version.LegacyV1,
-      OrderType.AMM,
-      Operation.Swap
+
     )
 
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit[LegacyV1, AMM]] =
+  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositLegacyV1,
@@ -99,14 +97,13 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
           PublicKeyRedeemer(redeemer),
           params,
           Version.LegacyV1,
-          OrderType.AMM,
-          Operation.Deposit
+
         ),
         none
       )
       .merge
 
-  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem[LegacyV1, AMM]] =
+  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == redeemLegacyV1,
@@ -123,8 +120,7 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
           PublicKeyRedeemer(redeemer),
           params,
           Version.LegacyV1,
-          OrderType.AMM,
-          Operation.Redeem
+
         ),
         none
       )

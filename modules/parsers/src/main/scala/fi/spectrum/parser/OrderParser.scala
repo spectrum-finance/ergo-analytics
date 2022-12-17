@@ -1,7 +1,7 @@
 package fi.spectrum.parser
 
 import fi.spectrum.core.domain.analytics.Version
-import fi.spectrum.core.domain.order.{Operation, Order, OrderType}
+import fi.spectrum.core.domain.order.{Order}
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.amm.order.AmmOrderParser
@@ -20,10 +20,10 @@ import fi.spectrum.parser.lock.LockOrderParser
 import fi.spectrum.parser.lock.v1.LockParser._
 
 /**
- * Parses any order no matter what version, type, or operation it has.
+ * Parses any order no matter what version or type it has.
  */
 trait OrderParser { self =>
-  def parse(box: Output): Option[Order[Version, OrderType, Operation]]
+  def parse(box: Output): Option[Order]
 
   def or(that: => OrderParser): OrderParser = (box: Output) =>
     self.parse(box) match {

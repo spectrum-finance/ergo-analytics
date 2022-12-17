@@ -1,11 +1,10 @@
 package fi.spectrum.parser.lock.v1
 
 import fi.spectrum.core.domain.analytics.Version
-import fi.spectrum.core.domain.{AssetAmount, PubKey, TokenId}
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
-import fi.spectrum.core.domain.order.{Operation, OrderType}
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.transaction.Output
+import fi.spectrum.core.domain.{AssetAmount, PubKey, TokenId}
 
 object Lock {
 
@@ -60,8 +59,6 @@ object Lock {
       59642
     ),
     PublicKeyRedeemer(PubKey.unsafeFromString("03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec")),
-    Version.V1,
-    OrderType.LOCK,
-    Operation.Lock
+    Version.V1
   )
 }

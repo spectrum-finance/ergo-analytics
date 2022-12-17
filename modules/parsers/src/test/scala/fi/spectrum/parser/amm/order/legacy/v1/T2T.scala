@@ -60,9 +60,7 @@ object T2T {
         293080115074409L,
         1000000000000000000L
       ),
-      Version.LegacyV1,
-      OrderType.AMM,
-      Operation.Swap
+      Version.LegacyV1
     )
   }
 
@@ -112,9 +110,7 @@ object T2T {
             18555857
           )
         ),
-        Version.LegacyV1,
-        OrderType.AMM,
-        Operation.Redeem
+        Version.LegacyV1
       )
 
   }

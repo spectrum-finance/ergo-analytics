@@ -33,7 +33,7 @@ final case class SwapDB(
 
 object SwapDB {
 
-  implicit val toDB: ToDB[ProcessedOrder[Order.AnySwap], SwapDB] = processed => {
+  implicit val toDB: ToDB[ProcessedOrder[Order.Swap], SwapDB] = processed => {
     processed.order match {
       case swap: SwapV3       => processed.widen(swap).toDB
       case swap: SwapV2       => processed.widen(swap).toDB

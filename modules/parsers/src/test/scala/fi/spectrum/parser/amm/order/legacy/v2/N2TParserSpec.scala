@@ -16,9 +16,9 @@ class N2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse n2t deposit legacy v2 contract") {
     val box = N2T.deposit.output
-    val depositResult: Order.AnyDeposit =
+    val depositResult: Order.Deposit =
       parser.deposit(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    val expected: Order.AnyDeposit = N2T.deposit.deposit
+    val expected: Order.Deposit = N2T.deposit.deposit
     (depositResult shouldEqual expected)
   }
 }

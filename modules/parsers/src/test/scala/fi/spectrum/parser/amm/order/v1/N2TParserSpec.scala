@@ -17,31 +17,31 @@ class N2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse n2t swap buy v1 contract") {
     val box = N2T.swap.swapN2TBuy
-    val swapResult: Order.AnySwap =
+    val swapResult: Order.Swap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (swapResult shouldEqual (N2T.swap.swapN2TBuyOrder: Order.AnySwap))
+    (swapResult shouldEqual (N2T.swap.swapN2TBuyOrder: Order.Swap))
   }
 
   property("Parse n2t swap sell v1 contract") {
     val box = N2T.swap.swapN2TSell
-    val swapResult: Order.AnySwap =
+    val swapResult: Order.Swap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get.asInstanceOf[SwapV1]
-    (swapResult shouldEqual (N2T.swap.swapN2TSellOrder: Order.AnySwap))
+    (swapResult shouldEqual (N2T.swap.swapN2TSellOrder: Order.Swap))
   }
 
   property("Parse n2t deposit v1 contract") {
     val box = N2T.deposit.depositN2T
-    val depositResult: Order.AnyDeposit =
+    val depositResult: Order.Deposit =
       parser.deposit(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    val expected: Order.AnyDeposit = N2T.deposit.expectedN2TDepositV1
+    val expected: Order.Deposit = N2T.deposit.expectedN2TDepositV1
     (depositResult shouldEqual expected)
   }
 
   property("Parse n2t redeem v1 contract") {
     val box = N2T.redeem.output
-    val redeemResult: Order.AnyRedeem =
+    val redeemResult: Order.Redeem =
       parser.redeem(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    val expected: Order.AnyRedeem = N2T.redeem.redeem
+    val expected: Order.Redeem = N2T.redeem.redeem
     (redeemResult shouldEqual expected)
   }
 }

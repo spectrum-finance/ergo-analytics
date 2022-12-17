@@ -3,7 +3,7 @@ package fi.spectrum.core.domain.order
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.AssetAmount
-import tofu.logging.derivation.{loggable, show}
+import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder, loggable, show)
+@derive(encoder, decoder, loggable)
 final case class DepositParams(inX: AssetAmount, inY: AssetAmount)

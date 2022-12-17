@@ -7,7 +7,7 @@ import fi.spectrum.core.domain.order.Order.Deposit.DepositLegacyV1
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemLegacyV1
 import fi.spectrum.core.domain.order.Order.Swap.SwapLegacyV1
 import fi.spectrum.core.domain.order.Order._
-import fi.spectrum.core.domain.order.OrderType.AMM
+
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.analytics.Version.LegacyV1
 import fi.spectrum.core.domain.order._
@@ -21,7 +21,7 @@ import sigmastate.Values
 
 class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
 
-  def swap(box: Output, tree: Values.ErgoTree): Option[Swap[LegacyV1, AMM]] =
+  def swap(box: Output, tree: Values.ErgoTree): Option[Swap] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == swapLegacyV1,
@@ -40,15 +40,13 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.LegacyV1,
-          OrderType.AMM,
-          Operation.Swap
+          Version.LegacyV1
         ),
         none
       )
       .merge
 
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit[LegacyV1, AMM]] =
+  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositLegacyV1,
@@ -65,15 +63,13 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.LegacyV1,
-          OrderType.AMM,
-          Operation.Deposit
+          Version.LegacyV1
         ),
         none
       )
       .merge
 
-  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem[LegacyV1, AMM]] =
+  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == redeemLegacyV1,
@@ -89,9 +85,7 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.LegacyV1,
-          OrderType.AMM,
-          Operation.Redeem
+          Version.LegacyV1
         ),
         none
       )

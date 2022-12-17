@@ -16,39 +16,39 @@ class T2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse t2t swap v3 no spf contract") {
     val box = T2T.swap.outputNoSpf
-    val swapResult: Order.AnySwap =
+    val swapResult: Order.Swap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (swapResult shouldEqual (T2T.swap.swapNoSpf: Order.AnySwap))
+    (swapResult shouldEqual (T2T.swap.swapNoSpf: Order.Swap))
   }
 
   property("Parse t2t swap v3 spf contract") {
     val box = T2T.swap.outputSpf
-    val swapResult: Order.AnySwap =
+    val swapResult: Order.Swap =
       parser.swap(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    (swapResult shouldEqual (T2T.swap.swapSpf: Order.AnySwap))
+    (swapResult shouldEqual (T2T.swap.swapSpf: Order.Swap))
   }
 
   property("Parse t2t deposit v3 y is spf contract") {
     val box = T2T.deposit.outputSpf
-    val depositResult: Order.AnyDeposit =
+    val depositResult: Order.Deposit =
       parser.deposit(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    val expected: Order.AnyDeposit = T2T.deposit.depositSpf
+    val expected: Order.Deposit = T2T.deposit.depositSpf
     (depositResult shouldEqual expected)
   }
 
   property("Parse t2t deposit v3 x is spf contract") {
     val box = T2T.deposit.outputSpfIsX
-    val depositResult: Order.AnyDeposit =
+    val depositResult: Order.Deposit =
       parser.deposit(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    val expected: Order.AnyDeposit = T2T.deposit.depositSpfIsX
+    val expected: Order.Deposit = T2T.deposit.depositSpfIsX
     (depositResult shouldEqual expected)
   }
 
   property("Parse t2t redeem v3 contract") {
     val box = T2T.redeem.output
-    val redeemResult: Order.AnyRedeem =
+    val redeemResult: Order.Redeem =
       parser.redeem(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    val expected: Order.AnyRedeem = T2T.redeem.order
+    val expected: Order.Redeem = T2T.redeem.order
     (redeemResult shouldEqual expected)
   }
 }

@@ -3,8 +3,9 @@ package fi.spectrum.parser.evaluation
 import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.OrderEvaluation
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, RedeemEvaluation, SwapEvaluation}
+import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderOptics._
-import fi.spectrum.core.domain.order.{Operation, Order, OrderType, Redeemer}
+import fi.spectrum.core.domain.order.{Order, Redeemer}
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.pool.PoolOptics._
 import fi.spectrum.core.domain.transaction.Output
@@ -16,31 +17,32 @@ import glass.classic.Optional
   */
 final class OrderEvaluationParser {
 
-  def parse(order: Order.Any, outputs: List[Output], pool: Pool.Any): Option[OrderEvaluation] = {
+  def parse(order: Order, outputs: List[Output], pool: Pool): Option[OrderEvaluation] = {
     val redeemer = order.redeemer match {
       case Redeemer.ErgoTreeRedeemer(value)  => value
       case Redeemer.PublicKeyRedeemer(value) => value.ergoTree
     }
     outputs
       .map { output =>
-        order.orderOperation match {
-          case Operation.Swap    => swap(redeemer, order, output)
-          case Operation.Deposit => deposit(redeemer, output, pool)
-          case Operation.Redeem  => redeem(redeemer, output, pool)
-          case Operation.Lock    => none
+        order match {
+          case _: Deposit => deposit(redeemer, output, pool)
+          case _: Redeem  => redeem(redeemer, output, pool)
+          case _: Swap    => swap(redeemer, order, output)
+          case _: Lock    => none
         }
+
       }
       .collectFirst { case Some(v) => v }
   }
 
-  def redeem(redeemer: SErgoTree, output: Output, pool: Pool.Any): Option[RedeemEvaluation] =
+  def redeem(redeemer: SErgoTree, output: Output, pool: Pool): Option[RedeemEvaluation] =
     if (redeemer == output.ergoTree) {
-      val outputX = implicitly[Optional[Pool.Any, AssetAmount] with Label["x"]].getOption(pool) match {
+      val outputX = implicitly[Optional[Pool, AssetAmount] with Label["x"]].getOption(pool) match {
         case Some(value) if value.isNative => AssetAmount.native(output.value).some
         case Some(value)                   => output.assets.find(_.tokenId == value.tokenId).map(AssetAmount.fromBoxAsset)
         case None                          => none
       }
-      val outputY = implicitly[Optional[Pool.Any, AssetAmount] with Label["y"]].getOption(pool) match {
+      val outputY = implicitly[Optional[Pool, AssetAmount] with Label["y"]].getOption(pool) match {
         case Some(value) if value.isNative => AssetAmount.native(output.value).some
         case Some(value)                   => output.assets.find(_.tokenId == value.tokenId).map(AssetAmount.fromBoxAsset)
         case None                          => none
@@ -52,8 +54,8 @@ final class OrderEvaluationParser {
       }
     } else none
 
-  def swap(redeemer: SErgoTree, order: Order.Any, output: Output): Option[SwapEvaluation] =
-    Optional[Order.Any, AssetAmount].getOption(order) match {
+  def swap(redeemer: SErgoTree, order: Order, output: Output): Option[SwapEvaluation] =
+    Optional[Order, AssetAmount].getOption(order) match {
       case Some(quote) if output.ergoTree == redeemer =>
         val out =
           if (quote.isNative) AssetAmount.native(output.value).some
@@ -62,9 +64,9 @@ final class OrderEvaluationParser {
       case _ => none
     }
 
-  def deposit(redeemer: SErgoTree, output: Output, pool: Pool.Any): Option[DepositEvaluation] =
+  def deposit(redeemer: SErgoTree, output: Output, pool: Pool): Option[DepositEvaluation] =
     if (output.ergoTree == redeemer)
-      Optional[Pool.Any, TokenId].getOption(pool) match {
+      Optional[Pool, TokenId].getOption(pool) match {
         case Some(value) =>
           output.assets.find(_.tokenId == value).map(AssetAmount.fromBoxAsset).map(DepositEvaluation(_))
         case None => none
