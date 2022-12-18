@@ -1,7 +1,7 @@
 package fi.spectrum.parser
 
 import fi.spectrum.core.domain.analytics.Version
-import fi.spectrum.core.domain.pool.{Pool, PoolType}
+import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.parser.amm.pool.AmmPoolParser
 import fi.spectrum.parser.amm.pool.v1.N2TPoolParser._
