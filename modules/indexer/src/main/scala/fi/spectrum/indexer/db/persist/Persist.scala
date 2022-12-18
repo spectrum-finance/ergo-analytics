@@ -108,7 +108,10 @@ object Persist {
 
     def insert(nel: NonEmptyList[O]): ConnectionIO[Int] =
       foldNel[ConnectionIO, Int, B](
-        nel.toList.flatMap(optional.getOption).map(_.toDB),
+        nel
+          .toList
+          .flatMap(optional.getOption)
+          .map(_.toDB),
         repository.insertNoConflict.updateMany,
         0
       )

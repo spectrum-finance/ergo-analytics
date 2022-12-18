@@ -2,9 +2,10 @@ package fi.spectrum.core.domain.analytics
 
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderOptics._
-import glass.Contains
+import glass.{Contains, PProperty}
 import glass.classic.Optional
-import glass.macros.GenContains
+import glass.macros.{GenContains, GenEquivalent}
+import cats.syntax.either._
 
 object ProcessedOrderOptics {
 
@@ -20,8 +21,15 @@ object ProcessedOrderOptics {
   implicit val lockOptional: Optional[ProcessedOrder.Any, Lock] =
     GenContains[ProcessedOrder.Any](_.order) >> lockPrism
 
-  implicit val offChainFeeOptional: Contains[ProcessedOrder.Any, Option[OffChainFee]] =
-    GenContains[ProcessedOrder.Any](_.offChainFee)
+  implicit val contains: Optional[ProcessedOrder.Any, OffChainFee] =
+    new Optional[ProcessedOrder.Any, OffChainFee] {
+      def set(s: ProcessedOrder.Any, b: OffChainFee): ProcessedOrder.Any = s.copy(offChainFee = Some(b))
 
-  implicit val r: Optional[ProcessedOrder.Any, OffChainFee] = implicitly[Optional[ProcessedOrder.Any, OffChainFee]]
+      def narrow(s: ProcessedOrder.Any): Either[ProcessedOrder.Any, OffChainFee] =
+        s.offChainFee match {
+          case Some(value) => value.asRight
+          case None        => s.asLeft
+        }
+    }
+
 }

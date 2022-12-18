@@ -14,7 +14,7 @@ final class OffChainFeeRepository
     "order_id",
     "output_id",
     "pub_key",
-    "fee",
+    "dex_fee",
     "fee_type"
   )
 
