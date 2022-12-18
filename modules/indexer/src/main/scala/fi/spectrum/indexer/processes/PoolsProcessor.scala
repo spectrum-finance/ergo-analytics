@@ -4,13 +4,12 @@ import cats.data.NonEmptyList
 import cats.syntax.foldable._
 import cats.syntax.traverse._
 import cats.{Foldable, Functor, Monad}
-import fi.spectrum.indexer.db.persist.PersistBundle
+import fi.spectrum.indexer.services.Pools
 import fi.spectrum.streaming.PoolsEventsConsumer
-import fi.spectrum.streaming.domain.PoolEvent
-import tofu.doobie.transactor.Txr
+import tofu.logging.{Logging, Logs}
 import tofu.streams.{Chunks, Evals}
-import tofu.syntax.doobie.txr._
 import tofu.syntax.monadic._
+import tofu.syntax.logging._
 import tofu.syntax.streams.all._
 
 trait PoolsProcessor[S[_]] {
@@ -22,36 +21,31 @@ object PoolsProcessor {
   def make[
     C[_]: Functor: Foldable,
     F[_]: Monad,
-    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad,
-    D[_]: Monad
-  ](implicit pools: PoolsEventsConsumer[S, F], bundle: PersistBundle[D], txr: Txr[F, D]): PoolsProcessor[S] =
-    new Live[C, F, S, D]
+    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
+  ](implicit pool: PoolsEventsConsumer[S, F], pools: Pools[F], logs: Logs[F, F]): F[PoolsProcessor[S]] =
+    logs.forService[PoolsProcessor[S]].map(implicit __ => new Live[C, F, S])
 
   final private class Live[
     C[_]: Functor: Foldable,
-    F[_]: Monad,
-    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad,
-    D[_]: Monad
+    F[_]: Monad: Logging,
+    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
   ](implicit
-    pools: PoolsEventsConsumer[S, F],
-    bundle: PersistBundle[D],
-    txr: Txr[F, D]
+    pool: PoolsEventsConsumer[S, F],
+    pools: Pools[F]
   ) extends PoolsProcessor[S] {
 
-    def run: S[Unit] = pools.stream
+    def run: S[Unit] = pool.stream
       .chunksN(10) //todo config
       .evalMap { events =>
-        def insert: D[Int] =
-          NonEmptyList
-            .fromList(events.toList.map(_.message).collect { case PoolEvent.Apply(pool) => pool })
-            .fold(0.pure[D])(bundle.pools.insert)
-
-        def resolve: D[Int] =
-          NonEmptyList
-            .fromList(events.toList.map(_.message).collect { case PoolEvent.Unapply(pool) => pool })
-            .fold(0.pure[D])(bundle.pools.resolve)
-
-        (insert >> resolve).trans.void >> events.toList.lastOption.traverse(_.commit).void
+        for {
+          _ <- info"Got next pools events batch of size ${events.size}"
+          _ <- NonEmptyList.fromList(events.toList.map(_.message)) match {
+                 case Some(value) => pools.process(value)
+                 case None        => unit[F]
+               }
+          _ <- events.toList.lastOption.traverse(_.commit).void
+          _ <- info"Finished to process pools batch"
+        } yield ()
       }
   }
 }

@@ -18,29 +18,29 @@ import tofu.syntax.monadic._
 
 object Main {
 
-  def run[S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad, F[_]: Monad, D[_]: Monad: LiftConnectionIO](spf: TokenId)(
-    implicit
-    elh: EmbeddableLogHandler[D],
-    txr: Txr[F, D],
-    e: ErgoAddressEncoder,
-    logs: Logs[F, F]
-  ) = {
-    implicit val txConsumer: TxEventsConsumer[S, F]       = ???
-    implicit val orderProducer: OrderEventsProducer[S]    = ???
-    implicit val orderConsumer: OrderEventsConsumer[S, F] = ???
-    implicit val poolsConsumer: PoolsEventsConsumer[S, F] = ???
-    implicit val poolsProducer: PoolsEventsProducer[S]    = ???
-
-    implicit val ordersParser: ProcessedOrderParser = ProcessedOrderParser.make(spf)
-    implicit val poolsParser: PoolParser            = PoolParser.make
-
-    implicit val persistBundle: PersistBundle[D] = PersistBundle.make[D]
-
-    implicit val ordersProcessor = OrdersProcessor.make[Chunk, F, S, D]
-    implicit val poolsProcessor  = PoolsProcessor.make[Chunk, F, S, D]
-
-    for {
-      tx <- TransactionsProcessor.make[Chunk, F, S]
-    } yield (tx.run, ordersProcessor.run, poolsProcessor.run)
-  }
+//  def run[S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad, F[_]: Monad, D[_]: Monad: LiftConnectionIO](spf: TokenId)(
+//    implicit
+//    elh: EmbeddableLogHandler[D],
+//    txr: Txr[F, D],
+//    e: ErgoAddressEncoder,
+//    logs: Logs[F, F]
+//  ) = {
+//    implicit val txConsumer: TxEventsConsumer[S, F]       = ???
+//    implicit val orderProducer: OrderEventsProducer[S]    = ???
+//    implicit val orderConsumer: OrderEventsConsumer[S, F] = ???
+//    implicit val poolsConsumer: PoolsEventsConsumer[S, F] = ???
+//    implicit val poolsProducer: PoolsEventsProducer[S]    = ???
+//
+//    implicit val ordersParser: ProcessedOrderParser = ProcessedOrderParser.make(spf)
+//    implicit val poolsParser: PoolParser            = PoolParser.make
+//
+//    implicit val persistBundle: PersistBundle[D] = PersistBundle.make[D]
+//
+//    implicit val ordersProcessor = OrdersProcessor.make[Chunk, F, S]
+//    implicit val poolsProcessor  = PoolsProcessor.make[Chunk, F, S]
+//
+//    for {
+//      tx <- TransactionsProcessor.make[Chunk, F, S]
+//    } yield (tx.run, ordersProcessor.run, poolsProcessor.run)
+//  }
 }

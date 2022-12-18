@@ -1,12 +1,10 @@
 package fi.spectrum.indexer.processes
 
+import cats.data.NonEmptyList
 import cats.syntax.foldable._
 import cats.{Foldable, Functor, Monad}
-import fi.spectrum.core.domain.transaction.Transaction
-import fi.spectrum.parser.PoolParser
-import fi.spectrum.parser.evaluation.ProcessedOrderParser
-import fi.spectrum.streaming.domain.TxEvent.Apply
-import fi.spectrum.streaming.domain.{OrderEvent, PoolEvent, TxEvent}
+import fi.spectrum.indexer.services.Transactions
+import fi.spectrum.streaming.domain.{OrderEvent, PoolEvent}
 import fi.spectrum.streaming.kafka.Record
 import fi.spectrum.streaming.{OrderEventsProducer, PoolsEventsProducer, TxEventsConsumer}
 import mouse.all._
@@ -30,8 +28,7 @@ object TransactionsProcessor {
     events: TxEventsConsumer[S, F],
     orders: OrderEventsProducer[S],
     pools: PoolsEventsProducer[S],
-    parser: ProcessedOrderParser,
-    poolsParser: PoolParser,
+    transactions: Transactions[F],
     logs: Logs[F, F]
   ): F[TransactionsProcessor[S]] = logs.forService[TransactionsProcessor[S]].map(implicit __ => new Live[C, F, S])
 
@@ -43,8 +40,7 @@ object TransactionsProcessor {
     events: TxEventsConsumer[S, F],
     ordersProducer: OrderEventsProducer[S],
     poolsProducer: PoolsEventsProducer[S],
-    orderParser: ProcessedOrderParser,
-    poolsParser: PoolParser
+    transactions: Transactions[F]
   ) extends TransactionsProcessor[S] {
 
     override def run: S[Unit] =
@@ -52,34 +48,15 @@ object TransactionsProcessor {
         .chunksN(10) //todo to config
         .evalTap(batch => info"Got next transaction batch of size: ${batch.size}.")
         .flatMap { committableBatch =>
-          val (orders: List[OrderEvent], pools: List[PoolEvent]) =
-            committableBatch.toList.foldLeft(List.empty[OrderEvent], List.empty[PoolEvent]) { case ((o, p), next) =>
-              val tx = Transaction.fromErgoLike(next.message.tx)
-              val (order: Option[OrderEvent], pool: Option[PoolEvent]) =
-                next.message match {
-                  case Apply(timestamp, _) =>
-                    val order = orderParser.parse(tx, timestamp).map(OrderEvent.Apply(_))
-                    val pool = tx.outputs
-                      .map(poolsParser.parse(_, timestamp))
-                      .collectFirst { case Some(p) => p }
-                      .map(PoolEvent.Apply(_))
-
-                    (order, pool)
-                  case TxEvent.Unapply(_) =>
-                    val order = orderParser.parse(tx, 0).map(OrderEvent.Unapply(_))
-                    val pool =
-                      tx.outputs
-                        .map(poolsParser.parse(_, 0))
-                        .collectFirst { case Some(p) => p }
-                        .map(PoolEvent.Unapply(_))
-
-                    (order, pool)
-                }
-
-              (order.fold(o)(_ :: o), pool.fold(p)(_ :: p))
-
-            }
           for {
+            (orders: List[OrderEvent], pools: List[PoolEvent]) <- eval {
+                                                                    NonEmptyList.fromList(
+                                                                      committableBatch.toList.map(_.message)
+                                                                    ) match {
+                                                                      case Some(value) => transactions.process(value)
+                                                                      case None        => (List.empty, List.empty).pure[F]
+                                                                    }
+                                                                  }
             _ <- eval(info"New orders: $orders")
             _ <- eval(info"New pools: $pools")
             _ <- emits(orders.map(o => Record(o.order.order.id, o))) thrush ordersProducer.produce

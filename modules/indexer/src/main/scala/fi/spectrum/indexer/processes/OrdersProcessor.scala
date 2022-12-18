@@ -4,13 +4,12 @@ import cats.data.NonEmptyList
 import cats.syntax.foldable._
 import cats.syntax.traverse._
 import cats.{Foldable, Functor, Monad}
-import fi.spectrum.indexer.db.persist.PersistBundle
+import fi.spectrum.indexer.services.Orders
 import fi.spectrum.streaming.OrderEventsConsumer
-import fi.spectrum.streaming.domain.OrderEvent
-import tofu.doobie.transactor.Txr
+import tofu.logging.{Logging, Logs}
 import tofu.streams.{Chunks, Evals}
-import tofu.syntax.doobie.txr._
 import tofu.syntax.monadic._
+import tofu.syntax.logging._
 import tofu.syntax.streams.all._
 
 trait OrdersProcessor[S[_]] {
@@ -22,36 +21,32 @@ object OrdersProcessor {
   def make[
     C[_]: Functor: Foldable,
     F[_]: Monad,
-    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad,
-    D[_]: Monad
-  ](implicit order: OrderEventsConsumer[S, F], bundle: PersistBundle[D], txr: Txr[F, D]): OrdersProcessor[S] =
-    new Live[C, F, S, D]
+    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
+  ](implicit order: OrderEventsConsumer[S, F], orders: Orders[F], logs: Logs[F, F]): F[OrdersProcessor[S]] =
+    logs.forService[OrdersProcessor[S]].map(implicit __ => new Live[C, F, S])
 
   final private class Live[
     C[_]: Functor: Foldable,
-    F[_]: Monad,
-    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad,
-    D[_]: Monad
+    F[_]: Monad: Logging,
+    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
   ](implicit
     order: OrderEventsConsumer[S, F],
-    bundle: PersistBundle[D],
-    txr: Txr[F, D]
+    orders: Orders[F]
   ) extends OrdersProcessor[S] {
 
-    def run: S[Unit] = order.stream
-      .chunksN(10) //todo config
-      .evalMap { events =>
-        def insert: D[Int] =
-          NonEmptyList
-            .fromList(events.toList.map(_.message).collect { case OrderEvent.Apply(order) => order })
-            .fold(0.pure[D])(v => bundle.insertAnyOrder.traverse(_(v)).map(_.sum))
-
-        def resolve: D[Int] =
-          NonEmptyList
-            .fromList(events.toList.map(_.message).collect { case OrderEvent.Unapply(order) => order })
-            .fold(0.pure[D])(v => bundle.resolveAnyOrder.traverse(_(v)).map(_.sum))
-
-        (insert >> resolve).trans.void >> events.toList.lastOption.traverse(_.commit).void
-      }
+    def run: S[Unit] =
+      order.stream
+        .chunksN(10) //todo config
+        .evalMap { events =>
+          for {
+            _ <- info"Got next orders events batch of size ${events.size}"
+            _ <- NonEmptyList.fromList(events.toList.map(_.message)) match {
+                   case Some(value) => orders.process(value)
+                   case None        => unit[F]
+                 }
+            _ <- events.toList.lastOption.traverse(_.commit).void
+            _ <- info"Finished to process orders batch"
+          } yield ()
+        }
   }
 }
