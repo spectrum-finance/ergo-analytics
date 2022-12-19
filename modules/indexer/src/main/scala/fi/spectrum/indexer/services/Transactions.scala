@@ -10,7 +10,7 @@ import fi.spectrum.streaming.domain.TxEvent.Apply
 import fi.spectrum.streaming.domain.{OrderEvent, PoolEvent, TxEvent}
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
-import tofu.logging.{Logging, Logs}
+import tofu.logging.Logging
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 
@@ -24,8 +24,8 @@ object Transactions {
   def make[F[_]: Monad](implicit
     orderParser: ProcessedOrderParser,
     poolsParser: PoolParser,
-    logs: Logs[F, F]
-  ): F[Transactions[F]] = logs.forService[Transactions[F]].map(implicit __ => new Tracing[F] attach new Live[F])
+    logs: Logging.Make[F]
+  ): Transactions[F] = logs.forService[Transactions[F]].map(implicit __ => new Tracing[F] attach new Live[F])
 
   final private class Live[F[_]: Applicative](implicit
     orderParser: ProcessedOrderParser,

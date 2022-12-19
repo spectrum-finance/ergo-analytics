@@ -3,18 +3,19 @@ import sbt._
 object Dependencies {
 
   object Version {
-    val ce3            = "3.4.2"
-    val tofu           = "0.11.0"
-    val glass          = "0.1.0"
-    val derevo         = "0.13.0"
-    val newtype        = "0.4.4"
-    val refined        = "0.10.1"
-    val enumeratum     = "1.7.0"
-    val circe          = "0.14.1"
-    val mouse          = "1.2.1"
-    val doobiePostgres = "1.0.0-RC2"
-    val fs2Kafka       = "2.5.0"
-    val doobieVersion  = "0.13.4"
+    val ce3        = "3.4.2"
+    val tofu       = "0.11.0"
+    val glass      = "0.1.0"
+    val derevo     = "0.13.0"
+    val newtype    = "0.4.4"
+    val refined    = "0.10.1"
+    val enumeratum = "1.7.0"
+    val circe      = "0.14.1"
+    val mouse      = "1.2.1"
+    val doobie     = "1.0.0-RC2"
+    val fs2Kafka   = "2.5.0"
+    val doobieTest = "0.13.4"
+    val pureConfig = "0.17.2"
 
     val scalaCheckVersion             = "1.14.1"
     val scalaCheckShapelessVersion    = "1.2.5"
@@ -30,15 +31,22 @@ object Dependencies {
     val kindProjector    = "0.13.2"
   }
 
-  val ce3            = "org.typelevel"   %% "cats-effect-kernel" % Version.ce3
-  val doobiePostgres = "org.tpolecat"    %% "doobie-postgres"    % Version.doobiePostgres
-  val kafka          = "com.github.fd4s" %% "fs2-kafka"          % Version.fs2Kafka
+  val ce3   = "org.typelevel"   %% "cats-effect-kernel" % Version.ce3
+  val kafka = "com.github.fd4s" %% "fs2-kafka"          % Version.fs2Kafka
 
   val newtype     = "io.estatico" %% "newtype"      % Version.newtype
   val refined     = "eu.timepit"  %% "refined"      % Version.refined
   val refinedCats = "eu.timepit"  %% "refined-cats" % Version.refined
 
   val mouse = "org.typelevel" %% "mouse" % Version.mouse
+
+  val pureConfigCE = "com.github.pureconfig" %% "pureconfig-cats-effect" % Version.pureConfig
+
+  val doobie = List(
+    "org.tpolecat" %% "doobie-postgres" % Version.doobie,
+    "org.tpolecat" %% "doobie-hikari"   % Version.doobie,
+    "org.tpolecat" %% "doobie-refined"  % Version.doobie
+  )
 
   val enums: List[ModuleID] = List(
     "com.beachape" %% "enumeratum"       % Version.enumeratum,
@@ -74,7 +82,7 @@ object Dependencies {
 
   val tests = List(
     "org.flywaydb"                % "flyway-core"                     % Version.flywayVersion              % Test,
-    "org.tpolecat"               %% "doobie-scalatest"                % Version.doobieVersion              % Test,
+    "org.tpolecat"               %% "doobie-scalatest"                % Version.doobieTest                 % Test,
     "org.scalatest"              %% "scalatest"                       % Version.scalaTestVersion           % Test,
     "org.scalatestplus"          %% "scalacheck-1-14"                 % Version.scalaTestPlusVersion       % Test,
     "com.dimafeng"               %% "testcontainers-scala-postgresql" % Version.testContainersScalaVersion % Test,

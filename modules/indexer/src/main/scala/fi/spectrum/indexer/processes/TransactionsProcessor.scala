@@ -3,12 +3,13 @@ package fi.spectrum.indexer.processes
 import cats.data.NonEmptyList
 import cats.syntax.foldable._
 import cats.{Foldable, Functor, Monad}
+import fi.spectrum.indexer.config.ApplicationConfig
 import fi.spectrum.indexer.services.Transactions
 import fi.spectrum.streaming.domain.{OrderEvent, PoolEvent}
 import fi.spectrum.streaming.kafka.Record
 import fi.spectrum.streaming.{OrderEventsProducer, PoolsEventsProducer, TxEventsConsumer}
 import mouse.all._
-import tofu.logging.{Logging, Logs}
+import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
@@ -24,19 +25,19 @@ object TransactionsProcessor {
     C[_]: Functor: Foldable,
     F[_]: Monad,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
-  ](implicit
+  ](config: ApplicationConfig)(implicit
     events: TxEventsConsumer[S, F],
     orders: OrderEventsProducer[S],
     pools: PoolsEventsProducer[S],
     transactions: Transactions[F],
-    logs: Logs[F, F]
-  ): F[TransactionsProcessor[S]] = logs.forService[TransactionsProcessor[S]].map(implicit __ => new Live[C, F, S])
+    logs: Logging.Make[F]
+  ): TransactionsProcessor[S] = logs.forService[TransactionsProcessor[S]].map(implicit __ => new Live[C, F, S](config))
 
   final private class Live[
     C[_]: Functor: Foldable,
     F[_]: Monad: Logging,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
-  ](implicit
+  ](config: ApplicationConfig)(implicit
     events: TxEventsConsumer[S, F],
     ordersProducer: OrderEventsProducer[S],
     poolsProducer: PoolsEventsProducer[S],
@@ -45,13 +46,13 @@ object TransactionsProcessor {
 
     override def run: S[Unit] =
       events.stream
-        .chunksN(10) //todo to config
+        .chunksN(config.transactionsBatchSize)
         .evalTap(batch => info"Got next transaction batch of size: ${batch.size}.")
         .flatMap { committableBatch =>
           for {
             (orders: List[OrderEvent], pools: List[PoolEvent]) <- eval {
                                                                     NonEmptyList.fromList(
-                                                                      committableBatch.toList.map(_.message)
+                                                                      committableBatch.toList.flatMap(_.message)
                                                                     ) match {
                                                                       case Some(value) => transactions.process(value)
                                                                       case None        => (List.empty, List.empty).pure[F]

@@ -38,9 +38,9 @@ lazy val core = mkModule("core", "core")
       refined,
       refinedCats,
       mouse,
-      doobiePostgres,
-      kafka
-    ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums
+      kafka,
+      pureConfigCE
+    ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums ++ doobie
   )
 
 lazy val streaming = mkModule("streaming", "events-streaming")

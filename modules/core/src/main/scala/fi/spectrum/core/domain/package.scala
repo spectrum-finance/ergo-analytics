@@ -1,7 +1,6 @@
 package fi.spectrum.core
 
 import cats.{Eq, Show}
-
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.util.{Get, Put}
@@ -17,6 +16,8 @@ import scorex.util.encode.Base16
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
 import cats.syntax.eq._
+import derevo.pureconfig.pureconfigReader
+import pureconfig.ConfigReader
 
 package object domain {
 
@@ -43,6 +44,8 @@ package object domain {
 
     implicit val put: Put[HexString] =
       Put[String].contramap[HexString](_.unwrapped)
+
+    implicit val configReader: ConfigReader[HexString] = ConfigReader.stringConfigReader.map(unsafeFromString)
 
     def fromBytes(bytes: Array[Byte]): HexString =
       unsafeFromString(scorex.util.encode.Base16.encode(bytes))
@@ -95,7 +98,7 @@ package object domain {
     )
   }
 
-  @derive(encoder, decoder, loggable, show)
+  @derive(encoder, decoder, loggable, show, pureconfigReader)
   @newtype final case class TokenId(value: HexString)
 
   object TokenId {

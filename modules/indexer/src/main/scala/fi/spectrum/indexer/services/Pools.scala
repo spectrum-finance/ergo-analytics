@@ -8,10 +8,10 @@ import fi.spectrum.streaming.domain.PoolEvent
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
-import tofu.logging.{Logging, Logs}
+import tofu.logging.Logging
 import tofu.syntax.doobie.txr._
-import tofu.syntax.monadic._
 import tofu.syntax.logging._
+import tofu.syntax.monadic._
 
 @derive(representableK)
 trait Pools[F[_]] {
@@ -20,7 +20,7 @@ trait Pools[F[_]] {
 
 object Pools {
 
-  def make[F[_]: Monad, D[_]: Monad](implicit bundle: PersistBundle[D], txr: Txr[F, D], logs: Logs[F, F]): F[Pools[F]] =
+  def make[F[_]: Monad, D[_]: Monad](implicit bundle: PersistBundle[D], txr: Txr[F, D], logs: Logging.Make[F]): Pools[F] =
     logs.forService[Pools[F]].map(implicit __ => new Tracing[F] attach new Live[F, D])
 
   final private class Live[F[_]: Functor, D[_]: Monad](implicit bundle: PersistBundle[D], txr: Txr[F, D])

@@ -12,6 +12,15 @@ import tofu.syntax.lift._
 object doobieLogging {
 
   def makeEmbeddableHandler[
+    F[_]: Functor: PerformThrow,
+    D[_]: Lift[F, *[_]]
+  ](name: String)(implicit logs: Logging.Make[F]): EmbeddableLogHandler[D] =
+    logs.byName(name).map { implicit log =>
+      val lhf = LogHandlerF(logDoobieEvent)
+      EmbeddableLogHandler.async(lhf).lift[D]
+    }
+
+  def makeEmbeddableHandler[
     I[_]: Functor,
     F[_]: Functor: PerformThrow,
     D[_]: Lift[F, *[_]]

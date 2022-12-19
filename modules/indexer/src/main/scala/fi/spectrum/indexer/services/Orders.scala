@@ -1,19 +1,19 @@
 package fi.spectrum.indexer.services
 
 import cats.data.NonEmptyList
+import cats.instances.all._
 import cats.syntax.traverse._
-import cats.{Applicative, Functor, Monad}
+import cats.{Functor, Monad}
 import derevo.derive
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.streaming.domain.OrderEvent
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
-import tofu.logging.{Logging, Logs}
+import tofu.logging.Logging
 import tofu.syntax.doobie.txr._
-import tofu.syntax.monadic._
 import tofu.syntax.logging._
-import cats.instances.all._
+import tofu.syntax.monadic._
 
 @derive(representableK)
 trait Orders[F[_]] {
@@ -25,8 +25,8 @@ object Orders {
   def make[F[_]: Monad, D[_]: Monad](implicit
     bundle: PersistBundle[D],
     txr: Txr[F, D],
-    logs: Logs[F, F]
-  ): F[Orders[F]] =
+    logs: Logging.Make[F]
+  ): Orders[F] =
     logs.forService[Orders[F]].map(implicit __ => new Tracing[F] attach new Live[F, D])
 
   final private class Live[F[_]: Functor, D[_]: Monad](implicit bundle: PersistBundle[D], txr: Txr[F, D])
