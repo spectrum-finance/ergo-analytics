@@ -2,6 +2,7 @@ package fi.spectrum.core.db
 
 import derevo.derive
 import derevo.pureconfig.pureconfigReader
+import tofu.WithContext
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -14,3 +15,5 @@ final case class PgConfig(
   minConnections: Int,
   maxConnections: Int
 )
+
+object PgConfig extends WithContext.Companion[PgConfig]

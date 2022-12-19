@@ -32,18 +32,20 @@ object MakeKafkaConsumer {
     }
 
   def make[
-    F[_]: Async,
+    F[_]: Async: KafkaConfig.Has,
     K: RecordDeserializer[F, *],
     V: RecordDeserializer[F, *]
-  ](kafka: KafkaConfig): MakeKafkaConsumer[F, K, V] =
+  ]: MakeKafkaConsumer[F, K, V] =
     (config: ConsumerConfig) => {
-      val settings =
-        ConsumerSettings[F, K, V]
-          .withAutoOffsetReset(AutoOffsetReset.Earliest)
-          .withBootstrapServers(kafka.bootstrapServers.mkString(","))
-          .withGroupId(config.groupId.value)
-          .withClientId(config.clientId.value)
-          .withEnableAutoCommit(false)
-      KafkaConsumer.stream(settings)
+      Stream.eval(KafkaConfig.access[F]).flatMap { kafka =>
+        val settings =
+          ConsumerSettings[F, K, V]
+            .withAutoOffsetReset(AutoOffsetReset.Earliest)
+            .withBootstrapServers(kafka.bootstrapServers.mkString(","))
+            .withGroupId(config.groupId.value)
+            .withClientId(config.clientId.value)
+            .withEnableAutoCommit(false)
+        KafkaConsumer.stream(settings)
+      }
     }
 }

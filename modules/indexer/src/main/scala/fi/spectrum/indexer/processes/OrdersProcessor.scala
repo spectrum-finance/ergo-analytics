@@ -12,6 +12,7 @@ import tofu.streams.{Chunks, Evals}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.all._
+import tofu.syntax.context._
 
 trait OrdersProcessor[S[_]] {
   def run: S[Unit]
@@ -21,21 +22,21 @@ object OrdersProcessor {
 
   def make[
     C[_]: Functor: Foldable,
-    F[_]: Monad,
+    F[_]: Monad: ApplicationConfig.Has,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
-  ](config: ApplicationConfig)(implicit order: OrderEventsConsumer[S, F], orders: Orders[F], logs: Logging.Make[F]): OrdersProcessor[S] =
-    logs.forService[OrdersProcessor[S]].map(implicit __ => new Live[C, F, S](config))
+  ](implicit order: OrderEventsConsumer[S, F], orders: Orders[F], logs: Logging.Make[F]): OrdersProcessor[S] =
+    logs.forService[OrdersProcessor[S]].map(implicit __ => new Live[C, F, S])
 
   final private class Live[
     C[_]: Functor: Foldable,
-    F[_]: Monad: Logging,
+    F[_]: Monad: Logging: ApplicationConfig.Has,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
-  ](config: ApplicationConfig)(implicit
+  ](implicit
     order: OrderEventsConsumer[S, F],
     orders: Orders[F]
   ) extends OrdersProcessor[S] {
 
-    def run: S[Unit] =
+    def run: S[Unit] = eval(context).flatMap { config =>
       order.stream
         .chunksN(config.ordersBatchSize)
         .evalMap { events =>
@@ -49,5 +50,6 @@ object OrdersProcessor {
             _ <- info"Finished to process orders batch"
           } yield ()
         }
+    }
   }
 }

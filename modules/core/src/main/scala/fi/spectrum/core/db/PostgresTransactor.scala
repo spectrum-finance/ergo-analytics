@@ -1,14 +1,17 @@
 package fi.spectrum.core.db
 
+import cats.effect.syntax.resource._
 import cats.effect.{Async, Resource, Sync}
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
+import fi.spectrum.core.db.PgConfig.access
 
 object PostgresTransactor {
 
-  def make[F[_]: Async](poolName: String, config: PgConfig): Resource[F, HikariTransactor[F]] =
+  def make[F[_]: Async: PgConfig.Has](poolName: String): Resource[F, HikariTransactor[F]] =
     for {
-      cp <- ExecutionContexts.fixedThreadPool(size = config.maxConnections)
+      config <- access.toResource
+      cp     <- ExecutionContexts.fixedThreadPool(size = config.maxConnections)
       xa <- HikariTransactor.newHikariTransactor[F](
               driverClassName = "org.postgresql.Driver",
               config.url,

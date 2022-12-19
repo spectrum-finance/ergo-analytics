@@ -23,28 +23,28 @@ object TransactionsProcessor {
 
   def make[
     C[_]: Functor: Foldable,
-    F[_]: Monad,
+    F[_]: Monad: ApplicationConfig.Has,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
-  ](config: ApplicationConfig)(implicit
+  ](implicit
     events: TxEventsConsumer[S, F],
     orders: OrderEventsProducer[S],
     pools: PoolsEventsProducer[S],
     transactions: Transactions[F],
     logs: Logging.Make[F]
-  ): TransactionsProcessor[S] = logs.forService[TransactionsProcessor[S]].map(implicit __ => new Live[C, F, S](config))
+  ): TransactionsProcessor[S] = logs.forService[TransactionsProcessor[S]].map(implicit __ => new Live[C, F, S])
 
   final private class Live[
     C[_]: Functor: Foldable,
-    F[_]: Monad: Logging,
+    F[_]: Monad: Logging: ApplicationConfig.Has,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
-  ](config: ApplicationConfig)(implicit
+  ](implicit
     events: TxEventsConsumer[S, F],
     ordersProducer: OrderEventsProducer[S],
     poolsProducer: PoolsEventsProducer[S],
     transactions: Transactions[F]
   ) extends TransactionsProcessor[S] {
 
-    override def run: S[Unit] =
+    override def run: S[Unit] = eval(ApplicationConfig.access).flatMap { config =>
       events.stream
         .chunksN(config.transactionsBatchSize)
         .evalTap(batch => info"Got next transaction batch of size: ${batch.size}.")
@@ -66,5 +66,6 @@ object TransactionsProcessor {
           } yield ()
         }
 
+    }
   }
 }

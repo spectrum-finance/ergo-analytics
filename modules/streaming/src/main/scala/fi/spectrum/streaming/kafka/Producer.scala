@@ -1,6 +1,7 @@
 package fi.spectrum.streaming.kafka
 
 import cats.effect._
+import cats.effect.syntax.resource._
 import cats.tagless.InvariantK
 import cats.tagless.InvariantK.ops.toAllInvariantKOps
 import cats.{~>, FlatMap, Monad}
@@ -42,23 +43,24 @@ object Producer {
   def make[
     I[_]: Async,
     F[_]: FlatMap,
-    G[_]: Monad,
+    G[_]: Monad: KafkaConfig.Has: MonadCancel[*[_], Throwable],
     K: RecordSerializer[I, *],
     V: RecordSerializer[I, *]
-  ](conf: ProducerConfig, kafka: KafkaConfig)(implicit
+  ](conf: ProducerConfig)(implicit
     isoKFG: IsoK[F, Stream[G, *]],
     isoKGI: IsoK[G, I]
-  ): Resource[I, Producer[K, V, F]] = {
-    val producerSettings =
-      ProducerSettings[I, K, V]
-        .withBootstrapServers(kafka.bootstrapServers.mkString(","))
-    KafkaProducer.resource(producerSettings).map { prod =>
-      new Live(conf, prod)
-        .imapK(funK[Stream[I, *], Stream[G, *]](_.translate(isoKGI.fromF)) andThen isoKFG.fromF)(
-          isoKFG.tof andThen funK[Stream[G, *], Stream[I, *]](_.translate(isoKGI.tof))
-        )
+  ): Resource[I, Producer[K, V, F]] =
+    KafkaConfig.access.toResource.mapK(isoKGI.tof).flatMap { kafka =>
+      val producerSettings =
+        ProducerSettings[I, K, V]
+          .withBootstrapServers(kafka.bootstrapServers.mkString(","))
+      KafkaProducer.resource(producerSettings).map { prod =>
+        new Live(conf, prod)
+          .imapK(funK[Stream[I, *], Stream[G, *]](_.translate(isoKGI.fromF)) andThen isoKFG.fromF)(
+            isoKFG.tof andThen funK[Stream[G, *], Stream[I, *]](_.translate(isoKGI.tof))
+          )
+      }
     }
-  }
 
   final private class Live[F[_]: Concurrent, K, V](
     conf: ProducerConfig,
