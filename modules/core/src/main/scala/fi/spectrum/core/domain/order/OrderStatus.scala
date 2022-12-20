@@ -40,11 +40,9 @@ object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
 
   def mapToMempool(order: OrderStatus): OrderStatus =
     order match {
-      case OrderStatus.Registered          => OrderStatus.WaitingRegistration
-      case OrderStatus.Executed            => OrderStatus.WaitingExecution
-      case OrderStatus.Refunded            => OrderStatus.WaitingRefund
-      case OrderStatus.WaitingRegistration => OrderStatus.WaitingRegistration
-      case OrderStatus.WaitingExecution    => OrderStatus.WaitingExecution
-      case OrderStatus.WaitingRefund       => OrderStatus.WaitingRefund
+      case OrderStatus.Registered => OrderStatus.WaitingRegistration
+      case OrderStatus.Executed   => OrderStatus.WaitingExecution
+      case OrderStatus.Refunded   => OrderStatus.WaitingRefund
+      case s                      => s
     }
 }

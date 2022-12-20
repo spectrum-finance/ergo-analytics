@@ -97,7 +97,6 @@ object Main extends IOApp {
         Producer.make[F, S, F, OrderId, OrderEvent](config.ordersProducer)
       implicit0(poolProducer: PoolsEventsProducer[S]) <-
         Producer.make[F, S, F, PoolId, PoolEvent](config.poolsProducer)
-
       implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
       implicit0(mempool: OrdersMempool[F])           = OrdersMempool.make[F]
       implicit0(ordersParser: ProcessedOrderParser)  = ProcessedOrderParser.make(config.spfTokenId)
