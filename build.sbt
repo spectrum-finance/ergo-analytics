@@ -39,7 +39,8 @@ lazy val core = mkModule("core", "core")
       refinedCats,
       mouse,
       kafka,
-      pureConfigCE
+      pureConfigCE,
+      redis
     ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums ++ doobie
   )
 

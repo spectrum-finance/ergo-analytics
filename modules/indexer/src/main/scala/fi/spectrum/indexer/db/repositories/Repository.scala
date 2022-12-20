@@ -7,7 +7,7 @@ import doobie.util.log.LogHandler
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.indexer.models.UpdateState
 
-/** Accumulates Insert/Delete/Update api
+/** Keeps Insert/Delete/Update api
   */
 trait Repository[T, I] {
   def insertNoConflict(implicit lh: LogHandler, w: Write[T]): Update[T]
@@ -24,7 +24,7 @@ trait Repository[T, I] {
 }
 
 object Repository {
-  implicit val swapsRepository: AmmSwapRepository               = new AmmSwapRepository
+  implicit val swapsRepository: AmmSwapRepository            = new AmmSwapRepository
   implicit val redeemsRepository: RedeemRepository           = new RedeemRepository
   implicit val depositsRepository: DepositRepository         = new DepositRepository
   implicit val locksRepository: LockRepository               = new LockRepository

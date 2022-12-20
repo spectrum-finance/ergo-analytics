@@ -2,12 +2,16 @@ package fi.spectrum.core.domain.analytics
 
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderOptics._
-import glass.{Contains, PProperty}
-import glass.classic.Optional
+import glass.{Contains, PContains, PProperty}
+import glass.classic.{Lens, Optional}
 import glass.macros.{GenContains, GenEquivalent}
 import cats.syntax.either._
+import fi.spectrum.core.domain.order.{OrderState, OrderStatus}
 
 object ProcessedOrderOptics {
+
+  implicit val stateStatusLens: Lens[ProcessedOrder.Any, OrderStatus] =
+    Lens[ProcessedOrder.Any, OrderState] >> Lens[OrderState, OrderStatus]
 
   implicit val swapOptional: Optional[ProcessedOrder.Any, Swap] =
     GenContains[ProcessedOrder.Any](_.order) >> swapPrism

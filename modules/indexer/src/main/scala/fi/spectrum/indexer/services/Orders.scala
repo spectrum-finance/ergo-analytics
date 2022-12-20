@@ -1,10 +1,11 @@
 package fi.spectrum.indexer.services
 
+import cats.Monad
 import cats.data.NonEmptyList
 import cats.instances.all._
 import cats.syntax.traverse._
-import cats.{Functor, Monad}
 import derevo.derive
+import fi.spectrum.core.domain.analytics.ProcessedOrder
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.streaming.domain.OrderEvent
 import tofu.doobie.transactor.Txr
@@ -24,26 +25,40 @@ object Orders {
 
   def make[F[_]: Monad, D[_]: Monad](implicit
     bundle: PersistBundle[D],
+    mempool: OrdersMempool[F],
     txr: Txr[F, D],
     logs: Logging.Make[F]
   ): Orders[F] =
     logs.forService[Orders[F]].map(implicit __ => new Tracing[F] attach new Live[F, D])
 
-  final private class Live[F[_]: Functor, D[_]: Monad](implicit bundle: PersistBundle[D], txr: Txr[F, D])
-    extends Orders[F] {
+  final private class Live[F[_]: Monad, D[_]: Monad](implicit
+    bundle: PersistBundle[D],
+    mempool: OrdersMempool[F],
+    txr: Txr[F, D]
+  ) extends Orders[F] {
 
     def process(events: NonEmptyList[OrderEvent]): F[Unit] = {
+      val (toInsert, toResolve) =
+        events
+          .foldLeft((List.empty[ProcessedOrder.Any], List.empty[ProcessedOrder.Any])) { case ((acc1, acc2), next) =>
+            next match {
+              case OrderEvent.Apply(order)   => (order :: acc1) -> acc2
+              case OrderEvent.Unapply(order) => acc1            -> (order :: acc2)
+            }
+          }
+
       def insert: D[Int] =
-        NonEmptyList
-          .fromList(events.collect { case OrderEvent.Apply(order) => order })
-          .fold(0.pure[D])(v => bundle.insertAnyOrder.traverse(_(v)).map(_.sum))
+        NonEmptyList.fromList(toInsert).fold(0.pure[D])(v => bundle.insertAnyOrder.traverse(_(v)).map(_.sum))
 
       def resolve: D[Int] =
-        NonEmptyList
-          .fromList(events.collect { case OrderEvent.Unapply(order) => order })
-          .fold(0.pure[D])(v => bundle.resolveAnyOrder.traverse(_(v)).map(_.sum))
+        NonEmptyList.fromList(toResolve).fold(0.pure[D])(v => bundle.resolveAnyOrder.traverse(_(v)).map(_.sum))
 
-      (insert >> resolve).trans.void
+      for {
+        _ <- (insert >> resolve).trans
+        _ <- mempool.del(toInsert)
+        _ <- toResolve.traverse(mempool.put)
+      } yield ()
+
     }
   }
 

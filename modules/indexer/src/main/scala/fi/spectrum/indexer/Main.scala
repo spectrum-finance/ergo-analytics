@@ -1,10 +1,11 @@
 package fi.spectrum.indexer
 
 import cats.Monad
-import cats.effect.kernel.{Async, Resource}
+import cats.effect.kernel.{Async, Clock, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
 import cats.effect.{ExitCode, IO, IOApp, MonadCancel}
+import dev.profunktor.redis4cats.RedisCommands
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
@@ -14,16 +15,17 @@ import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.indexer.config.ConfigBundle
 import fi.spectrum.indexer.config.ConfigBundle._
 import fi.spectrum.indexer.db.persist.PersistBundle
-import fi.spectrum.indexer.processes.{OrdersProcessor, PoolsProcessor, TransactionsProcessor}
-import fi.spectrum.indexer.services.{Orders, Pools, Transactions}
+import fi.spectrum.indexer.processes.{MempoolProcessor, OrdersProcessor, PoolsProcessor, TransactionsProcessor}
+import fi.spectrum.indexer.services.{Orders, OrdersMempool, Pools, Transactions}
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.streaming._
-import fi.spectrum.streaming.domain.{OrderEvent, PoolEvent, TxEvent}
+import fi.spectrum.streaming.domain.{MempoolEvent, OrderEvent, PoolEvent, TxEvent}
 import fi.spectrum.streaming.kafka.Consumer._
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import fi.spectrum.streaming.kafka.serde._
 import fi.spectrum.streaming.kafka.serde.tx._
+import fi.spectrum.streaming.kafka.serde.mempool._
 import fi.spectrum.streaming.kafka.{Consumer, MakeKafkaConsumer, Producer}
 import fs2.kafka.RecordDeserializer
 import fs2.{Chunk, Stream}
@@ -39,6 +41,8 @@ import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.monadic._
 import tofu.{In, WithContext}
+import fi.spectrum.core.common.redis._
+import fi.spectrum.core.common.redis.codecs._
 
 object Main extends IOApp {
 
@@ -57,7 +61,7 @@ object Main extends IOApp {
 
   def init[
     S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad: LiftStream[*[_], F],
-    F[_]: Async: In[Dispatcher[F], *[_]]: MonadCancel[*[_], Throwable]
+    F[_]: Async: In[Dispatcher[F], *[_]]: MonadCancel[*[_], Throwable]: Clock
   ](
     configPathOpt: Option[String]
   )(implicit iso: IsoK[S, Stream[F, *]], isoKF: IsoK[F, F]): Resource[F, List[S[Unit]]] = {
@@ -83,6 +87,8 @@ object Main extends IOApp {
                                                       "markets-index-db-logging"
                                                     )
       implicit0(txEvents: TxEventsConsumer[S, F]) = makeConsumer[TxId, Option[TxEvent], S, F](config.txConsumer)
+      implicit0(mempoolTxEvents: MempoolEventsConsumer[S, F]) =
+        makeConsumer[TxId, Option[MempoolEvent], S, F](config.mempoolTxConsumer)
       implicit0(orderEvents: OrderEventsConsumer[S, F]) =
         makeConsumer[OrderId, Option[OrderEvent], S, F](config.ordersConsumer)
       implicit0(poolEvents: PoolsEventsConsumer[S, F]) =
@@ -91,6 +97,9 @@ object Main extends IOApp {
         Producer.make[F, S, F, OrderId, OrderEvent](config.ordersProducer)
       implicit0(poolProducer: PoolsEventsProducer[S]) <-
         Producer.make[F, S, F, PoolId, PoolEvent](config.poolsProducer)
+
+      implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
+      implicit0(mempool: OrdersMempool[F])           = OrdersMempool.make[F]
       implicit0(ordersParser: ProcessedOrderParser)  = ProcessedOrderParser.make(config.spfTokenId)
       implicit0(poolsParser: PoolParser)             = PoolParser.make
       implicit0(persistBundle: PersistBundle[xa.DB]) = PersistBundle.make[xa.DB]
@@ -100,7 +109,8 @@ object Main extends IOApp {
       ordersProcessor                                = OrdersProcessor.make[Chunk, F, S]
       poolsProcessor                                 = PoolsProcessor.make[Chunk, F, S]
       tx                                             = TransactionsProcessor.make[Chunk, F, S]
-    } yield List(tx.run, ordersProcessor.run, poolsProcessor.run)
+      mempoolProcessor                               = MempoolProcessor.make[Chunk, F, S]
+    } yield List(tx.run, ordersProcessor.run, poolsProcessor.run, mempoolProcessor.run)
   }
 
 }

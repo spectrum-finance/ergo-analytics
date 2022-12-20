@@ -16,6 +16,7 @@ object Dependencies {
     val fs2Kafka   = "2.5.0"
     val doobieTest = "0.13.4"
     val pureConfig = "0.17.2"
+    val redis4Cats  = "1.3.0"
 
     val scalaCheckVersion             = "1.14.1"
     val scalaCheckShapelessVersion    = "1.2.5"
@@ -39,7 +40,7 @@ object Dependencies {
   val refinedCats = "eu.timepit"  %% "refined-cats" % Version.refined
 
   val mouse = "org.typelevel" %% "mouse" % Version.mouse
-
+  val redis = "dev.profunktor" %% "redis4cats-effects" % Version.redis4Cats
   val pureConfigCE = "com.github.pureconfig" %% "pureconfig-cats-effect" % Version.pureConfig
 
   val doobie = List(

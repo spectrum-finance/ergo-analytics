@@ -2,6 +2,7 @@ package fi.spectrum.indexer.config
 
 import derevo.derive
 import derevo.pureconfig.pureconfigReader
+import fi.spectrum.core.common.redis.RedisConfig
 import fi.spectrum.core.config.{ConfigBundleCompanion, ProtocolConfig}
 import fi.spectrum.core.db.PgConfig
 import fi.spectrum.core.domain.TokenId
@@ -17,12 +18,15 @@ final case class ConfigBundle(
   @promote protocol: ProtocolConfig,
   @promote application: ApplicationConfig,
   @promote spfTokenId: TokenId,
+  @promote mempool: MempoolConfig,
   txConsumer: ConsumerConfig,
+  mempoolTxConsumer: ConsumerConfig,
   ordersConsumer: ConsumerConfig,
   poolsConsumer: ConsumerConfig,
   ordersProducer: ProducerConfig,
   poolsProducer: ProducerConfig,
-  @promote kafka: KafkaConfig
+  @promote kafka: KafkaConfig,
+  @promote redis: RedisConfig
 )
 
 object ConfigBundle extends WithContext.Companion[ConfigBundle] with ConfigBundleCompanion[ConfigBundle] {

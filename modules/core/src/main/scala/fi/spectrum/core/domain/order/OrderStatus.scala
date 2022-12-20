@@ -13,7 +13,7 @@ import tofu.logging.Loggable
   *  2. Registered - node executed order request.
   *  3. WaitingExecution - off-chain operator executed order.
   *  4. Executed - order executed by a node.
-  *  5. Stacked - the order must be executed for the following N blocks after registration.
+  *  5. WaitingRefund - refund order is in network.
   *  6. Refunded - a user refunded the order.
   */
 sealed abstract class OrderStatus extends EnumEntry
@@ -28,7 +28,7 @@ object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
 
   case object Executed extends OrderStatus
 
-  case object Stacked extends OrderStatus
+  case object WaitingRefund extends OrderStatus
 
   case object Refunded extends OrderStatus
 
@@ -37,4 +37,14 @@ object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
   implicit val show: Show[OrderStatus] = _.entryName
 
   implicit val loggable: Loggable[OrderStatus] = Loggable.show
+
+  def mapToMempool(order: OrderStatus): OrderStatus =
+    order match {
+      case OrderStatus.Registered          => OrderStatus.WaitingRegistration
+      case OrderStatus.Executed            => OrderStatus.WaitingExecution
+      case OrderStatus.Refunded            => OrderStatus.WaitingRefund
+      case OrderStatus.WaitingRegistration => OrderStatus.WaitingRegistration
+      case OrderStatus.WaitingExecution    => OrderStatus.WaitingExecution
+      case OrderStatus.WaitingRefund       => OrderStatus.WaitingRefund
+    }
 }
