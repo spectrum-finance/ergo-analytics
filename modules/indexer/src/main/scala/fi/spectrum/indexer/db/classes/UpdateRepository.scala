@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import doobie.util.log.LogHandler
 import doobie.{ConnectionIO, Update}
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.models.UpdateState
+import fi.spectrum.indexer.db.models.UpdateState
 
 /** Describes the way to update T order status
   */

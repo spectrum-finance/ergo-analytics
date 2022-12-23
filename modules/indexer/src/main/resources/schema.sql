@@ -148,3 +148,13 @@ create table if not exists public.off_chain_fee (
 alter table public.off_chain_fee owner to ergo_admin;
 
 create index off_chain_fee__pub_key on public.off_chain_fee using btree (pub_key);
+
+create table if not exists public.assets (
+    id public.hash32type primary key,
+    ticker public.ticker,
+    decimals integer
+);
+
+alter table public.assets owner to ergo_admin;
+
+create index assets__ticker on public.assets using btree (ticker);

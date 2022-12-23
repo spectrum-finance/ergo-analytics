@@ -16,7 +16,8 @@ object Dependencies {
     val fs2Kafka   = "2.5.0"
     val doobieTest = "0.13.4"
     val pureConfig = "0.17.2"
-    val redis4Cats  = "1.3.0"
+    val redis4Cats = "1.3.0"
+    val sttp       = "3.8.5"
 
     val scalaCheckVersion             = "1.14.1"
     val scalaCheckShapelessVersion    = "1.2.5"
@@ -39,9 +40,17 @@ object Dependencies {
   val refined     = "eu.timepit"  %% "refined"      % Version.refined
   val refinedCats = "eu.timepit"  %% "refined-cats" % Version.refined
 
-  val mouse = "org.typelevel" %% "mouse" % Version.mouse
-  val redis = "dev.profunktor" %% "redis4cats-effects" % Version.redis4Cats
+  val mouse        = "org.typelevel"         %% "mouse"                  % Version.mouse
+  val redis        = "dev.profunktor"        %% "redis4cats-effects"     % Version.redis4Cats
   val pureConfigCE = "com.github.pureconfig" %% "pureconfig-cats-effect" % Version.pureConfig
+
+  val sttp =
+    List(
+      "com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2"  % Version.sttp,
+      "com.softwaremill.sttp.client3" %% "core"                           % Version.sttp,
+      "com.softwaremill.sttp.client3" %% "circe"                          % Version.sttp,
+      "com.softwaremill.sttp.client3" %% "okhttp-backend"                 % Version.sttp % Test
+    )
 
   val doobie = List(
     "org.tpolecat" %% "doobie-postgres" % Version.doobie,

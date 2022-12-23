@@ -1,4 +1,4 @@
-package fi.spectrum.indexer.models
+package fi.spectrum.indexer.db.models
 
 import fi.spectrum.core.domain.order.PoolId
 import fi.spectrum.core.domain.pool.Pool

@@ -6,6 +6,8 @@ import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
 import cats.effect.{ExitCode, IO, IOApp, MonadCancel}
 import dev.profunktor.redis4cats.RedisCommands
+import fi.spectrum.core.common.redis._
+import fi.spectrum.core.common.redis.codecs._
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
@@ -15,8 +17,9 @@ import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.indexer.config.ConfigBundle
 import fi.spectrum.indexer.config.ConfigBundle._
 import fi.spectrum.indexer.db.persist.PersistBundle
+import fi.spectrum.indexer.db.repositories.AssetsRepo
 import fi.spectrum.indexer.processes.{MempoolProcessor, OrdersProcessor, PoolsProcessor, TransactionsProcessor}
-import fi.spectrum.indexer.services.{Orders, OrdersMempool, Pools, Transactions}
+import fi.spectrum.indexer.services._
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.streaming._
@@ -24,14 +27,16 @@ import fi.spectrum.streaming.domain.{MempoolEvent, OrderEvent, PoolEvent, TxEven
 import fi.spectrum.streaming.kafka.Consumer._
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import fi.spectrum.streaming.kafka.serde._
-import fi.spectrum.streaming.kafka.serde.tx._
 import fi.spectrum.streaming.kafka.serde.mempool._
+import fi.spectrum.streaming.kafka.serde.tx._
 import fi.spectrum.streaming.kafka.{Consumer, MakeKafkaConsumer, Producer}
 import fs2.kafka.RecordDeserializer
 import fs2.{Chunk, Stream}
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.ergoplatform.ErgoAddressEncoder
+import sttp.client3.SttpBackend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import tofu.doobie.log.EmbeddableLogHandler
 import tofu.doobie.transactor.Txr
 import tofu.fs2.LiftStream
@@ -41,15 +46,13 @@ import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.monadic._
 import tofu.{In, WithContext}
-import fi.spectrum.core.common.redis._
-import fi.spectrum.core.common.redis.codecs._
 
 object Main extends IOApp {
 
   type S[A] = fs2.Stream[IO, A]
 
   def run(args: List[String]): IO[ExitCode] =
-    Dispatcher[IO].use { dispatcher =>
+    Dispatcher.parallel[IO].use { dispatcher =>
       implicit val isoKS: IsoK[S, Stream[IO, *]]        = IsoK.id[S]
       implicit val isoKF: IsoK[IO, IO]                  = IsoK.id[IO]
       implicit val cxt: WithContext[IO, Dispatcher[IO]] = WithContext.const(dispatcher)
@@ -76,6 +79,8 @@ object Main extends IOApp {
       Consumer.make[S1, F1, K, V](conf)
     }
 
+    def makeBackend: Resource[F, SttpBackend[F, Any]] = HttpClientFs2Backend.resource[F]()
+
     for {
       config <- ConfigBundle.load[F](configPathOpt).toResource
       implicit0(context: WithContext[F, ConfigBundle]) = config.makeContext[F]
@@ -98,6 +103,10 @@ object Main extends IOApp {
       implicit0(poolProducer: PoolsEventsProducer[S]) <-
         Producer.make[F, S, F, PoolId, PoolEvent](config.poolsProducer)
       implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
+      implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
+      implicit0(assetsRepo: AssetsRepo[xa.DB]) = AssetsRepo.make[xa.DB]
+      implicit0(explorer: Explorer[F])    <- Explorer.make[F].toResource
+      implicit0(assets: AssetsService[F]) <- AssetsService.make[F, xa.DB].toResource
       implicit0(mempool: OrdersMempool[F])           = OrdersMempool.make[F]
       implicit0(ordersParser: ProcessedOrderParser)  = ProcessedOrderParser.make(config.spfTokenId)
       implicit0(poolsParser: PoolParser)             = PoolParser.make

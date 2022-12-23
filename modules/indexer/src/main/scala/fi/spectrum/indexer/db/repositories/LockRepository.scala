@@ -2,7 +2,7 @@ package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.indexer.db.classes.{DeleteRepository, NonUpdatableRepository}
-import fi.spectrum.indexer.models.LockDB
+import fi.spectrum.indexer.db.models.LockDB
 
 final class LockRepository
   extends Repository[LockDB, OrderId]

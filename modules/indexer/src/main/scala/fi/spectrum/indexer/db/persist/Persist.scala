@@ -11,9 +11,9 @@ import fi.spectrum.core.domain.order.OrderStatus.{Executed, Refunded, Registered
 import fi.spectrum.core.domain.order.{Order, OrderId}
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
+import fi.spectrum.indexer.db.models.UpdateState
 import fi.spectrum.indexer.db.repositories.Repository
 import fi.spectrum.indexer.foldNel
-import fi.spectrum.indexer.models.UpdateState
 import glass.classic.{Lens, Optional, Prism}
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler

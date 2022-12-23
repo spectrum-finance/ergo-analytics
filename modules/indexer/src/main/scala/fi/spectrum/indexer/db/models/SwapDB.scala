@@ -1,4 +1,4 @@
-package fi.spectrum.indexer.models
+package fi.spectrum.indexer.db.models
 
 import cats.syntax.option._
 import fi.spectrum.core.domain._

@@ -5,7 +5,7 @@ import doobie.{ConnectionIO, Update}
 import doobie.util.Write
 import doobie.util.log.LogHandler
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.models.UpdateState
+import fi.spectrum.indexer.db.models.UpdateState
 
 /** Keeps Insert/Delete/Update api
   */
@@ -30,4 +30,6 @@ object Repository {
   implicit val locksRepository: LockRepository               = new LockRepository
   implicit val offChainsFeeRepository: OffChainFeeRepository = new OffChainFeeRepository
   implicit val poolsRepository: PoolRepository               = new PoolRepository
+
+  implicit val assetInsert: AssetInsert = new AssetInsert
 }

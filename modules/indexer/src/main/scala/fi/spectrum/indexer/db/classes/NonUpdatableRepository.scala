@@ -5,7 +5,7 @@ import cats.syntax.applicative._
 import doobie.ConnectionIO
 import doobie.util.log
 import fi.spectrum.core.domain.order
-import fi.spectrum.indexer.models.UpdateState
+import fi.spectrum.indexer.db.models.UpdateState
 
 /** Provides api for non updatable entities
   */

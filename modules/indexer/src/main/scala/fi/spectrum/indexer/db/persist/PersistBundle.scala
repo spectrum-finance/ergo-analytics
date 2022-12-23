@@ -2,14 +2,14 @@ package fi.spectrum.indexer.db.persist
 
 import cats.FlatMap
 import cats.data.NonEmptyList
-import fi.spectrum.core.domain.{analytics, BoxId}
+import fi.spectrum.core.domain.{BoxId, analytics}
 import fi.spectrum.core.domain.analytics.{OffChainFee, ProcessedOrder}
 import fi.spectrum.core.domain.order.{Order, OrderId}
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.pool.Pool.AmmPool
 import fi.spectrum.core.domain.pool.PoolOptics._
 import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
-import fi.spectrum.indexer.models._
+import fi.spectrum.indexer.db.models.{DepositDB, LockDB, OffChainFeeDB, PoolDB, RedeemDB, SwapDB}
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler
 

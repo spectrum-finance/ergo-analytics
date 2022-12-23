@@ -2,7 +2,7 @@ package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
-import fi.spectrum.indexer.models.SwapDB
+import fi.spectrum.indexer.db.models.SwapDB
 
 final class AmmSwapRepository
   extends Repository[SwapDB, OrderId]
