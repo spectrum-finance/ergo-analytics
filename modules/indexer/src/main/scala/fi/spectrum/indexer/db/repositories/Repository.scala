@@ -14,13 +14,13 @@ trait Repository[T, I] {
 
   def delete(implicit lh: LogHandler, w: Write[I]): Update[I]
 
-  def updateRefunded(update: NonEmptyList[UpdateState])(implicit lh: LogHandler): ConnectionIO[Int]
+  def updateRefunded(update: UpdateState)(implicit lh: LogHandler): ConnectionIO[Int]
 
-  def deleteRefunded(delete: NonEmptyList[OrderId])(implicit lh: LogHandler): ConnectionIO[Int]
+  def deleteRefunded(delete: OrderId)(implicit lh: LogHandler): ConnectionIO[Int]
 
-  def updateExecuted(update: NonEmptyList[UpdateState])(implicit lh: LogHandler): ConnectionIO[Int]
+  def updateExecuted(update: UpdateState)(implicit lh: LogHandler): ConnectionIO[Int]
 
-  def deleteExecuted(delete: NonEmptyList[OrderId])(implicit lh: LogHandler): ConnectionIO[Int]
+  def deleteExecuted(delete: OrderId)(implicit lh: LogHandler): ConnectionIO[Int]
 }
 
 object Repository {

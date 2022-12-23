@@ -38,6 +38,14 @@ object Orders {
   ) extends Orders[F] {
 
     def process(events: NonEmptyList[OrderEvent]): F[Unit] = {
+
+      def run: D[Int] = events
+        .traverse {
+          case OrderEvent.Apply(order)   => bundle.insertAnyOrder.traverse(_(order)).map(_.sum)
+          case OrderEvent.Unapply(order) => bundle.resolveAnyOrder.traverse(_(order)).map(_.sum)
+        }
+        .map(_.toList.sum)
+
       val (toInsert, toResolve) =
         events
           .foldLeft((List.empty[ProcessedOrder.Any], List.empty[ProcessedOrder.Any])) { case ((acc1, acc2), next) =>
@@ -47,14 +55,8 @@ object Orders {
             }
           }
 
-      def insert: D[Int] =
-        NonEmptyList.fromList(toInsert).fold(0.pure[D])(v => bundle.insertAnyOrder.traverse(_(v)).map(_.sum))
-
-      def resolve: D[Int] =
-        NonEmptyList.fromList(toResolve).fold(0.pure[D])(v => bundle.resolveAnyOrder.traverse(_(v)).map(_.sum))
-
       for {
-        _ <- (insert >> resolve).trans
+        _ <- run.trans
         _ <- mempool.del(toInsert)
         _ <- toResolve.traverse(mempool.put)
       } yield ()

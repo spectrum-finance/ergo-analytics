@@ -22,10 +22,10 @@ final case class PersistBundle[D[_]](
   pools: Persist[Pool, D]
 ) {
 
-  def insertAnyOrder: List[NonEmptyList[ProcessedOrder.Any] => D[Int]] =
+  def insertAnyOrder: List[ProcessedOrder.Any => D[Int]] =
     List(swaps.insert, deposits.insert, redeems.insert, locks.insert, offChainFees.insert)
 
-  def resolveAnyOrder: List[NonEmptyList[ProcessedOrder.Any] => D[Int]] =
+  def resolveAnyOrder: List[ProcessedOrder.Any => D[Int]] =
     List(swaps.resolve, deposits.resolve, redeems.resolve, locks.resolve, offChainFees.resolve)
 }
 

@@ -36,15 +36,12 @@ object Pools {
   ) extends Pools[F] {
 
     def process(events: NonEmptyList[PoolEvent]): F[Unit] = {
-      def insert: D[Int] =
-        NonEmptyList
-          .fromList(events.collect { case PoolEvent.Apply(order) => order })
-          .fold(0.pure[D])(bundle.pools.insert(_))
-
-      def resolve: D[Int] =
-        NonEmptyList
-          .fromList(events.collect { case PoolEvent.Unapply(order) => order })
-          .fold(0.pure[D])(bundle.pools.resolve(_))
+      def run: D[Int] = events
+        .traverse {
+          case PoolEvent.Apply(pool)   => bundle.pools.insert(pool)
+          case PoolEvent.Unapply(pool) => bundle.pools.resolve(pool)
+        }
+        .map(_.toList.sum)
 
       def tokens: F[Unit] = NonEmptyList.fromList(events.collect { case PoolEvent.Apply(pool: AmmPool) =>
         List(pool.lp.tokenId, pool.x.tokenId, pool.y.tokenId)
@@ -53,7 +50,7 @@ object Pools {
         case None        => unit[F]
       }
 
-      (insert >> resolve).trans >> tokens
+      run.trans >> tokens
     }
   }
 
