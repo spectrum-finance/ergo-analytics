@@ -45,7 +45,7 @@ object BlockProcessor {
                    case None        => unit[F]
                  }
             _ <- events.toList.lastOption.traverse(_.commit).void
-            _ <- info"Finished to process pools batch"
+            _ <- info"Finished to process blocks batch"
           } yield ()
         }
       }
