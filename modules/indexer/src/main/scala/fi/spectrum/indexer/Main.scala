@@ -11,19 +11,19 @@ import fi.spectrum.core.common.redis.codecs._
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
-import fi.spectrum.core.domain.TxId
+import fi.spectrum.core.domain.{BlockId, TxId}
 import fi.spectrum.core.domain.order.{OrderId, PoolId}
 import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.indexer.config.ConfigBundle
 import fi.spectrum.indexer.config.ConfigBundle._
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.repositories.AssetsRepo
-import fi.spectrum.indexer.processes.{MempoolProcessor, OrdersProcessor, PoolsProcessor, TransactionsProcessor}
+import fi.spectrum.indexer.processes.{BlockProcessor, MempoolProcessor, OrdersProcessor, PoolsProcessor, TransactionsProcessor}
 import fi.spectrum.indexer.services._
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.streaming._
-import fi.spectrum.streaming.domain.{MempoolEvent, OrderEvent, PoolEvent, TxEvent}
+import fi.spectrum.streaming.domain.{BlockEvent, MempoolEvent, OrderEvent, PoolEvent, TxEvent}
 import fi.spectrum.streaming.kafka.Consumer._
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import fi.spectrum.streaming.kafka.serde._
@@ -98,6 +98,8 @@ object Main extends IOApp {
         makeConsumer[OrderId, Option[OrderEvent], S, F](config.ordersConsumer)
       implicit0(poolEvents: PoolsEventsConsumer[S, F]) =
         makeConsumer[PoolId, Option[PoolEvent], S, F](config.poolsConsumer)
+      implicit0(blockEvents: BlocksEventsConsumer[S, F]) =
+        makeConsumer[BlockId, Option[BlockEvent], S, F](config.blocksConsumer)
       implicit0(ordersProducer: OrderEventsProducer[S]) <-
         Producer.make[F, S, F, OrderId, OrderEvent](config.ordersProducer)
       implicit0(poolProducer: PoolsEventsProducer[S]) <-
@@ -113,12 +115,14 @@ object Main extends IOApp {
       implicit0(persistBundle: PersistBundle[xa.DB]) = PersistBundle.make[xa.DB]
       implicit0(orders: Orders[F])                   = Orders.make[F, xa.DB]
       implicit0(pools: Pools[F])                     = Pools.make[F, xa.DB]
+      implicit0(blocks: Blocks[F])                   = Blocks.make[F, xa.DB]
       implicit0(transactions: Transactions[F])       = Transactions.make[F]
       ordersProcessor                                = OrdersProcessor.make[Chunk, F, S]
       poolsProcessor                                 = PoolsProcessor.make[Chunk, F, S]
+      blockProcessor                                 = BlockProcessor.make[Chunk, F, S]
       tx                                             = TransactionsProcessor.make[Chunk, F, S]
       mempoolProcessor                               = MempoolProcessor.make[Chunk, F, S]
-    } yield List(tx.run, ordersProcessor.run, poolsProcessor.run, mempoolProcessor.run)
+    } yield List(tx.run, ordersProcessor.run, poolsProcessor.run, mempoolProcessor.run, blockProcessor.run)
   }
 
 }
