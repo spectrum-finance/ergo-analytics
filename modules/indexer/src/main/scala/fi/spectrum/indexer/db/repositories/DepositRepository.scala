@@ -2,14 +2,20 @@ package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
-import fi.spectrum.indexer.db.models.DepositDB
+import fi.spectrum.indexer.db.models.{DepositDB, UpdateEvaluatedTx}
+import doobie.{ConnectionIO, Update}
+import doobie.util.log.LogHandler
+import fi.spectrum.core.domain.analytics.OrderEvaluation.DepositEvaluation
 
 final class DepositRepository
-  extends Repository[DepositDB, OrderId]
+  extends Repository[DepositDB, OrderId, DepositEvaluation]
   with DeleteRepository[DepositDB, OrderId]
   with UpdateRepository[DepositDB] {
 
   val tableName: String = "deposits"
+
+  val executed: String   = "executed_transaction_id"
+  val executedTs: String = "executed_transaction_timestamp"
 
   val fields: List[String] = List(
     "order_id",
@@ -30,11 +36,31 @@ final class DepositRepository
     "redeemer_ergo_tree",
     "registered_transaction_id",
     "registered_transaction_timestamp",
-    "executed_transaction_id",
-    "executed_transaction_timestamp",
-    "refunded_transaction_id",
-    "refunded_transaction_timestamp"
+    executed,
+    executedTs,
+    refunded,
+    refundedTs
   )
 
   val field: String = "order_id"
+
+  def updateExecuted(update: UpdateEvaluatedTx[DepositEvaluation])(implicit lh: LogHandler): ConnectionIO[Int] =
+    Update[UpdateEvaluatedTx[DepositEvaluation]](
+      s"""
+         |update $tableName
+         |set $executed=?, $executedTs=?, pool_state_id=?, output_id_lp=?, output_amount_lp=?
+         |where order_id=?""".stripMargin
+    )
+      .toUpdate0(update)
+      .run
+
+  def deleteExecuted(delete: OrderId)(implicit lh: LogHandler): ConnectionIO[Int] =
+    Update[OrderId](
+      s"""
+         |update $tableName
+         |set $executed=null, $executedTs=null, pool_state_id=null,output_id_lp=null,output_amount_lp=null
+         |where order_id=?""".stripMargin
+    )
+      .toUpdate0(delete)
+      .run
 }

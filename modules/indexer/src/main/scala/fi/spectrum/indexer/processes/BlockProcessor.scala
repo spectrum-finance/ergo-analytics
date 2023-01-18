@@ -6,7 +6,7 @@ import cats.syntax.traverse._
 import cats.{Foldable, Functor, Monad}
 import fi.spectrum.indexer.config.ApplicationConfig
 import fi.spectrum.indexer.services.Blocks
-import fi.spectrum.streaming.BlocksEventsConsumer
+import fi.spectrum.streaming.BlocksConsumer
 import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.logging._
@@ -23,7 +23,7 @@ object BlockProcessor {
     C[_]: Functor: Foldable,
     F[_]: Monad: ApplicationConfig.Has,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
-  ](implicit blocks: BlocksEventsConsumer[S, F], repo: Blocks[F], logs: Logging.Make[F]): BlockProcessor[S] =
+  ](implicit blocks: BlocksConsumer[S, F], repo: Blocks[F], logs: Logging.Make[F]): BlockProcessor[S] =
     logs.forService[BlockProcessor[S]] map { implicit __ => new Live[C, F, S] }
 
   final class Live[
@@ -31,13 +31,13 @@ object BlockProcessor {
     F[_]: Monad: Logging: ApplicationConfig.Has,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
   ](implicit
-    blocks: BlocksEventsConsumer[S, F],
+    blocks: BlocksConsumer[S, F],
     repo: Blocks[F]
   ) extends BlockProcessor[S] {
 
     def run: S[Unit] =
       eval(ApplicationConfig.access).flatMap { config =>
-        blocks.stream.chunksN(config.poolsBatchSize).evalMap { events =>
+        blocks.stream.chunksN(config.blocksBatchSize).evalMap { events =>
           for {
             _ <- info"Got next block events batch of size ${events.size}"
             _ <- NonEmptyList.fromList(events.toList.flatMap(_.message)) match {

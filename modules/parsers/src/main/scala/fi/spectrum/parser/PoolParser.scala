@@ -22,7 +22,7 @@ trait PoolParser { self =>
 
 object PoolParser {
 
-  def make: PoolParser = List[PoolParser](ammPoolParser).reduceLeft(_ or _)
+  implicit def make: PoolParser = List[PoolParser](ammPoolParser).reduceLeft(_ or _)
 
   private def ammPoolParser: PoolParser = {
     val poolParser: AmmPoolParser[Version, AmmType] = AmmPoolParser.make

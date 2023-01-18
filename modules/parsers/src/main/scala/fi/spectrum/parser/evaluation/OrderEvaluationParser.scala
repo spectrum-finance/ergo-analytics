@@ -60,15 +60,15 @@ final class OrderEvaluationParser {
         val out =
           if (quote.isNative) AssetAmount.native(output.value).some
           else output.assets.find(_.tokenId == quote.tokenId).map(AssetAmount.fromBoxAsset)
-        out.map(SwapEvaluation(_))
+        out.map(SwapEvaluation.apply)
       case _ => none
     }
 
   def deposit(redeemer: SErgoTree, output: Output, pool: Pool): Option[DepositEvaluation] =
     if (output.ergoTree == redeemer)
       Optional[Pool, TokenId].getOption(pool) match {
-        case Some(value) =>
-          output.assets.find(_.tokenId == value).map(AssetAmount.fromBoxAsset).map(DepositEvaluation(_))
+        case Some(poolLP) =>
+          output.assets.find(_.tokenId == poolLP).map(AssetAmount.fromBoxAsset).map(DepositEvaluation.apply)
         case None => none
       }
     else none

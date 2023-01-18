@@ -6,8 +6,7 @@ import tofu.WithContext
 
 @derive(pureconfigReader)
 final case class ApplicationConfig(
-  ordersBatchSize: Int,
-  poolsBatchSize: Int,
+  blocksBatchSize: Int,
   transactionsBatchSize: Int,
   mempoolBatchSize: Int
 )

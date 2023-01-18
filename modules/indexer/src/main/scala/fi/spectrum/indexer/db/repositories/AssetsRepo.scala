@@ -14,7 +14,7 @@ import tofu.higherKind.derived.representableK
 import tofu.syntax.monadic._
 
 @derive(representableK)
-sealed trait AssetsRepo[F[_]] {
+trait AssetsRepo[F[_]] {
   def getAll: F[List[TokenId]]
 
   def insertNoConflict(nel: NonEmptyList[AssetDB]): F[Unit]
@@ -31,7 +31,7 @@ object AssetsRepo {
     extends AssetsRepo[F] {
 
     def getAll: F[List[TokenId]] =
-      LiftConnectionIO[F].lift(sql"select token_id from assets".query[TokenId].to[List])
+      LiftConnectionIO[F].lift(sql"select id from assets".query[TokenId].to[List])
 
     def insertNoConflict(nel: NonEmptyList[AssetDB]): F[Unit] =
       LiftConnectionIO[F].lift(insert.insertNoConflict.updateMany(nel)).void

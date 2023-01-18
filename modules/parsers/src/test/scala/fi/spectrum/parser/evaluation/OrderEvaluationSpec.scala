@@ -1,6 +1,6 @@
 package fi.spectrum.parser.evaluation
 
-import fi.spectrum.parser.evaluation.Processed._
+import fi.spectrum.parser.evaluation.Transactions._
 import fi.spectrum.parser.{CatsPlatform, OrderParser, PoolParser}
 import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.matchers.should.Matchers
@@ -15,21 +15,26 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
   val parser      = OrderEvaluationParser.make
 
   property("Parse swap evaluation") {
-    val order = transactionSwap.inputs.toList.map(i => orderParser.parse(i.output)).collectFirst { case Some(v) => v }.get
-    val pool = transactionSwap.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
-    parser.parse(order, transactionSwap.outputs.toList, pool).get shouldEqual OrderEval.swap.eval
+    val order =
+      swapRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
+    val pool = swapEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
+    parser.parse(order, swapEvaluateTransaction.outputs.toList, pool).get shouldEqual swapEval
   }
 
   property("Parse redeem evaluation") {
-    val order = transactionRedeem.inputs.toList.map(i => orderParser.parse(i.output)).collectFirst { case Some(v) => v }.get
-    val pool = transactionRedeem.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
-    parser.parse(order, transactionRedeem.outputs.toList, pool).get shouldEqual OrderEval.redeem.eval
+    val order =
+      redeemRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
+    val pool =
+      redeemEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
+    parser.parse(order, redeemEvaluateTransaction.outputs.toList, pool).get shouldEqual redeemEval
   }
 
   property("Parse deposit evaluation") {
-    val order = transactionDeposit.inputs.toList.map(i => orderParser.parse(i.output)).collectFirst { case Some(v) => v }.get
-    val pool = transactionDeposit.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
-    parser.parse(order, transactionDeposit.outputs.toList, pool).get shouldEqual OrderEval.deposit.eval
+    val order =
+      depositRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
+    val pool =
+      depositEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
+    parser.parse(order, depositEvaluateTransaction.outputs.toList, pool).get shouldEqual depositEval
   }
 
 }

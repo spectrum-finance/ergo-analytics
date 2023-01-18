@@ -54,7 +54,7 @@ object Version extends Enum[Version] with CirceEnum[Version] with Lowercase {
       case Left(value)                 => s"Failed to decode $b - ${value.getMessage()}".asLeft
     }
   }
-  implicit def showAntVersion[B <: Version]: Show[B] = (t: B) => t.entryName
+  implicit def showAnyVersion[B <: Version]: Show[B] = (t: B) => t.entryName
 
   implicit def loggableAnyVersion[B <: Version]: Loggable[B] = Loggable.show
 }

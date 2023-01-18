@@ -1,10 +1,10 @@
 package fi.spectrum.core.domain
 
-
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.{Get, Put}
 import io.estatico.newtype.macros.newtype
+import scodec.bits.ByteVector
 import tofu.logging.derivation.{loggable, show}
 
 package object order {
@@ -15,6 +15,11 @@ package object order {
   object OrderId {
     implicit val get: Get[OrderId] = deriving
     implicit val put: Put[OrderId] = deriving
+
+    implicit def codec: scodec.Codec[OrderId] =
+      scodec.codecs
+        .bytes(64)
+        .xmap(xs => OrderId(new String(xs.toArray)), pid => ByteVector(pid.value.getBytes()))
   }
 
   @derive(encoder, decoder, loggable, show)

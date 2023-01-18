@@ -4,12 +4,12 @@ import cats.effect.kernel.Clock
 import cats.syntax.foldable._
 import cats.syntax.traverse._
 import cats.{Foldable, Functor, Monad}
-import fi.spectrum.core.domain.analytics.ProcessedOrder
+import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.core.domain.transaction.Transaction
 import fi.spectrum.indexer.config.ApplicationConfig
-import fi.spectrum.indexer.services.OrdersMempool
+import fi.spectrum.indexer.services.Mempool
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
-import fi.spectrum.streaming.MempoolEventsConsumer
+import fi.spectrum.streaming.MempoolConsumer
 import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.logging._
@@ -28,9 +28,9 @@ object MempoolProcessor {
     F[_]: Monad: ApplicationConfig.Has: Clock,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
   ](implicit
-    events: MempoolEventsConsumer[S, F],
-    mempoolCache: OrdersMempool[F],
-    orderParser: ProcessedOrderParser,
+    events: MempoolConsumer[S, F],
+    mempoolCache: Mempool[F],
+    orderParser: ProcessedOrderParser[F],
     logs: Logging.Make[F]
   ): MempoolProcessor[S] = logs.forService[MempoolProcessor[S]].map(implicit __ => new Live[C, F, S])
 
@@ -38,7 +38,7 @@ object MempoolProcessor {
     C[_]: Functor: Foldable,
     F[_]: Monad: ApplicationConfig.Has: Logging: Clock,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
-  ](implicit events: MempoolEventsConsumer[S, F], mempoolCache: OrdersMempool[F], orderParser: ProcessedOrderParser)
+  ](implicit events: MempoolConsumer[S, F], mempoolCache: Mempool[F], orderParser: ProcessedOrderParser[F])
     extends MempoolProcessor[S] {
 
     def run: S[Unit] = eval(ApplicationConfig.access).flatMap { config =>
@@ -46,10 +46,11 @@ object MempoolProcessor {
         .chunksN(config.mempoolBatchSize)
         .evalTap(batch => info"Got next mempool batch of size: ${batch.size}.")
         .flatMap { committableBatch =>
-          def orders(ts: Long): List[ProcessedOrder.Any] = committableBatch.toList
-            .flatMap(_.message)
-            .map(tx => Transaction.fromErgoLike(tx.tx))
-            .flatMap(tx => orderParser.parse(tx, ts))
+          def orders(ts: Long): List[Processed.Any] = List.empty
+//            committableBatch.toList
+//            .flatMap(_.message)
+//            .map(tx => Transaction.fromErgoLike(tx.tx))
+//            .flatMap(tx => orderParser.parse(tx, ts))
 
           for {
             ts <- eval(millis[F])

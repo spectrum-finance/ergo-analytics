@@ -4,34 +4,35 @@ import cats.Monad
 import cats.effect.kernel.{Async, Clock, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
-import cats.effect.{ExitCode, IO, IOApp, MonadCancel}
+import cats.effect.{ExitCode, IO, IOApp}
 import dev.profunktor.redis4cats.RedisCommands
 import fi.spectrum.core.common.redis._
 import fi.spectrum.core.common.redis.codecs._
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
-import fi.spectrum.core.domain.{BlockId, TxId}
-import fi.spectrum.core.domain.order.{OrderId, PoolId}
+import fi.spectrum.core.domain.TxId
 import fi.spectrum.core.syntax.WithContextOps._
+import fi.spectrum.graphite.{GraphiteClient, Metrics}
 import fi.spectrum.indexer.config.ConfigBundle
 import fi.spectrum.indexer.config.ConfigBundle._
+import fi.spectrum.indexer.db.local.storage.{OrderStorageTransactional, OrdersStorage}
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.repositories.AssetsRepo
-import fi.spectrum.indexer.processes.{BlockProcessor, MempoolProcessor, OrdersProcessor, PoolsProcessor, TransactionsProcessor}
+import fi.spectrum.indexer.processes.TransactionsProcessor
 import fi.spectrum.indexer.services._
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.streaming._
-import fi.spectrum.streaming.domain.{BlockEvent, MempoolEvent, OrderEvent, PoolEvent, TxEvent}
+import fi.spectrum.streaming.domain.TransactionEvent
+import fi.spectrum.streaming.domain.TransactionEvent._
 import fi.spectrum.streaming.kafka.Consumer._
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
-import fi.spectrum.streaming.kafka.serde._
-import fi.spectrum.streaming.kafka.serde.mempool._
-import fi.spectrum.streaming.kafka.serde.tx._
-import fi.spectrum.streaming.kafka.{Consumer, MakeKafkaConsumer, Producer}
+import fi.spectrum.streaming.kafka.serde.string._
+import fi.spectrum.streaming.kafka.{Consumer, MakeKafkaConsumer}
+import fs2.Chunk
 import fs2.kafka.RecordDeserializer
-import fs2.{Chunk, Stream}
+import io.github.oskin1.rocksdb.scodec.TxRocksDB
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.ergoplatform.ErgoAddressEncoder
@@ -41,7 +42,6 @@ import tofu.doobie.log.EmbeddableLogHandler
 import tofu.doobie.transactor.Txr
 import tofu.fs2.LiftStream
 import tofu.fs2Instances._
-import tofu.lift.IsoK
 import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.monadic._
@@ -53,8 +53,6 @@ object Main extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =
     Dispatcher.parallel[IO].use { dispatcher =>
-      implicit val isoKS: IsoK[S, Stream[IO, *]]        = IsoK.id[S]
-      implicit val isoKF: IsoK[IO, IO]                  = IsoK.id[IO]
       implicit val cxt: WithContext[IO, Dispatcher[IO]] = WithContext.const(dispatcher)
       init[S, IO](args.headOption).use { processes =>
         val appF = fs2.Stream(processes: _*).parJoinUnbounded.compile.drain
@@ -64,19 +62,17 @@ object Main extends IOApp {
 
   def init[
     S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad: LiftStream[*[_], F],
-    F[_]: Async: In[Dispatcher[F], *[_]]: MonadCancel[*[_], Throwable]: Clock
-  ](
-    configPathOpt: Option[String]
-  )(implicit iso: IsoK[S, Stream[F, *]], isoKF: IsoK[F, F]): Resource[F, List[S[Unit]]] = {
+    F[_]: Async: In[Dispatcher[F], *[_]]: Clock
+  ](configPathOpt: Option[String]): Resource[F, List[S[Unit]]] = {
 
     def makeConsumer[
-      K: RecordDeserializer[F1, *],
-      V: RecordDeserializer[F1, *],
-      S1[_]: LiftStream[*[_], F1]: Monad,
-      F1[_]: Async: KafkaConfig.Has
-    ](conf: ConsumerConfig): Aux[K, V, (TopicPartition, OffsetAndMetadata), S1, F1] = {
-      implicit val maker = MakeKafkaConsumer.make[F1, K, V]
-      Consumer.make[S1, F1, K, V](conf)
+      K: RecordDeserializer[F, *],
+      V: RecordDeserializer[F, *]
+    ](conf: ConsumerConfig)(implicit
+      context: KafkaConfig.Has[F]
+    ): Aux[K, V, (TopicPartition, OffsetAndMetadata), S, F] = {
+      implicit val maker: MakeKafkaConsumer[F, K, V] = MakeKafkaConsumer.make[F, K, V]
+      Consumer.make[S, F, K, V](conf)
     }
 
     def makeBackend: Resource[F, SttpBackend[F, Any]] = HttpClientFs2Backend.resource[F]()
@@ -85,44 +81,31 @@ object Main extends IOApp {
       config <- ConfigBundle.load[F](configPathOpt).toResource
       implicit0(context: WithContext[F, ConfigBundle]) = config.makeContext[F]
       implicit0(e: ErgoAddressEncoder) <- ProtocolConfig.access[F].map(_.networkType.addressEncoder).toResource
-      transactor                       <- PostgresTransactor.make[F]("markets-index")
-      implicit0(xa: Txr.Continuational[F]) = Txr.continuational[F](transactor)
-      implicit0(logs: Logging.Make[F])     = Logging.Make.plain[F]
-      implicit0(elh: EmbeddableLogHandler[xa.DB]) = makeEmbeddableHandler[F, xa.DB](
-                                                      "markets-index-db-logging"
-                                                    )
-      implicit0(txEvents: TxEventsConsumer[S, F]) = makeConsumer[TxId, Option[TxEvent], S, F](config.txConsumer)
-      implicit0(mempoolTxEvents: MempoolEventsConsumer[S, F]) =
-        makeConsumer[TxId, Option[MempoolEvent], S, F](config.mempoolTxConsumer)
-      implicit0(orderEvents: OrderEventsConsumer[S, F]) =
-        makeConsumer[OrderId, Option[OrderEvent], S, F](config.ordersConsumer)
-      implicit0(poolEvents: PoolsEventsConsumer[S, F]) =
-        makeConsumer[PoolId, Option[PoolEvent], S, F](config.poolsConsumer)
-      implicit0(blockEvents: BlocksEventsConsumer[S, F]) =
-        makeConsumer[BlockId, Option[BlockEvent], S, F](config.blocksConsumer)
-      implicit0(ordersProducer: OrderEventsProducer[S]) <-
-        Producer.make[F, S, F, OrderId, OrderEvent](config.ordersProducer)
-      implicit0(poolProducer: PoolsEventsProducer[S]) <-
-        Producer.make[F, S, F, PoolId, PoolEvent](config.poolsProducer)
+      transactor                       <- PostgresTransactor.make[F]("indexer")
+      implicit0(xa: Txr.Continuational[F])        = Txr.continuational[F](transactor)
+      implicit0(logsF: Logging.Make[F])           = Logging.Make.plain[F]
+      implicit0(logsD: Logging.Make[xa.DB])       = Logging.Make.plain[xa.DB]
+      implicit0(elh: EmbeddableLogHandler[xa.DB]) = makeEmbeddableHandler[F, xa.DB]("indexer-db")
+      implicit0(txC: TxConsumer[S, F])            = makeConsumer[TxId, Option[TransactionEvent]](config.txConsumer)
+      implicit0(graphiteD: GraphiteClient[xa.DB])        <- GraphiteClient.make[F, xa.DB](config.graphite)
+      implicit0(graphiteF: GraphiteClient[F])            <- GraphiteClient.make[F, F](config.graphite)
       implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
       implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
+      implicit0(rocks: TxRocksDB[F])                     <- TxRocksDB.make[F, F](config.rocks.path)
       implicit0(assetsRepo: AssetsRepo[xa.DB]) = AssetsRepo.make[xa.DB]
-      implicit0(explorer: Explorer[F])    <- Explorer.make[F].toResource
-      implicit0(assets: AssetsService[F]) <- AssetsService.make[F, xa.DB].toResource
-      implicit0(mempool: OrdersMempool[F])           = OrdersMempool.make[F]
-      implicit0(ordersParser: ProcessedOrderParser)  = ProcessedOrderParser.make(config.spfTokenId)
-      implicit0(poolsParser: PoolParser)             = PoolParser.make
-      implicit0(persistBundle: PersistBundle[xa.DB]) = PersistBundle.make[xa.DB]
-      implicit0(orders: Orders[F])                   = Orders.make[F, xa.DB]
-      implicit0(pools: Pools[F])                     = Pools.make[F, xa.DB]
-      implicit0(blocks: Blocks[F])                   = Blocks.make[F, xa.DB]
-      implicit0(transactions: Transactions[F])       = Transactions.make[F]
-      ordersProcessor                                = OrdersProcessor.make[Chunk, F, S]
-      poolsProcessor                                 = PoolsProcessor.make[Chunk, F, S]
-      blockProcessor                                 = BlockProcessor.make[Chunk, F, S]
-      tx                                             = TransactionsProcessor.make[Chunk, F, S]
-      mempoolProcessor                               = MempoolProcessor.make[Chunk, F, S]
-    } yield List(tx.run, ordersProcessor.run, poolsProcessor.run, mempoolProcessor.run, blockProcessor.run)
+      implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
+      implicit0(metricsF: Metrics[F])          = Metrics.make[F]
+      implicit0(explorer: Explorer[F]) <- Explorer.make[F].toResource
+      implicit0(assets: Assets[F])     <- Assets.make[F, xa.DB].toResource
+      implicit0(ordersParser: ProcessedOrderParser[F]) = ProcessedOrderParser.make[F](config.spfTokenId)
+      implicit0(poolsParser: PoolParser)               = PoolParser.make
+      implicit0(persistBundle: PersistBundle[xa.DB])   = PersistBundle.make[xa.DB]
+      implicit0(orders: Orders[F])                     = Orders.make[F, xa.DB]
+      implicit0(pools: Pools[F])                       = Pools.make[F, xa.DB]
+      implicit0(storage: OrderStorageTransactional[F]) = OrdersStorage.make[F]
+      implicit0(transactions: Events[F])               = Events.make[F]
+      txProcessor                                      = TransactionsProcessor.make[Chunk, F, S]
+    } yield List(txProcessor.run)
   }
 
 }

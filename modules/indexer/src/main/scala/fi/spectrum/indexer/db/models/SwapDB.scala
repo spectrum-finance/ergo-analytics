@@ -4,9 +4,9 @@ import cats.syntax.option._
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.analytics.AnalyticsOptics._
 import fi.spectrum.core.domain.analytics.OrderEvaluation.SwapEvaluation
-import fi.spectrum.core.domain.analytics.{OrderEvaluation, ProcessedOrder, Version}
+import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed, Version}
 import fi.spectrum.core.domain.order.Order.Swap._
-import fi.spectrum.core.domain.order.OrderStatus.{Executed, Refunded, Registered}
+import fi.spectrum.core.domain.order.OrderStatus.{Evaluated, Refunded, Registered}
 import fi.spectrum.core.domain.order.{Order, OrderId, PoolId}
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
@@ -33,7 +33,7 @@ final case class SwapDB(
 
 object SwapDB {
 
-  implicit val toDB: ToDB[ProcessedOrder[Order.Swap], SwapDB] = processed => {
+  implicit val toDB: ToDB[Processed[Order.Swap], SwapDB] = processed => {
     processed.order match {
       case swap: SwapV3       => processed.widen(swap).toDB
       case swap: SwapV2       => processed.widen(swap).toDB
@@ -42,7 +42,7 @@ object SwapDB {
     }
   }
 
-  implicit val ___V1: ToDB[ProcessedOrder[SwapV1], SwapDB] =
+  implicit val ___V1: ToDB[Processed[SwapV1], SwapDB] =
     processed => {
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
       val txInfo   = TxInfo(processed.state.txId, processed.state.timestamp)
@@ -61,12 +61,12 @@ object SwapDB {
         processed.order.version,
         none,
         if (processed.state.status.in(Registered)) txInfo.some else none,
-        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none
       )
     }
 
-  implicit val ___V2: ToDB[ProcessedOrder[SwapV2], SwapDB] =
+  implicit val ___V2: ToDB[Processed[SwapV2], SwapDB] =
     processed => {
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
       val txInfo   = TxInfo(processed.state.txId, processed.state.timestamp)
@@ -85,12 +85,12 @@ object SwapDB {
         processed.order.version,
         processed.order.redeemer.value.some,
         if (processed.state.status.in(Registered)) txInfo.some else none,
-        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none
       )
     }
 
-  implicit val ___V3: ToDB[ProcessedOrder[SwapV3], SwapDB] =
+  implicit val ___V3: ToDB[Processed[SwapV3], SwapDB] =
     processed => {
       val swap     = processed.order
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
@@ -110,12 +110,12 @@ object SwapDB {
         swap.version,
         swap.redeemer.value.some,
         if (processed.state.status.in(Registered)) txInfo.some else none,
-        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none
       )
     }
 
-  implicit val ___LegacyV1: ToDB[ProcessedOrder[SwapLegacyV1], SwapDB] =
+  implicit val ___LegacyV1: ToDB[Processed[SwapLegacyV1], SwapDB] =
     processed => {
       val swap     = processed.order
       val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
@@ -135,7 +135,7 @@ object SwapDB {
         swap.version,
         none,
         if (processed.state.status.in(Registered)) txInfo.some else none,
-        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none
       )
     }

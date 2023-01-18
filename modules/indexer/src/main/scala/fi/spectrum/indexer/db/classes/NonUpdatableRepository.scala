@@ -3,20 +3,21 @@ package fi.spectrum.indexer.db.classes
 import cats.syntax.applicative._
 import doobie.ConnectionIO
 import doobie.util.log
+import fi.spectrum.core.domain.analytics.OrderEvaluation
 import fi.spectrum.core.domain.order
-import fi.spectrum.indexer.db.models.UpdateState
+import fi.spectrum.indexer.db.models.{UpdateEvaluatedTx, UpdateRefundedTx}
 
 /** Provides api for non updatable entities
   */
 trait NonUpdatableRepository[T] extends UpdateRepository[T] {
 
-  override def updateExecuted(update: UpdateState)(implicit lh: log.LogHandler): ConnectionIO[Int] =
+  def updateExecuted(update: UpdateEvaluatedTx[OrderEvaluation])(implicit lh: log.LogHandler): ConnectionIO[Int] =
     0.pure[ConnectionIO]
 
-  override def updateRefunded(update: UpdateState)(implicit lh: log.LogHandler): ConnectionIO[Int] =
+  override def updateRefunded(update: UpdateRefundedTx)(implicit lh: log.LogHandler): ConnectionIO[Int] =
     0.pure[ConnectionIO]
 
-  override def deleteExecuted(delete: order.OrderId)(implicit lh: log.LogHandler): ConnectionIO[Int] =
+  def deleteExecuted(delete: order.OrderId)(implicit lh: log.LogHandler): ConnectionIO[Int] =
     0.pure[ConnectionIO]
 
   override def deleteRefunded(delete: order.OrderId)(implicit lh: log.LogHandler): ConnectionIO[Int] =

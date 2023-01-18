@@ -1,4 +1,4 @@
-package fi.spectrum.streaming.domain
+package fi.spectrum.streaming.kafka.models
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive

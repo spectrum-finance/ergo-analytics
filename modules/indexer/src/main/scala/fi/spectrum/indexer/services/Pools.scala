@@ -4,8 +4,10 @@ import cats.Monad
 import cats.data.NonEmptyList
 import derevo.derive
 import fi.spectrum.core.domain.pool.Pool.AmmPool
+import fi.spectrum.core.syntax.PoolsOps._
+import fi.spectrum.graphite.Metrics
 import fi.spectrum.indexer.db.persist.PersistBundle
-import fi.spectrum.streaming.domain.PoolEvent
+import fi.spectrum.indexer.models.BlockChainEvent._
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
@@ -24,7 +26,8 @@ object Pools {
   def make[F[_]: Monad, D[_]: Monad](implicit
     bundle: PersistBundle[D],
     txr: Txr[F, D],
-    assets: AssetsService[F],
+    assets: Assets[F],
+    metrics: Metrics[D],
     logs: Logging.Make[F]
   ): Pools[F] =
     logs.forService[Pools[F]].map(implicit __ => new Tracing[F] attach new Live[F, D])
@@ -32,20 +35,30 @@ object Pools {
   final private class Live[F[_]: Monad, D[_]: Monad](implicit
     bundle: PersistBundle[D],
     txr: Txr[F, D],
-    assets: AssetsService[F]
+    assets: Assets[F],
+    metrics: Metrics[D]
   ) extends Pools[F] {
 
     def process(events: NonEmptyList[PoolEvent]): F[Unit] = {
       def run: D[Int] = events
         .traverse {
-          case PoolEvent.Apply(pool)   => bundle.pools.insert(pool)
-          case PoolEvent.Unapply(pool) => bundle.pools.resolve(pool)
+          case Apply(pool) =>
+            metrics.sendCount(s"pool.apply.${pool.metric}", 1) >>
+              bundle.pools.insert(pool)
+          case Unapply(pool) =>
+            metrics.sendCount(s"pool.unapply.${pool.metric}", 1) >>
+              bundle.pools.resolve(pool)
         }
         .map(_.toList.sum)
 
-      def tokens: F[Unit] = NonEmptyList.fromList(events.collect { case PoolEvent.Apply(pool: AmmPool) =>
-        List(pool.lp.tokenId, pool.x.tokenId, pool.y.tokenId)
-      }.flatten) match {
+      def tokens: F[Unit] = NonEmptyList.fromList(
+        events
+          .collect { case Apply(pool: AmmPool) =>
+            List(pool.lp.tokenId, pool.x.tokenId, pool.y.tokenId)
+          }
+          .flatten
+          .distinct
+      ) match {
         case Some(value) => assets.process(value)
         case None        => unit[F]
       }
@@ -58,7 +71,7 @@ object Pools {
 
     def process(events: NonEmptyList[PoolEvent]): Mid[F, Unit] =
       for {
-        _ <- info"Going to process next pool events: $events"
+        _ <- info"Going to process next pool events: ${events.toList.mkString(",")}"
         r <- _
         _ <- info"Pools result is: $r"
       } yield r

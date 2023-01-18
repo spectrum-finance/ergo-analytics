@@ -18,6 +18,9 @@ object Dependencies {
     val pureConfig = "0.17.2"
     val redis4Cats = "1.3.0"
     val sttp       = "3.8.5"
+    val rocksDB    = "0.2.1"
+    val retry      = "3.1.0"
+    val fs2IO      = "3.5.0"
 
     val scalaCheckVersion             = "1.14.1"
     val scalaCheckShapelessVersion    = "1.2.5"
@@ -33,8 +36,12 @@ object Dependencies {
     val kindProjector    = "0.13.2"
   }
 
-  val ce3   = "org.typelevel"   %% "cats-effect-kernel" % Version.ce3
-  val kafka = "com.github.fd4s" %% "fs2-kafka"          % Version.fs2Kafka
+  val ce3   = "org.typelevel"    %% "cats-effect-kernel" % Version.ce3
+  val fs2IO = "co.fs2"           %% "fs2-io"             % Version.fs2IO
+  val kafka = "com.github.fd4s"  %% "fs2-kafka"          % Version.fs2Kafka
+  val retry = "com.github.cb372" %% "cats-retry"         % Version.retry
+
+  val rocksDB = "io.github.oskin1" %% "rocks4cats-scodec" % Version.rocksDB
 
   val newtype     = "io.estatico" %% "newtype"      % Version.newtype
   val refined     = "eu.timepit"  %% "refined"      % Version.refined
@@ -46,10 +53,10 @@ object Dependencies {
 
   val sttp =
     List(
-      "com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2"  % Version.sttp,
-      "com.softwaremill.sttp.client3" %% "core"                           % Version.sttp,
-      "com.softwaremill.sttp.client3" %% "circe"                          % Version.sttp,
-      "com.softwaremill.sttp.client3" %% "okhttp-backend"                 % Version.sttp % Test
+      "com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % Version.sttp,
+      "com.softwaremill.sttp.client3" %% "core"                          % Version.sttp,
+      "com.softwaremill.sttp.client3" %% "circe"                         % Version.sttp,
+      "com.softwaremill.sttp.client3" %% "okhttp-backend"                % Version.sttp % Test
     )
 
   val doobie = List(

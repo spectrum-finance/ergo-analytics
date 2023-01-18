@@ -10,7 +10,7 @@ import fi.spectrum.core.domain.order.{Order, PoolId}
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{ErgoTreeTemplate, PubKey, TokenId}
 import fi.spectrum.core.protocol.ErgoTreeSerializer
-import fi.spectrum.parser.constants.predefinedErgoTrees
+import fi.spectrum.parser.api.predefinedErgoTrees
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 
 /** Tries to find output for off-chain operator.

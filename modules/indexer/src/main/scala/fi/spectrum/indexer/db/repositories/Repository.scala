@@ -1,23 +1,23 @@
 package fi.spectrum.indexer.db.repositories
 
-import doobie.{ConnectionIO, Update}
 import doobie.util.Write
 import doobie.util.log.LogHandler
+import doobie.{ConnectionIO, Update}
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.db.models.UpdateState
+import fi.spectrum.indexer.db.models.{UpdateEvaluatedTx, UpdateRefundedTx}
 
 /** Keeps Insert/Delete/Update api
   */
-trait Repository[T, I] {
+trait Repository[T, I, E] {
   def insertNoConflict(implicit lh: LogHandler, w: Write[T]): Update[T]
 
   def delete(implicit lh: LogHandler, w: Write[I]): Update[I]
 
-  def updateRefunded(update: UpdateState)(implicit lh: LogHandler): ConnectionIO[Int]
+  def updateRefunded(update: UpdateRefundedTx)(implicit lh: LogHandler): ConnectionIO[Int]
 
   def deleteRefunded(delete: OrderId)(implicit lh: LogHandler): ConnectionIO[Int]
 
-  def updateExecuted(update: UpdateState)(implicit lh: LogHandler): ConnectionIO[Int]
+  def updateExecuted(update: UpdateEvaluatedTx[E])(implicit lh: LogHandler): ConnectionIO[Int]
 
   def deleteExecuted(delete: OrderId)(implicit lh: LogHandler): ConnectionIO[Int]
 }

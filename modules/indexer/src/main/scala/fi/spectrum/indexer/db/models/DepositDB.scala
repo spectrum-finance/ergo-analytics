@@ -4,9 +4,9 @@ import cats.syntax.option._
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.analytics.AnalyticsOptics._
 import fi.spectrum.core.domain.analytics.OrderEvaluation.DepositEvaluation
-import fi.spectrum.core.domain.analytics.{OrderEvaluation, ProcessedOrder, Version}
+import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed, Version}
 import fi.spectrum.core.domain.order.Order.Deposit._
-import fi.spectrum.core.domain.order.OrderStatus.{Executed, Refunded, Registered}
+import fi.spectrum.core.domain.order.OrderStatus.{Evaluated, Refunded, Registered}
 import fi.spectrum.core.domain.order.{Fee, Order, OrderId, PoolId}
 import fi.spectrum.indexer.classes.syntax._
 import fi.spectrum.indexer.classes.ToDB
@@ -32,7 +32,7 @@ final case class DepositDB(
 
 object DepositDB {
 
-  implicit val toDB: ToDB[ProcessedOrder[Order.Deposit], DepositDB] = processed => {
+  implicit val toDB: ToDB[Processed[Order.Deposit], DepositDB] = processed => {
     processed.order match {
       case deposit: DepositV3       => processed.widen(deposit).toDB
       case deposit: DepositV1       => processed.widen(deposit).toDB
@@ -41,7 +41,7 @@ object DepositDB {
     }
   }
 
-  implicit val ___V1: ToDB[ProcessedOrder[DepositV1], DepositDB] =
+  implicit val ___V1: ToDB[Processed[DepositV1], DepositDB] =
     processed => {
       val deposit     = processed.order
       val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
@@ -60,12 +60,12 @@ object DepositDB {
         deposit.version,
         none,
         if (processed.state.status.in(Registered)) txInfo.some else none,
-        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none
       )
     }
 
-  implicit val ___V3: ToDB[ProcessedOrder[DepositV3], DepositDB] =
+  implicit val ___V3: ToDB[Processed[DepositV3], DepositDB] =
     processed => {
       val deposit     = processed.order
       val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
@@ -84,12 +84,12 @@ object DepositDB {
         deposit.version,
         deposit.redeemer.value.some,
         if (processed.state.status.in(Registered)) txInfo.some else none,
-        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none
       )
     }
 
-  implicit val ___LegacyV1: ToDB[ProcessedOrder[DepositLegacyV1], DepositDB] =
+  implicit val ___LegacyV1: ToDB[Processed[DepositLegacyV1], DepositDB] =
     processed => {
       val deposit     = processed.order
       val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
@@ -108,12 +108,12 @@ object DepositDB {
         deposit.version,
         none,
         if (processed.state.status.in(Registered)) txInfo.some else none,
-        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none
       )
     }
 
-  implicit val ___LegacyV2: ToDB[ProcessedOrder[DepositLegacyV2], DepositDB] =
+  implicit val ___LegacyV2: ToDB[Processed[DepositLegacyV2], DepositDB] =
     processed => {
       val deposit     = processed.order
       val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
@@ -132,7 +132,7 @@ object DepositDB {
         deposit.version,
         none,
         if (processed.state.status.in(Registered)) txInfo.some else none,
-        if (processed.state.status.in(Executed)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none
       )
     }

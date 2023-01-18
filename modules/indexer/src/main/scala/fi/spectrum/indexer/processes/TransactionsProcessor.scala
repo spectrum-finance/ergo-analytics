@@ -4,11 +4,9 @@ import cats.data.NonEmptyList
 import cats.syntax.foldable._
 import cats.{Foldable, Functor, Monad}
 import fi.spectrum.indexer.config.ApplicationConfig
-import fi.spectrum.indexer.services.Transactions
-import fi.spectrum.streaming.domain.{OrderEvent, PoolEvent}
-import fi.spectrum.streaming.kafka.Record
-import fi.spectrum.streaming.{OrderEventsProducer, PoolsEventsProducer, TxEventsConsumer}
-import mouse.all._
+import fi.spectrum.indexer.models.BlockChainEvent.{OrderEvent, PoolEvent}
+import fi.spectrum.indexer.services.{Events, Orders, Pools}
+import fi.spectrum.streaming.TxConsumer
 import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.logging._
@@ -26,10 +24,10 @@ object TransactionsProcessor {
     F[_]: Monad: ApplicationConfig.Has,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
   ](implicit
-    events: TxEventsConsumer[S, F],
-    orders: OrderEventsProducer[S],
-    pools: PoolsEventsProducer[S],
-    transactions: Transactions[F],
+    events: TxConsumer[S, F],
+    orders: Orders[F],
+    pools: Pools[F],
+    transactions: Events[F],
     logs: Logging.Make[F]
   ): TransactionsProcessor[S] = logs.forService[TransactionsProcessor[S]].map(implicit __ => new Live[C, F, S])
 
@@ -38,31 +36,29 @@ object TransactionsProcessor {
     F[_]: Monad: Logging: ApplicationConfig.Has,
     S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
   ](implicit
-    events: TxEventsConsumer[S, F],
-    ordersProducer: OrderEventsProducer[S],
-    poolsProducer: PoolsEventsProducer[S],
-    transactions: Transactions[F]
+    events: TxConsumer[S, F],
+    orders: Orders[F],
+    pools: Pools[F],
+    transactions: Events[F]
   ) extends TransactionsProcessor[S] {
 
     override def run: S[Unit] = eval(ApplicationConfig.access).flatMap { config =>
       events.stream
         .chunksN(config.transactionsBatchSize)
-        .evalTap(batch => info"Got next transaction batch of size: ${batch.size}.")
-        .flatMap { committableBatch =>
+        .evalTap(batch => info"Received transactions: ${batch.size}.")
+        .evalMap { batch =>
+          val batchElems = batch.toList.flatMap(_.message)
           for {
-            (orders: List[OrderEvent], pools: List[PoolEvent]) <- eval {
-                                                                    NonEmptyList.fromList(
-                                                                      committableBatch.toList.flatMap(_.message)
-                                                                    ) match {
-                                                                      case Some(value) => transactions.process(value)
-                                                                      case None        => (List.empty, List.empty).pure[F]
-                                                                    }
-                                                                  }
-            _ <- eval(info"New orders: $orders")
-            _ <- eval(info"New pools: $pools")
-            _ <- emits(orders.map(o => Record(o.order.order.id, o))) thrush ordersProducer.produce
-            _ <- emits(pools.map(p => Record(p.pool.poolId, p))) thrush poolsProducer.produce
-            _ <- eval(committableBatch.toList.lastOption.traverse_(_.commit))
+            _ <- info"batch elems size: ${batchElems.length}"
+            (orderEvents, poolEvents) <-
+              NonEmptyList
+                .fromList(batchElems)
+                .fold((List.empty[OrderEvent], List.empty[PoolEvent]).pure[F])(transactions.process)
+            _ <- info"New orders: ${orderEvents.mkString(",")}"
+            _ <- info"New pools: ${poolEvents.mkString(",")}"
+            _ <- NonEmptyList.fromList(orderEvents).fold(unit[F])(orders.process)
+            _ <- NonEmptyList.fromList(poolEvents).fold(unit[F])(pools.process)
+            _ <- batch.toList.lastOption.traverse_(_.commit)
           } yield ()
         }
 

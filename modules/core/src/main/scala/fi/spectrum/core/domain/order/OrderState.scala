@@ -3,7 +3,7 @@ package fi.spectrum.core.domain.order
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.TxId
-import glass.macros.{ClassyOptics, Optics}
+import glass.macros.ClassyOptics
 import tofu.logging.derivation.loggable
 
 /** Keeps information about the transaction, which brings to order new status
