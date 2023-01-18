@@ -1,4 +1,4 @@
-package fi.spectrum.indexer.models
+package fi.spectrum.indexer.db.models
 
 import fi.spectrum.core.domain.analytics.{ProcessedOrder, Version}
 import fi.spectrum.core.domain.order.Order.Lock.LockV1

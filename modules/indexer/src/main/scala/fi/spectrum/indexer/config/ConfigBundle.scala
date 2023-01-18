@@ -19,6 +19,7 @@ final case class ConfigBundle(
   @promote application: ApplicationConfig,
   @promote spfTokenId: TokenId,
   @promote mempool: MempoolConfig,
+  @promote network: NetworkConfig,
   txConsumer: ConsumerConfig,
   mempoolTxConsumer: ConsumerConfig,
   ordersConsumer: ConsumerConfig,

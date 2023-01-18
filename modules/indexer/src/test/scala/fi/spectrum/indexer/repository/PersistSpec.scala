@@ -11,9 +11,9 @@ import fi.spectrum.core.domain.order.Order
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.indexer.classes.ToDB
+import fi.spectrum.indexer.db.models.{DepositDB, OffChainFeeDB, PoolDB, RedeemDB, SwapDB, TxInfo}
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.{Indexer, PGContainer}
-import fi.spectrum.indexer.models._
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import glass.classic.Optional

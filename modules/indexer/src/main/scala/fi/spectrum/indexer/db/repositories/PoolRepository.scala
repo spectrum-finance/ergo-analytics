@@ -2,7 +2,7 @@ package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.BoxId
 import fi.spectrum.indexer.db.classes.{DeleteRepository, NonUpdatableRepository}
-import fi.spectrum.indexer.models.PoolDB
+import fi.spectrum.indexer.db.models.PoolDB
 
 class PoolRepository
   extends Repository[PoolDB, BoxId]

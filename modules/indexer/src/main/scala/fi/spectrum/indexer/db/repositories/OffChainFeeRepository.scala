@@ -2,7 +2,7 @@ package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.indexer.db.classes.{DeleteRepository, NonUpdatableRepository}
-import fi.spectrum.indexer.models.OffChainFeeDB
+import fi.spectrum.indexer.db.models.OffChainFeeDB
 
 final class OffChainFeeRepository
   extends Repository[OffChainFeeDB, OrderId]

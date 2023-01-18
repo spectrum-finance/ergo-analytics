@@ -2,7 +2,7 @@ package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
-import fi.spectrum.indexer.models.RedeemDB
+import fi.spectrum.indexer.db.models.RedeemDB
 
 final class RedeemRepository
   extends Repository[RedeemDB, OrderId]
