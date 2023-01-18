@@ -22,30 +22,14 @@ final case class TransactionTest(
   def toTransaction: Transaction =
     Transaction(
       id,
-      NonEmptyList.fromListUnsafe(inputs.map(fromExplorerInput)),
+      NonEmptyList.fromListUnsafe(inputs.map(_.boxId)),
       NonEmptyList.fromListUnsafe(outputs.map(fromExplorerOut))
-    )
-
-  private def fromExplorerInput(in: InputTest): Input =
-    Input(
-      in.boxId,
-      in.spendingProof,
-      Output(
-        in.boxId,
-        in.outputTransactionId,
-        in.value,
-        in.outputIndex,
-        in.outputCreatedAt,
-        in.ergoTree,
-        in.assets.map(fromExplorerBox),
-        in.additionalRegisters
-      )
     )
 
   private def fromExplorerBox(a: BoxAssetTest): BoxAsset =
     BoxAsset(a.tokenId, a.amount)
 
-  private def fromExplorerOut(o: OutputTest): Output =
+  def fromExplorerOut(o: OutputTest): Output =
     Output(
       o.boxId,
       o.transactionId,

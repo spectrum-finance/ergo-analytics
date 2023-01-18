@@ -1,6 +1,6 @@
 package fi.spectrum.indexer.db.models
 
-import fi.spectrum.core.domain.analytics.{ProcessedOrder, Version}
+import fi.spectrum.core.domain.analytics.{Processed, Version}
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.{Order, OrderId}
 import fi.spectrum.core.domain.pool.Pool
@@ -18,13 +18,23 @@ final case class LockDB(
 
 object LockDB {
 
-  implicit val toDB: ToDB[ProcessedOrder[Order.Lock], LockDB] = processed => {
+  implicit val toDBNonUpdatable: ToDB[Order.Lock, LockDB] = { case order: LockV1 =>
+    LockDB(
+      order.id,
+      order.deadline,
+      order.amount,
+      order.redeemer.value,
+      order.version
+    )
+  }
+
+  implicit val toDB: ToDB[Processed[Order.Lock], LockDB] = processed => {
     processed.order match {
       case lock: LockV1 => processed.widen(lock).toDB
     }
   }
 
-  implicit val ___V1: ToDB[ProcessedOrder[LockV1], LockDB] =
+  implicit val ___V1: ToDB[Processed[LockV1], LockDB] =
     processed => {
       LockDB(
         processed.order.id,

@@ -1,9 +1,10 @@
 package fi.spectrum.core
 
-import algebra.Semigroup
+import cats.syntax.eq._
 import cats.{Eq, Order, Show}
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import derevo.pureconfig.pureconfigReader
 import doobie.util.{Get, Put}
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.refineV
@@ -13,12 +14,12 @@ import fi.spectrum.core.syntax.PubKeyOps
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
+import org.ergoplatform.ErgoBox
+import pureconfig.ConfigReader
+import scodec.bits.ByteVector
 import scorex.util.encode.Base16
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
-import cats.syntax.eq._
-import derevo.pureconfig.pureconfigReader
-import pureconfig.ConfigReader
 
 package object domain {
 
@@ -73,6 +74,11 @@ package object domain {
   object TxId {
     implicit val get: Get[TxId] = deriving
     implicit val put: Put[TxId] = deriving
+
+    implicit def codec: scodec.Codec[TxId] =
+      scodec.codecs
+        .bytes(32)
+        .xmap(xs => TxId(new String(xs.toArray)), pid => ByteVector(pid.value.getBytes()))
   }
 
   @derive(encoder, decoder, loggable, show)
@@ -81,6 +87,14 @@ package object domain {
   object BoxId {
     implicit val get: Get[BoxId] = deriving
     implicit val put: Put[BoxId] = deriving
+
+    def fromErgo(ergoBoxId: ErgoBox.BoxId): BoxId =
+      BoxId(Base16.encode(ergoBoxId))
+
+    implicit def codec: scodec.Codec[BoxId] =
+      scodec.codecs
+        .bytes(64)
+        .xmap(xs => BoxId(new String(xs.toArray)), pid => ByteVector(pid.value.getBytes()))
   }
 
   @derive(encoder, decoder, loggable, show)

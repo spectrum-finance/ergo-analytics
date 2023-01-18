@@ -3,9 +3,11 @@ package fi.spectrum.core.domain.order
 import fi.spectrum.core.domain.AssetAmount
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.Order.Deposit._
+import fi.spectrum.core.domain.order.Order.Lock._
 import fi.spectrum.core.domain.order.Order.Redeem._
 import fi.spectrum.core.domain.order.Order.Swap._
-import glass.classic.Optional
+import glass.Contains
+import glass.classic.{Lens, Optional}
 import glass.macros.{GenContains, GenSubset}
 
 object OrderOptics {
@@ -37,5 +39,10 @@ object OrderOptics {
     (depositPrism >> GenSubset[Deposit, DepositLegacyV1] >> GenContains[DepositLegacyV1](_.params)) orElse
     (depositPrism >> GenSubset[Deposit, DepositLegacyV2] >> GenContains[DepositLegacyV2](_.params))
   }
+
+  implicit val lensOrderIdLock: Lens[LockV1, OrderId] = Contains[LockV1, OrderId]
+
+  implicit val lensLockOrderId: Lens[Order.Lock, OrderId] =
+    (GenSubset[Order.Lock, LockV1] >> lensOrderIdLock).unsafeTotal
 
 }

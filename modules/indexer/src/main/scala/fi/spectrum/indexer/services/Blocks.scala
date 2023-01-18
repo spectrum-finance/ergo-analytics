@@ -4,7 +4,7 @@ import cats.Monad
 import cats.data.NonEmptyList
 import derevo.derive
 import fi.spectrum.indexer.db.persist.PersistBundle
-import fi.spectrum.streaming.domain.BlockEvent
+import fi.spectrum.streaming.kafka.models.BlockEvent
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
@@ -23,15 +23,13 @@ object Blocks {
   def make[F[_]: Monad, D[_]: Monad](implicit
     bundle: PersistBundle[D],
     txr: Txr[F, D],
-    assets: AssetsService[F],
     logs: Logging.Make[F]
   ): Blocks[F] =
     logs.forService[Blocks[F]].map(implicit __ => new Tracing[F] attach new Live[F, D])
 
   final private class Live[F[_]: Monad, D[_]: Monad](implicit
     bundle: PersistBundle[D],
-    txr: Txr[F, D],
-    assets: AssetsService[F]
+    txr: Txr[F, D]
   ) extends Blocks[F] {
 
     def process(events: NonEmptyList[BlockEvent]): F[Unit] = {

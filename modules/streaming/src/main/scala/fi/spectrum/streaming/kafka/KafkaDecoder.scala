@@ -6,6 +6,7 @@ import fi.spectrum.core.common.IsOption
 import io.circe.Decoder
 import tofu.Throws
 import tofu.syntax.monadic._
+import cats.syntax.either._
 import tofu.syntax.raise._
 
 trait KafkaDecoder[A, F[_]] {

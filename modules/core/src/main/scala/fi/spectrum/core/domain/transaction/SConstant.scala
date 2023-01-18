@@ -8,6 +8,7 @@ import fi.spectrum.core.protocol.SigmaType.SimpleKindSigmaType._
 import io.circe.{Decoder, Encoder, Json}
 import io.circe.refined._
 import io.circe.syntax._
+import io.circe.parser.decode
 import tofu.logging.derivation.{loggable, show}
 
 @derive(loggable, show)
@@ -52,4 +53,13 @@ object SConstant {
       }
     }
   }
+
+  def fromRenderValue(sType: SigmaType, value: String): SConstant =
+    sType match {
+      case SInt               => IntConstant(value.toInt)
+      case SLong              => LongConstant(value.toLong)
+      case SSigmaProp         => SigmaPropConstant(PubKey.unsafeFromString(value))
+      case SCollection(SByte) => ByteaConstant(HexString.unsafeFromString(value))
+      case _                  => UnresolvedConstant(value)
+    }
 }

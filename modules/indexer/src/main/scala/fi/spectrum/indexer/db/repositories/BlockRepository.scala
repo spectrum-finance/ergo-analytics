@@ -1,11 +1,12 @@
 package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.BlockId
+import fi.spectrum.core.domain.analytics.OrderEvaluation
 import fi.spectrum.indexer.db.classes.{DeleteRepository, NonUpdatableRepository}
 import fi.spectrum.indexer.db.models.BlockDB
 
 class BlockRepository
-  extends Repository[BlockDB, BlockId]
+  extends Repository[BlockDB, BlockId, OrderEvaluation]
   with DeleteRepository[BlockDB, BlockId]
   with NonUpdatableRepository[BlockDB] {
 

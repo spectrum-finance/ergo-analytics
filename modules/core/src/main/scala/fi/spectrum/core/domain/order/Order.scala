@@ -8,6 +8,7 @@ import fi.spectrum.core.domain.analytics.Version._
 import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
 import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
 import fi.spectrum.core.domain.transaction.Output
+import glass.macros.ClassyOptics
 import tofu.logging.derivation.loggable
 
 /** This abstraction represents any order that appears in ergo network.
@@ -190,6 +191,7 @@ object Order {
 
   object Lock {
 
+    @ClassyOptics
     @derive(encoder, decoder, loggable)
     final case class LockV1(
       box: Output,
@@ -198,6 +200,8 @@ object Order {
       redeemer: PublicKeyRedeemer,
       version: V1
     ) extends Lock
+
+    object LockV1
   }
 
 }

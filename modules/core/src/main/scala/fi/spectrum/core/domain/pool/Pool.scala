@@ -14,7 +14,7 @@ import tofu.logging.derivation.{loggable, show}
 /** This abstraction represents any pool in our domain, e.g. Amm pool, LM pool
   */
 
-@derive(encoder, decoder, loggable)
+@derive(encoder, decoder, loggable, show)
 sealed trait Pool {
   val poolId: PoolId
   val box: Output

@@ -7,62 +7,65 @@ import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.update.Update0
 import fi.spectrum.core.domain.TokenId
-import fi.spectrum.core.domain.analytics.ProcessedOrder
+import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.indexer.db.models.{DepositDB, SwapDB, TxInfo}
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.{Indexer, PGContainer}
-import fi.spectrum.indexer.mocks.OrdersMempoolMock
-import fi.spectrum.indexer.repository.{Deposits, Swaps}
+import fi.spectrum.indexer.mocks.{MetricsMock, OrdersMempoolMock}
+import fi.spectrum.indexer.models.BlockChainEvent
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
-import fi.spectrum.streaming.domain.OrderEvent
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import tofu.syntax.doobie.txr._
+import fi.spectrum.parser.evaluation.Transactions._
 
 class OrdersSpec extends AnyFlatSpec with Matchers with PGContainer with Indexer {
 
   "Orders service" should "process forks correct" in {
     implicit val repo: PersistBundle[ConnectionIO] = PersistBundle.make[ConnectionIO]
     implicit val mempool                           = OrdersMempoolMock.mock[IO]
+    implicit val metrics                           = MetricsMock.make[ConnectionIO]
 
-    val parser: ProcessedOrderParser = ProcessedOrderParser.make(TokenId.unsafeFromString(""))
-    val service                      = Orders.make[IO, ConnectionIO]
+    val parser = ProcessedOrderParser.make[IO](TokenId.unsafeFromString(""))
 
-    val depositRegister: ProcessedOrder.Any = parser.parse(Deposits.depositToExecute, 0L).get
-    val depositExecute                      = parser.parse(Deposits.execute, 0L).get
+    val service = Orders.make[IO, ConnectionIO]
 
-    val swapRegister = parser.parse(Swaps.transactionSwapRegisterToRefund, 0L).get
-    val swapRefunded = parser.parse(Swaps.transactionSwapRefundRegister, 0L).get
+    val depositRegister: Processed.Any = parser.registered(depositRegisterTransaction, 0L).unsafeRunSync().get
+    val depositExecute =
+      parser.evaluated(depositEvaluateTransaction, 0L, depositRegister, depositPool.get).unsafeRunSync().get
+
+    val swapRegister = parser.registered(swapRegisterRefundTransaction, 0L).unsafeRunSync().get
+    val swapRefunded = parser.refunded(swapRefundTransaction, 0L, swapRegister).unsafeRunSync()
 
     val eventsCase1 = List(
-      OrderEvent.Apply(depositRegister),
-      OrderEvent.Apply(depositExecute),
-      OrderEvent.Unapply(depositExecute),
-      OrderEvent.Apply(depositExecute)
+      BlockChainEvent.Apply(depositRegister),
+      BlockChainEvent.Apply(depositExecute),
+      BlockChainEvent.Unapply(depositExecute),
+      BlockChainEvent.Apply(depositExecute)
     )
 
     val eventsCase2 = List(
-      OrderEvent.Apply(depositRegister),
-      OrderEvent.Apply(depositExecute),
-      OrderEvent.Unapply(depositExecute)
+      BlockChainEvent.Apply(depositRegister),
+      BlockChainEvent.Apply(depositExecute),
+      BlockChainEvent.Unapply(depositExecute)
     )
 
     val eventsCase3 = List(
-      OrderEvent.Apply(depositRegister),
-      OrderEvent.Apply(depositExecute),
-      OrderEvent.Unapply(depositExecute),
-      OrderEvent.Unapply(depositRegister)
+      BlockChainEvent.Apply(depositRegister),
+      BlockChainEvent.Apply(depositExecute),
+      BlockChainEvent.Unapply(depositExecute),
+      BlockChainEvent.Unapply(depositRegister)
     )
 
     val eventsCase4 = List(
-      OrderEvent.Apply(depositRegister),
-      OrderEvent.Apply(swapRegister),
-      OrderEvent.Unapply(swapRegister),
-      OrderEvent.Unapply(depositRegister),
-      OrderEvent.Apply(swapRegister),
-      OrderEvent.Apply(swapRefunded),
-      OrderEvent.Apply(depositRegister),
-      OrderEvent.Unapply(swapRefunded)
+      BlockChainEvent.Apply(depositRegister),
+      BlockChainEvent.Apply(swapRegister),
+      BlockChainEvent.Unapply(swapRegister),
+      BlockChainEvent.Unapply(depositRegister),
+      BlockChainEvent.Apply(swapRegister),
+      BlockChainEvent.Apply(swapRefunded),
+      BlockChainEvent.Apply(depositRegister),
+      BlockChainEvent.Unapply(swapRefunded)
     )
 
     val (r1, r2, r3, r4D, r4S) =
@@ -70,7 +73,6 @@ class OrdersSpec extends AnyFlatSpec with Matchers with PGContainer with Indexer
         _  <- service.process(NonEmptyList.fromListUnsafe(eventsCase1))
         r1 <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[DepositDB].unique.trans
         _  <- Update0(s"delete from deposits", None).run.trans
-
         _  <- service.process(NonEmptyList.fromListUnsafe(eventsCase2))
         r2 <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[DepositDB].unique.trans
         _  <- Update0(s"delete from deposits", None).run.trans

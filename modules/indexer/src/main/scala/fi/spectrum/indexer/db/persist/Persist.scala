@@ -7,11 +7,11 @@ import cats.tagless.ApplyK.ops.toAllApplyKOps
 import doobie.ConnectionIO
 import doobie.util.Write
 import doobie.util.log.LogHandler
-import fi.spectrum.core.domain.analytics.ProcessedOrder
+import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed}
 import fi.spectrum.core.domain.order.{Order, OrderId, OrderStatus}
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
-import fi.spectrum.indexer.db.models.UpdateState
+import fi.spectrum.indexer.db.models.{UpdateEvaluatedTx, UpdateRefundedTx}
 import fi.spectrum.indexer.db.repositories.Repository
 import glass.classic.{Lens, Optional, Prism}
 import tofu.doobie.LiftConnectionIO
@@ -33,48 +33,54 @@ object Persist {
     tofu.higherKind.derived.genRepresentableK[Repr]
   }
 
-  def makeUpdatable[D[_]: LiftConnectionIO: FlatMap, O <: Order, B: Write](implicit
+  def makeUpdatable[D[_]: LiftConnectionIO: FlatMap, O <: Order, E, B: Write](implicit
     elh: EmbeddableLogHandler[D],
     prism: Prism[Order, O],
-    toDB: ToDB[ProcessedOrder[O], B],
-    repository: Repository[B, OrderId]
-  ): Persist[ProcessedOrder.Any, D] =
-    elh.embed(implicit __ => new LiveUpdatable[O, B].mapK(LiftConnectionIO[D].liftF))
+    prism2: Prism[OrderEvaluation, E],
+    toDB: ToDB[Processed[O], B],
+    repository: Repository[B, OrderId, E]
+  ): Persist[Processed.Any, D] =
+    elh.embed(implicit __ => new LiveUpdatable[O, E, B].mapK(LiftConnectionIO[D].liftF))
 
   def makeNonUpdatable[D[_]: LiftConnectionIO: FlatMap, O, S, B: Write, T: Write](implicit
     elh: EmbeddableLogHandler[D],
     optional: Optional[O, S],
     lens: Lens[S, T],
     toDB: ToDB[S, B],
-    repository: Repository[B, T]
+    repository: Repository[B, T, OrderEvaluation]
   ): Persist[O, D] =
     elh.embed(implicit __ => new LiveNonUpdatable[O, S, B, T].mapK(LiftConnectionIO[D].liftF))
 
-  final private class LiveUpdatable[O <: Order, B: Write](implicit
+  /** @tparam O - Order type itself e.g. Swap, Redeem, Deposit
+    * @tparam E - Evaluation type e.g. SwapEvaluation, DepositEvaluation etc.
+    * @tparam B - DB representation of order O
+    */
+  final private class LiveUpdatable[O <: Order, E, B: Write](implicit
     prism: Prism[Order, O],
-    toDB: ToDB[ProcessedOrder[O], B],
-    repository: Repository[B, OrderId],
+    prism2: Prism[OrderEvaluation, E],
+    toDB: ToDB[Processed[O], B],
+    repository: Repository[B, OrderId, E],
     logHandler: LogHandler
-  ) extends Persist[ProcessedOrder.Any, ConnectionIO] {
+  ) extends Persist[Processed.Any, ConnectionIO] {
 
-    def insert(processed: ProcessedOrder.Any): ConnectionIO[Int] =
+    def insert(processed: Processed.Any): ConnectionIO[Int] =
       processed.wined
         .traverse { order =>
           order.state.status match {
             case OrderStatus.Registered => repository.insertNoConflict.toUpdate0(order.toDB).run
-            case OrderStatus.Executed   => repository.updateExecuted(UpdateState.fromProcessed(order))
-            case OrderStatus.Refunded   => repository.updateRefunded(UpdateState.fromProcessed(order))
+            case OrderStatus.Evaluated  => repository.updateExecuted(UpdateEvaluatedTx.fromProcessed(order))
+            case OrderStatus.Refunded   => repository.updateRefunded(UpdateRefundedTx.fromProcessed(order))
             case _                      => 0.pure[ConnectionIO]
           }
         }
         .map(_.getOrElse(0))
 
-    def resolve(processed: ProcessedOrder.Any): ConnectionIO[Int] =
+    def resolve(processed: Processed.Any): ConnectionIO[Int] =
       processed.wined
         .traverse { order =>
           order.state.status match {
             case OrderStatus.Registered => repository.delete.toUpdate0(order.order.id).run
-            case OrderStatus.Executed   => repository.deleteExecuted(order.order.id)
+            case OrderStatus.Evaluated  => repository.deleteExecuted(order.order.id)
             case OrderStatus.Refunded   => repository.deleteRefunded(order.order.id)
             case _                      => 0.pure[ConnectionIO]
           }
@@ -82,11 +88,17 @@ object Persist {
         .map(_.getOrElse(0))
   }
 
+  /** @tparam O - From what we gonna extract the model
+    * @tparam S - Model to extract
+    * @tparam B - DB representation of extracted model
+    * @tparam T - model's id
+    */
+
   final private class LiveNonUpdatable[O, S, B: Write, T: Write](implicit
     optional: Optional[O, S],
     lens: Lens[S, T],
     toDB: ToDB[S, B],
-    repository: Repository[B, T],
+    repository: Repository[B, T, OrderEvaluation],
     logHandler: LogHandler
   ) extends Persist[O, ConnectionIO] {
 

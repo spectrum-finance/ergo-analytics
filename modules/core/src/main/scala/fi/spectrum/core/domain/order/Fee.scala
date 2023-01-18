@@ -1,6 +1,5 @@
 package fi.spectrum.core.domain.order
 
-
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.Read

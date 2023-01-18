@@ -5,9 +5,10 @@ import cats.data.NonEmptyList
 import cats.instances.all._
 import cats.syntax.traverse._
 import derevo.derive
-import fi.spectrum.core.domain.analytics.ProcessedOrder
+import fi.spectrum.core.syntax.ProcessedOps._
+import fi.spectrum.graphite.Metrics
 import fi.spectrum.indexer.db.persist.PersistBundle
-import fi.spectrum.streaming.domain.OrderEvent
+import fi.spectrum.indexer.models.BlockChainEvent._
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
@@ -15,6 +16,8 @@ import tofu.logging.Logging
 import tofu.syntax.doobie.txr._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
+import tofu.syntax.time.now.millis
+import tofu.time.Clock
 
 @derive(representableK)
 trait Orders[F[_]] {
@@ -23,54 +26,60 @@ trait Orders[F[_]] {
 
 object Orders {
 
-  def make[F[_]: Monad, D[_]: Monad](implicit
+  def make[F[_]: Monad, D[_]: Monad: Clock](implicit
     bundle: PersistBundle[D],
-    mempool: OrdersMempool[F],
     txr: Txr[F, D],
+    metrics: Metrics[D],
     logs: Logging.Make[F]
   ): Orders[F] =
     logs.forService[Orders[F]].map(implicit __ => new Tracing[F] attach new Live[F, D])
 
-  final private class Live[F[_]: Monad, D[_]: Monad](implicit
+  final private class Live[F[_]: Monad, D[_]: Monad: Clock](implicit
     bundle: PersistBundle[D],
-    mempool: OrdersMempool[F],
-    txr: Txr[F, D]
+    txr: Txr[F, D],
+    metrics: Metrics[D]
   ) extends Orders[F] {
 
-    def process(events: NonEmptyList[OrderEvent]): F[Unit] = {
-
-      def run: D[Int] = events
+    def process(events: NonEmptyList[OrderEvent]): F[Unit] =
+      events
         .traverse {
-          case OrderEvent.Apply(order)   => bundle.insertAnyOrder.traverse(_(order)).map(_.sum)
-          case OrderEvent.Unapply(order) => bundle.resolveAnyOrder.traverse(_(order)).map(_.sum)
+          case Apply(order) =>
+            handleWithMetrics(
+              s"apply.${order.metric}",
+              bundle.insertAnyOrder.traverse(_(order)).map(_.sum)
+            )
+          case Unapply(order) =>
+            handleWithMetrics(
+              s"unapply.${order.metric}",
+              bundle.resolveAnyOrder.traverse(_(order)).map(_.sum)
+            )
         }
         .map(_.toList.sum)
+        .trans
+        .void
 
-      val (toInsert, toResolve) =
-        events
-          .foldLeft((List.empty[ProcessedOrder.Any], List.empty[ProcessedOrder.Any])) { case ((acc1, acc2), next) =>
-            next match {
-              case OrderEvent.Apply(order)   => (order :: acc1) -> acc2
-              case OrderEvent.Unapply(order) => acc1            -> (order :: acc2)
-            }
-          }
-
+    private def handleWithMetrics(metric: String, f: D[Int]): D[Int] =
       for {
-        _ <- run.trans
-        _ <- mempool.del(toInsert)
-        _ <- toResolve.traverse(mempool.put)
-      } yield ()
-
-    }
+        _      <- metrics.sendCount(s"db.order.$metric", 1)
+        start  <- millis
+        r      <- f
+        finish <- millis
+        _      <- metrics.sendTs(s"db.order.$metric", (finish - start).toDouble)
+      } yield r
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Orders[Mid[F, *]] {
 
-    def process(events: NonEmptyList[OrderEvent]): Mid[F, Unit] =
+    def process(events: NonEmptyList[OrderEvent]): Mid[F, Unit] = {
+      val log = events.toList.map {
+        case Apply(event)   => s"Apply(${event.order.id})"
+        case Unapply(event) => s"Unapply(${event.order.id})"
+      }
       for {
-        _ <- info"Going to process next events: $events"
+        _ <- info"process($log)"
         r <- _
-        _ <- info"All processed events inserted successfully."
+        _ <- info"process($log) -> finish"
       } yield r
+    }
   }
 }

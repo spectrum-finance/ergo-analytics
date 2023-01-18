@@ -1,103 +1,38 @@
 package fi.spectrum.streaming.kafka
 
 import cats.effect.Sync
-import cats.syntax.option._
 import cats.syntax.applicative._
-import derevo.circe.{decoder, encoder}
-import derevo.derive
-import fi.spectrum.streaming.domain.{MempoolEvent, TxEvent}
-import fi.spectrum.streaming.domain.TxEvent.Apply
+import fi.spectrum.core.domain.TxId
 import fs2.kafka.{Deserializer, RecordDeserializer, RecordSerializer, Serializer}
-import io.circe.parser.parse
+import io.circe.Encoder
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder}
-import org.ergoplatform.ErgoLikeTransactionSerializer
-import scorex.util.encode.Base64
-
-import scala.util.Try
 
 object serde {
 
   private val charset = "UTF-8"
 
-  implicit def deserializerViaKafkaDecoder[F[_]: Sync, A](implicit
-    decoder: KafkaDecoder[A, F]
-  ): RecordDeserializer[F, A] =
-    RecordDeserializer.lift {
-      Deserializer.lift(decoder.decode)
-    }
+  object string {
 
-  implicit def serializerViaCirceEncoder[F[_]: Sync, A: Encoder]: RecordSerializer[F, A] =
-    RecordSerializer.lift {
-      Serializer.lift { a =>
-        a.asJson.noSpacesSortKeys.getBytes(charset).pure
-      }
-    }
+    implicit def txIdDeserializer[F[_]: Sync]: RecordDeserializer[F, TxId] = deserializerString(TxId.apply)
 
-  object tx {
-
-    @derive(encoder, decoder)
-    sealed trait KafkaTxEvent {
-      val tx: String
-    }
-
-    @derive(encoder, decoder)
-    final case class TxApply(tx: String, ts: Long) extends KafkaTxEvent
-
-    @derive(encoder, decoder)
-    final case class TxUnapply(tx: String) extends KafkaTxEvent
-
-    implicit def txSerializer[F[_]: Sync]: RecordSerializer[F, TxEvent] = RecordSerializer.lift(
-      Serializer.string.contramap { event: TxEvent =>
-        val txBytes      = ErgoLikeTransactionSerializer.toBytes(event.tx)
-        val base64Encode = Base64.encode(txBytes)
-        event match {
-          case Apply(timestamp, _) => TxApply(base64Encode, timestamp).asJson.noSpaces
-          case TxEvent.Unapply(_)  => TxUnapply(base64Encode).asJson.noSpaces
-        }
-      }
-    )
-
-    implicit def txDeserializer[F[_]: Sync]: RecordDeserializer[F, Option[TxEvent]] = RecordDeserializer.lift(
-      Deserializer.string.map { str =>
-        parse(str).flatMap(_.as[KafkaTxEvent]).toOption.flatMap { event =>
-          val bytes = Base64.decode(event.tx)
-          val tx    = bytes.flatMap(b => Try(ErgoLikeTransactionSerializer.fromBytes(b))).toOption
-          (event, tx) match {
-            case (TxApply(_, ts), Some(tx)) => TxEvent.Apply(ts, tx).some
-            case (TxUnapply(_), Some(tx))   => TxEvent.Unapply(tx).some
-            case _                          => none[TxEvent]
-          }
-        }
-      }
-    )
+    def deserializerString[F[_]: Sync, A](f: String => A): RecordDeserializer[F, A] =
+      RecordDeserializer.lift(Deserializer.string.map(f))
   }
 
-  object mempool {
+  object json {
 
-    @derive(encoder, decoder)
-    final case class MempoolApply(tx: String)
-
-    implicit def mempoolSerializer[F[_]: Sync]: RecordSerializer[F, MempoolEvent] = RecordSerializer.lift(
-      Serializer.string.contramap { event: MempoolEvent =>
-        val txBytes      = ErgoLikeTransactionSerializer.toBytes(event.tx)
-        val base64Encode = Base64.encode(txBytes)
-        MempoolApply(base64Encode).asJson.noSpaces
+    implicit def deserializerViaKafkaDecoder[F[_]: Sync, A](implicit
+      decoder: KafkaDecoder[A, F]
+    ): RecordDeserializer[F, A] =
+      RecordDeserializer.lift {
+        Deserializer.lift(decoder.decode)
       }
-    )
 
-    implicit def mempoolDeserializer[F[_]: Sync]: RecordDeserializer[F, Option[MempoolEvent]] = RecordDeserializer.lift(
-      Deserializer.string.map { str =>
-        parse(str).flatMap(_.as[MempoolApply]).toOption.flatMap { event =>
-          val bytes = Base64.decode(event.tx)
-          val tx    = bytes.flatMap(b => Try(ErgoLikeTransactionSerializer.fromBytes(b))).toOption
-          (event, tx) match {
-            case (MempoolApply(_), Some(tx)) => MempoolEvent(tx).some
-            case _                           => none[MempoolEvent]
-          }
+    implicit def serializerViaCirceEncoder[F[_]: Sync, A: Encoder]: RecordSerializer[F, A] =
+      RecordSerializer.lift {
+        Serializer.lift { a =>
+          a.asJson.noSpacesSortKeys.getBytes(charset).pure
         }
       }
-    )
   }
-
 }

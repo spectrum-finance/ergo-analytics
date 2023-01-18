@@ -3,8 +3,6 @@ package fi.spectrum.indexer.db
 import cats.effect.IO
 import doobie.ConnectionIO
 import doobie.util.log.LogHandler
-import fi.spectrum.core.domain.TokenId
-import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import org.ergoplatform.ErgoAddressEncoder
 import tofu.doobie.log.EmbeddableLogHandler
 import tofu.logging.Logging.Make
