@@ -5,11 +5,11 @@ import derevo.derive
 import fi.spectrum.core.domain.BoxId
 import fi.spectrum.core.domain.order.{Order, OrderState}
 import glass.classic.Prism
-import glass.macros.POptics
+import glass.macros.{ClassyOptics, POptics}
 import tofu.logging.derivation.loggable
 
 @derive(encoder, decoder, loggable)
-@POptics
+@ClassyOptics
 final case class ProcessedOrder[O <: Order](
   order: O,
   state: OrderState,

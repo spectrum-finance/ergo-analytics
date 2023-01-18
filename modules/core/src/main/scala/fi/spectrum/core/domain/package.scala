@@ -1,6 +1,7 @@
 package fi.spectrum.core
 
-import cats.{Eq, Show}
+import algebra.Semigroup
+import cats.{Eq, Order, Show}
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import doobie.util.{Get, Put}
@@ -47,6 +48,8 @@ package object domain {
 
     implicit val configReader: ConfigReader[HexString] = ConfigReader.stringConfigReader.map(unsafeFromString)
 
+    implicit val order: Order[HexString] = (x: HexString, y: HexString) => x.value.value.compare(y.value.value)
+
     def fromBytes(bytes: Array[Byte]): HexString =
       unsafeFromString(scorex.util.encode.Base16.encode(bytes))
 
@@ -81,6 +84,14 @@ package object domain {
   }
 
   @derive(encoder, decoder, loggable, show)
+  @newtype case class BlockId(value: String)
+
+  object BlockId {
+    implicit val get: Get[BlockId] = deriving
+    implicit val put: Put[BlockId] = deriving
+  }
+
+  @derive(encoder, decoder, loggable, show)
   @newtype final case class SErgoTree(value: HexString) {
     def toBytea: Array[Byte] = value.toBytes
   }
@@ -111,6 +122,7 @@ package object domain {
 
     def unsafeFromString(s: String): TokenId = TokenId(HexString.unsafeFromString(s))
 
+    implicit val order: Order[TokenId] = deriving
   }
 
   @derive(encoder, decoder, loggable, show)

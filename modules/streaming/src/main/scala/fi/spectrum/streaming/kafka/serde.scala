@@ -5,7 +5,7 @@ import cats.syntax.option._
 import cats.syntax.applicative._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import fi.spectrum.streaming.domain.TxEvent
+import fi.spectrum.streaming.domain.{MempoolEvent, TxEvent}
 import fi.spectrum.streaming.domain.TxEvent.Apply
 import fs2.kafka.{Deserializer, RecordDeserializer, RecordSerializer, Serializer}
 import io.circe.parser.parse
@@ -67,6 +67,33 @@ object serde {
             case (TxApply(_, ts), Some(tx)) => TxEvent.Apply(ts, tx).some
             case (TxUnapply(_), Some(tx))   => TxEvent.Unapply(tx).some
             case _                          => none[TxEvent]
+          }
+        }
+      }
+    )
+  }
+
+  object mempool {
+
+    @derive(encoder, decoder)
+    final case class MempoolApply(tx: String)
+
+    implicit def mempoolSerializer[F[_]: Sync]: RecordSerializer[F, MempoolEvent] = RecordSerializer.lift(
+      Serializer.string.contramap { event: MempoolEvent =>
+        val txBytes      = ErgoLikeTransactionSerializer.toBytes(event.tx)
+        val base64Encode = Base64.encode(txBytes)
+        MempoolApply(base64Encode).asJson.noSpaces
+      }
+    )
+
+    implicit def mempoolDeserializer[F[_]: Sync]: RecordDeserializer[F, Option[MempoolEvent]] = RecordDeserializer.lift(
+      Deserializer.string.map { str =>
+        parse(str).flatMap(_.as[MempoolApply]).toOption.flatMap { event =>
+          val bytes = Base64.decode(event.tx)
+          val tx    = bytes.flatMap(b => Try(ErgoLikeTransactionSerializer.fromBytes(b))).toOption
+          (event, tx) match {
+            case (MempoolApply(_), Some(tx)) => MempoolEvent(tx).some
+            case _                           => none[MempoolEvent]
           }
         }
       }

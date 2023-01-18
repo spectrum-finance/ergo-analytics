@@ -11,9 +11,9 @@ import fi.spectrum.core.domain.order.Order
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.indexer.classes.ToDB
+import fi.spectrum.indexer.db.models.{DepositDB, OffChainFeeDB, PoolDB, RedeemDB, SwapDB, TxInfo}
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.{Indexer, PGContainer}
-import fi.spectrum.indexer.models._
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import glass.classic.Optional
@@ -35,9 +35,9 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     val expectedPool = implicitly[ToDB[Pool, PoolDB]].toDB(pool)
 
     def run = for {
-      insertResult  <- repo.pools.insert(NonEmptyList.of(pool)).trans
+      insertResult  <- repo.pools.insert(pool).trans
       expected1     <- sql"select * from pools where pool_id=${pool.poolId}".query[PoolDB].unique.trans
-      resolveResult <- repo.pools.resolve(NonEmptyList.of(pool)).trans
+      resolveResult <- repo.pools.resolve(pool).trans
       expected2     <- sql"select * from pools where pool_id=${pool.poolId}".query[PoolDB].option.trans
     } yield {
       insertResult shouldEqual 1
@@ -59,14 +59,16 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     Optional[ProcessedOrder.Any, OffChainFee].getOption(executed) shouldEqual executed.offChainFee
 
     def run = for {
-      insertResult <- repo.offChainFees.insert(NonEmptyList.of(register, executed)).trans
+      insertResult <- repo.offChainFees.insert(register).trans
+      insertResult1 <- repo.offChainFees.insert(executed).trans
       expected1 <-
         sql"select * from off_chain_fee where order_id=${register.order.id}".query[OffChainFeeDB].unique.trans
-      resolveResult <- repo.offChainFees.resolve(NonEmptyList.of(executed)).trans
+      resolveResult <- repo.offChainFees.resolve(executed).trans
       expected2 <-
         sql"select * from off_chain_fee where order_id=${register.order.id}".query[OffChainFeeDB].option.trans
     } yield {
-      insertResult shouldEqual 1
+      insertResult shouldEqual 0
+      insertResult1 shouldEqual 1
       resolveResult shouldEqual 1
 
       expected1 shouldEqual expectedFee
@@ -88,18 +90,24 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
       implicitly[ToDB[ProcessedOrder[Redeem], RedeemDB]].toDB(register2.asInstanceOf[ProcessedOrder[Redeem]])
 
     def run = for {
-      insertResult  <- repo.redeems.insert(NonEmptyList.of(register, register2)).trans
+      insertResult  <- repo.redeems.insert(register).trans
+      insertResult1  <- repo.redeems.insert(register2).trans
       expected1     <- sql"select * from redeems where order_id=${register.order.id}".query[RedeemDB].unique.trans
       expected2     <- sql"select * from redeems where order_id=${register2.order.id}".query[RedeemDB].unique.trans
-      resolveResult <- repo.redeems.insert(NonEmptyList.of(refund, executed)).trans
+      resolveResult <- repo.redeems.insert(refund).trans
+      resolveResult1 <- repo.redeems.insert(executed).trans
       expected3     <- sql"select * from redeems where order_id=${register.order.id}".query[RedeemDB].unique.trans
       expected4     <- sql"select * from redeems where order_id=${register2.order.id}".query[RedeemDB].unique.trans
-      deleteResult  <- repo.redeems.resolve(NonEmptyList.of(register, register2)).trans
+      deleteResult  <- repo.redeems.resolve(register).trans
+      deleteResult1  <- repo.redeems.resolve(register2).trans
       expected5     <- sql"select * from redeems".query[RedeemDB].to[List].trans
     } yield {
-      insertResult shouldEqual 2
-      resolveResult shouldEqual 2
-      deleteResult shouldEqual 2
+      insertResult shouldEqual 1
+      insertResult1 shouldEqual 1
+      resolveResult shouldEqual 1
+      resolveResult1 shouldEqual 1
+      deleteResult shouldEqual 1
+      deleteResult1 shouldEqual 1
 
       expected1 shouldEqual register1Expected
       expected2 shouldEqual register2Expected
@@ -125,18 +133,24 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
       implicitly[ToDB[ProcessedOrder[Deposit], DepositDB]].toDB(register2.asInstanceOf[ProcessedOrder[Deposit]])
 
     def run = for {
-      insertResult  <- repo.deposits.insert(NonEmptyList.of(register, register2)).trans
+      insertResult  <- repo.deposits.insert(register).trans
+      insertResult1  <- repo.deposits.insert(register2).trans
       expected1     <- sql"select * from deposits where order_id=${register.order.id}".query[DepositDB].unique.trans
       expected2     <- sql"select * from deposits where order_id=${register2.order.id}".query[DepositDB].unique.trans
-      resolveResult <- repo.deposits.insert(NonEmptyList.of(refund, executed)).trans
+      resolveResult <- repo.deposits.insert(refund).trans
+      resolveResult1 <- repo.deposits.insert(executed).trans
       expected3     <- sql"select * from deposits where order_id=${register.order.id}".query[DepositDB].unique.trans
       expected4     <- sql"select * from deposits where order_id=${register2.order.id}".query[DepositDB].unique.trans
-      deleteResult  <- repo.deposits.resolve(NonEmptyList.of(register, register2)).trans
+      deleteResult  <- repo.deposits.resolve(register).trans
+      deleteResult1  <- repo.deposits.resolve(register2).trans
       expected5     <- sql"select * from deposits".query[DepositDB].to[List].trans
     } yield {
-      insertResult shouldEqual 2
-      resolveResult shouldEqual 2
-      deleteResult shouldEqual 2
+      insertResult shouldEqual 1
+      insertResult1 shouldEqual 1
+      resolveResult shouldEqual 1
+      resolveResult1 shouldEqual 1
+      deleteResult shouldEqual 1
+      deleteResult1 shouldEqual 1
 
       expected1 shouldEqual register1Expected
       expected2 shouldEqual register2Expected
@@ -161,28 +175,30 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
         .toDB(register2.asInstanceOf[ProcessedOrder[Order.Swap]])
 
     def run = for {
-      insertRegister  <- repo.swaps.insert(NonEmptyList.of(register, register2)).trans
+      insertRegister  <- repo.swaps.insert(register).trans
+      insertRegister1  <- repo.swaps.insert(register2).trans
       resultRegister  <- sql"select * from swaps where order_id=${register.order.id}".query[SwapDB].unique.trans
       resultRegister2 <- sql"select * from swaps where order_id=${register2.order.id}".query[SwapDB].unique.trans
       executed         = parser.parse(Swaps.transactionSwapExecuted, 0).get
       expectedExecuted = expectedRegister.copy(executedTx = Some(TxInfo(executed.state.txId, executed.state.timestamp)))
-      insertExecuted <- repo.swaps.insert(NonEmptyList.one(executed)).trans
+      insertExecuted <- repo.swaps.insert(executed).trans
       resultExecuted <- sql"select * from swaps where order_id=${executed.order.id}".query[SwapDB].unique.trans
       refunded         = parser.parse(Swaps.transactionSwapRefundRegister, 0).get
       expectedRefunded = resultRegister2.copy(refundedTx = Some(TxInfo(refunded.state.txId, refunded.state.timestamp)))
-      insertRefunded <- repo.swaps.insert(NonEmptyList.one(refunded)).trans
+      insertRefunded <- repo.swaps.insert(refunded).trans
       resultRefunded <- sql"select * from swaps where order_id=${refunded.order.id}".query[SwapDB].unique.trans
 
-      deleteRefunded <- repo.swaps.resolve(NonEmptyList.one(refunded)).trans
+      deleteRefunded <- repo.swaps.resolve(refunded).trans
       resultDelete1  <- sql"select * from swaps where order_id=${refunded.order.id}".query[SwapDB].unique.trans
 
-      deleteExecuted <- repo.swaps.resolve(NonEmptyList.one(executed)).trans
+      deleteExecuted <- repo.swaps.resolve(executed).trans
       resultDelete2  <- sql"select * from swaps where order_id=${executed.order.id}".query[SwapDB].unique.trans
 
-      deleteRegister <- repo.swaps.resolve(NonEmptyList.one(register)).trans
+      deleteRegister <- repo.swaps.resolve(register).trans
       resultDelete3  <- sql"select * from swaps where order_id=${register.order.id}".query[SwapDB].option.trans
     } yield {
-      insertRegister shouldEqual 2
+      insertRegister shouldEqual 1
+      insertRegister1 shouldEqual 1
       insertExecuted shouldEqual 1
       insertRefunded shouldEqual 1
 
