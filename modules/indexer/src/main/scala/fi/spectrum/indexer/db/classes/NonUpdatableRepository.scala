@@ -1,6 +1,5 @@
 package fi.spectrum.indexer.db.classes
 
-import cats.data.NonEmptyList
 import cats.syntax.applicative._
 import doobie.ConnectionIO
 import doobie.util.log
@@ -11,15 +10,15 @@ import fi.spectrum.indexer.db.models.UpdateState
   */
 trait NonUpdatableRepository[T] extends UpdateRepository[T] {
 
-  override def updateExecuted(update: NonEmptyList[UpdateState])(implicit lh: log.LogHandler): ConnectionIO[Int] =
+  override def updateExecuted(update: UpdateState)(implicit lh: log.LogHandler): ConnectionIO[Int] =
     0.pure[ConnectionIO]
 
-  override def updateRefunded(update: NonEmptyList[UpdateState])(implicit lh: log.LogHandler): ConnectionIO[Int] =
+  override def updateRefunded(update: UpdateState)(implicit lh: log.LogHandler): ConnectionIO[Int] =
     0.pure[ConnectionIO]
 
-  override def deleteExecuted(delete: NonEmptyList[order.OrderId])(implicit lh: log.LogHandler): ConnectionIO[Int] =
+  override def deleteExecuted(delete: order.OrderId)(implicit lh: log.LogHandler): ConnectionIO[Int] =
     0.pure[ConnectionIO]
 
-  override def deleteRefunded(delete: NonEmptyList[order.OrderId])(implicit lh: log.LogHandler): ConnectionIO[Int] =
+  override def deleteRefunded(delete: order.OrderId)(implicit lh: log.LogHandler): ConnectionIO[Int] =
     0.pure[ConnectionIO]
 }

@@ -1,6 +1,5 @@
 package fi.spectrum.indexer.db.repositories
 
-import cats.data.NonEmptyList
 import doobie.{ConnectionIO, Update}
 import doobie.util.Write
 import doobie.util.log.LogHandler
@@ -14,13 +13,13 @@ trait Repository[T, I] {
 
   def delete(implicit lh: LogHandler, w: Write[I]): Update[I]
 
-  def updateRefunded(update: NonEmptyList[UpdateState])(implicit lh: LogHandler): ConnectionIO[Int]
+  def updateRefunded(update: UpdateState)(implicit lh: LogHandler): ConnectionIO[Int]
 
-  def deleteRefunded(delete: NonEmptyList[OrderId])(implicit lh: LogHandler): ConnectionIO[Int]
+  def deleteRefunded(delete: OrderId)(implicit lh: LogHandler): ConnectionIO[Int]
 
-  def updateExecuted(update: NonEmptyList[UpdateState])(implicit lh: LogHandler): ConnectionIO[Int]
+  def updateExecuted(update: UpdateState)(implicit lh: LogHandler): ConnectionIO[Int]
 
-  def deleteExecuted(delete: NonEmptyList[OrderId])(implicit lh: LogHandler): ConnectionIO[Int]
+  def deleteExecuted(delete: OrderId)(implicit lh: LogHandler): ConnectionIO[Int]
 }
 
 object Repository {
@@ -30,6 +29,7 @@ object Repository {
   implicit val locksRepository: LockRepository               = new LockRepository
   implicit val offChainsFeeRepository: OffChainFeeRepository = new OffChainFeeRepository
   implicit val poolsRepository: PoolRepository               = new PoolRepository
+  implicit val blocksRepository: BlockRepository             = new BlockRepository
 
   implicit val assetInsert: AssetInsert = new AssetInsert
 }

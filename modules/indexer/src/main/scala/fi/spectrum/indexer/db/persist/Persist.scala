@@ -1,19 +1,18 @@
 package fi.spectrum.indexer.db.persist
 
 import cats.FlatMap
-import cats.data.NonEmptyList
+import cats.syntax.applicative._
+import cats.syntax.traverse._
 import cats.tagless.ApplyK.ops.toAllApplyKOps
 import doobie.ConnectionIO
 import doobie.util.Write
 import doobie.util.log.LogHandler
 import fi.spectrum.core.domain.analytics.ProcessedOrder
-import fi.spectrum.core.domain.order.OrderStatus.{Executed, Refunded, Registered}
-import fi.spectrum.core.domain.order.{Order, OrderId}
+import fi.spectrum.core.domain.order.{Order, OrderId, OrderStatus}
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
 import fi.spectrum.indexer.db.models.UpdateState
 import fi.spectrum.indexer.db.repositories.Repository
-import fi.spectrum.indexer.foldNel
 import glass.classic.{Lens, Optional, Prism}
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler
@@ -22,9 +21,9 @@ import tofu.higherKind.RepresentableK
 /** Describes how to communicate with database
   */
 trait Persist[R, F[_]] {
-  def insert(nel: NonEmptyList[R]): F[Int]
+  def insert(r: R): F[Int]
 
-  def resolve(nel: NonEmptyList[R]): F[Int]
+  def resolve(r: R): F[Int]
 }
 
 object Persist {
@@ -58,44 +57,29 @@ object Persist {
     logHandler: LogHandler
   ) extends Persist[ProcessedOrder.Any, ConnectionIO] {
 
-    def insert(nel: NonEmptyList[ProcessedOrder.Any]): ConnectionIO[Int] = {
-      val (registered, executed, refunded) = {
-        val (x, y, z) = accumulateByStatus(nel)
-        (x.map(_.toDB), y.map(UpdateState.fromProcessed), z.map(UpdateState.fromProcessed))
-      }
-
-      for {
-        x <- foldNel[ConnectionIO, Int, B](registered, repository.insertNoConflict.updateMany, 0)
-        y <- foldNel[ConnectionIO, Int, UpdateState](executed, repository.updateExecuted, 0)
-        z <- foldNel[ConnectionIO, Int, UpdateState](refunded, repository.updateRefunded, 0)
-      } yield x + y + z
-    }
-
-    def resolve(nel: NonEmptyList[ProcessedOrder.Any]): ConnectionIO[Int] = {
-      val (registered, executed, refunded) = {
-        val (x, y, z) = accumulateByStatus(nel)
-        (x.map(_.order.id), y.map(_.order.id), z.map(_.order.id))
-      }
-
-      for {
-        x <- foldNel[ConnectionIO, Int, OrderId](registered, repository.delete.updateMany, 0)
-        y <- foldNel[ConnectionIO, Int, OrderId](executed, repository.deleteExecuted, 0)
-        z <- foldNel[ConnectionIO, Int, OrderId](refunded, repository.deleteRefunded, 0)
-      } yield x + y + z
-
-    }
-
-    private def accumulateByStatus(
-      nel: NonEmptyList[ProcessedOrder.Any]
-    ): (List[ProcessedOrder[O]], List[ProcessedOrder[O]], List[ProcessedOrder[O]]) =
-      nel.toList
-        .flatMap(_.wined)
-        .foldLeft(List.empty[ProcessedOrder[O]], List.empty[ProcessedOrder[O]], List.empty[ProcessedOrder[O]]) {
-          case ((acc1, acc2, acc3), next) if next.state.status.in(Registered) => (next :: acc1, acc2, acc3)
-          case ((acc1, acc2, acc3), next) if next.state.status.in(Executed)   => (acc1, next :: acc2, acc3)
-          case ((acc1, acc2, acc3), next) if next.state.status.in(Refunded)   => (acc1, acc2, next :: acc3)
-          case ((acc1, acc2, acc3), _)                                        => (acc1, acc2, acc3)
+    def insert(processed: ProcessedOrder.Any): ConnectionIO[Int] =
+      processed.wined
+        .traverse { order =>
+          order.state.status match {
+            case OrderStatus.Registered => repository.insertNoConflict.toUpdate0(order.toDB).run
+            case OrderStatus.Executed   => repository.updateExecuted(UpdateState.fromProcessed(order))
+            case OrderStatus.Refunded   => repository.updateRefunded(UpdateState.fromProcessed(order))
+            case _                      => 0.pure[ConnectionIO]
+          }
         }
+        .map(_.getOrElse(0))
+
+    def resolve(processed: ProcessedOrder.Any): ConnectionIO[Int] =
+      processed.wined
+        .traverse { order =>
+          order.state.status match {
+            case OrderStatus.Registered => repository.delete.toUpdate0(order.order.id).run
+            case OrderStatus.Executed   => repository.deleteExecuted(order.order.id)
+            case OrderStatus.Refunded   => repository.deleteRefunded(order.order.id)
+            case _                      => 0.pure[ConnectionIO]
+          }
+        }
+        .map(_.getOrElse(0))
   }
 
   final private class LiveNonUpdatable[O, S, B: Write, T: Write](implicit
@@ -106,22 +90,17 @@ object Persist {
     logHandler: LogHandler
   ) extends Persist[O, ConnectionIO] {
 
-    def insert(nel: NonEmptyList[O]): ConnectionIO[Int] =
-      foldNel[ConnectionIO, Int, B](
-        nel
-          .toList
-          .flatMap(optional.getOption)
-          .map(_.toDB),
-        repository.insertNoConflict.updateMany,
-        0
-      )
+    def insert(o: O): ConnectionIO[Int] =
+      optional.getOption(o).map(_.toDB) match {
+        case Some(value) => repository.insertNoConflict.toUpdate0(value).run
+        case None        => 0.pure[ConnectionIO]
+      }
 
-    def resolve(nel: NonEmptyList[O]): ConnectionIO[Int] =
-      foldNel[ConnectionIO, Int, T](
-        nel.toList.flatMap(optional.getOption).map(lens.extract),
-        repository.delete.updateMany,
-        0
-      )
+    def resolve(o: O): ConnectionIO[Int] =
+      optional.getOption(o).map(lens.extract) match {
+        case Some(value) => repository.delete.toUpdate0(value).run
+        case None        => 0.pure[ConnectionIO]
+      }
 
   }
 }
