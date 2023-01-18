@@ -24,8 +24,10 @@ final case class ConfigBundle(
   mempoolTxConsumer: ConsumerConfig,
   ordersConsumer: ConsumerConfig,
   poolsConsumer: ConsumerConfig,
+  blocksConsumer: ConsumerConfig,
   ordersProducer: ProducerConfig,
   poolsProducer: ProducerConfig,
+  blocksProducer: ProducerConfig,
   @promote kafka: KafkaConfig,
   @promote redis: RedisConfig
 )

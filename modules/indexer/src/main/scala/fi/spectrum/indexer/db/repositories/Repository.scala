@@ -1,6 +1,5 @@
 package fi.spectrum.indexer.db.repositories
 
-import cats.data.NonEmptyList
 import doobie.{ConnectionIO, Update}
 import doobie.util.Write
 import doobie.util.log.LogHandler
@@ -30,6 +29,7 @@ object Repository {
   implicit val locksRepository: LockRepository               = new LockRepository
   implicit val offChainsFeeRepository: OffChainFeeRepository = new OffChainFeeRepository
   implicit val poolsRepository: PoolRepository               = new PoolRepository
+  implicit val blocksRepository: BlockRepository             = new BlockRepository
 
   implicit val assetInsert: AssetInsert = new AssetInsert
 }

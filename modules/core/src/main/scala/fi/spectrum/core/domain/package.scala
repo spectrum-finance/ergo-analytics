@@ -17,7 +17,6 @@ import scorex.util.encode.Base16
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
 import cats.syntax.eq._
-import cats.syntax.order
 import derevo.pureconfig.pureconfigReader
 import pureconfig.ConfigReader
 
@@ -82,6 +81,14 @@ package object domain {
   object BoxId {
     implicit val get: Get[BoxId] = deriving
     implicit val put: Put[BoxId] = deriving
+  }
+
+  @derive(encoder, decoder, loggable, show)
+  @newtype case class BlockId(value: String)
+
+  object BlockId {
+    implicit val get: Get[BlockId] = deriving
+    implicit val put: Put[BlockId] = deriving
   }
 
   @derive(encoder, decoder, loggable, show)
