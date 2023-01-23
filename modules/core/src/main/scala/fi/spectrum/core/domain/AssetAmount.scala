@@ -1,6 +1,5 @@
 package fi.spectrum.core.domain
 
-
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.constants.ErgoAssetId

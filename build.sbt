@@ -44,6 +44,8 @@ lazy val core = mkModule("core", "core")
       rocksDB,
       retry
     ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums ++ doobie ++ sttp
+      redis
+    ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums ++ doobie ++ sttp ++ scodec ++ tapir ++ jawnFs2
   )
 
 lazy val streaming = mkModule("streaming", "streaming")
@@ -64,6 +66,16 @@ lazy val parsers = mkModule("parsers", "parsers")
       CompilerPlugins.betterMonadicFor,
       CompilerPlugins.kindProjector
     )
+  )
+  .dependsOn(core)
+
+lazy val api = mkModule("markets-api", "markets-api")
+  .settings(scalacOptions ++= commonScalacOption)
+  .settings(
+    libraryDependencies ++= List(
+      CompilerPlugins.betterMonadicFor,
+      CompilerPlugins.kindProjector
+    ) ++ scodec ++ http4s ++ tapir ++ tests
   )
   .dependsOn(core)
 

@@ -21,6 +21,14 @@ object Dependencies {
     val rocksDB    = "0.2.1"
     val retry      = "3.1.0"
     val fs2IO      = "3.5.0"
+    val tapir = "1.0.0" //"0.18.3"
+    val tapirOpenapi = "0.20.2"
+    val tapirRedoc = "0.19.0-M4"
+    val scodecCore = "1.11.7"
+    val scodecBits = "1.1.21"
+    val jawnFs2 = "2.0.0"
+    val scodecCats = "1.1.0"
+    val http4s = "0.23.12"
 
     val scalaCheckVersion             = "1.14.1"
     val scalaCheckShapelessVersion    = "1.2.5"
@@ -58,6 +66,28 @@ object Dependencies {
       "com.softwaremill.sttp.client3" %% "circe"                         % Version.sttp,
       "com.softwaremill.sttp.client3" %% "okhttp-backend"                % Version.sttp % Test
     )
+
+  val tapir =
+    List(
+      "com.softwaremill.sttp.tapir" %% "tapir-core"               % Version.tapir,
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe"         % Version.tapir,
+      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server"      % Version.tapir,
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs"       % Version.tapir,
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % Version.tapirOpenapi,
+      "com.softwaremill.sttp.tapir" %% "tapir-redoc-http4s"       % Version.tapirRedoc
+    )
+
+  val http4s = List(
+    "org.http4s" %% "http4s-blaze-server" % Version.http4s
+  )
+
+  val jawnFs2 = List("org.typelevel" %% "jawn-fs2" % Version.jawnFs2)
+
+  val scodec = List(
+    "org.scodec" %% "scodec-core" % Version.scodecCore,
+    "org.scodec" %% "scodec-bits" % Version.scodecBits,
+    "org.scodec" %% "scodec-cats" % Version.scodecCats
+  )
 
   val doobie = List(
     "org.tpolecat" %% "doobie-postgres" % Version.doobie,
