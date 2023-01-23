@@ -9,6 +9,8 @@ import fi.spectrum.core.domain.TokenId
 import fi.spectrum.graphite.GraphiteSettings
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig, ProducerConfig}
 import glass.macros.{ClassyPOptics, promote}
+import fi.spectrum.core.streaming.config.{ConsumerConfig, KafkaConfig, ProducerConfig}
+import glass.macros.{ClassyPOptics, promote}
 import tofu.WithContext
 import tofu.logging.Loggable
 
