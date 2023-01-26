@@ -6,7 +6,7 @@ import cats.{Foldable, Functor, Monad}
 import fi.spectrum.indexer.config.ApplicationConfig
 import fi.spectrum.indexer.models.BlockChainEvent.{OrderEvent, PoolEvent}
 import fi.spectrum.indexer.services.{Events, Orders, Pools}
-import fi.spectrum.streaming.TxConsumer
+import fi.spectrum.streaming.kafka.TxConsumer
 import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.logging._

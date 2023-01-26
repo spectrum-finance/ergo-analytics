@@ -9,7 +9,7 @@ import fi.spectrum.core.domain.transaction.Transaction
 import fi.spectrum.indexer.config.ApplicationConfig
 import fi.spectrum.indexer.services.Mempool
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
-import fi.spectrum.streaming.MempoolConsumer
+import fi.spectrum.streaming.kafka.MempoolConsumer
 import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.logging._

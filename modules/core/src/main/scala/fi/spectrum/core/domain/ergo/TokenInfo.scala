@@ -23,7 +23,7 @@ object TokenInfo {
       ErgoAssetId,
       ErgoGenesisBox,
       ErgoEmissionAmount,
-      Some(ErgoAssetTicker.value),
+      Some(ErgoAssetTicker),
       Some(ErgoAssetDescription),
       Some(ErgoAssetDecimals)
     )

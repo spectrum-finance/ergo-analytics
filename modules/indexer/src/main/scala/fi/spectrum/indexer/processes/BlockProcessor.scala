@@ -6,7 +6,7 @@ import cats.syntax.traverse._
 import cats.{Foldable, Functor, Monad}
 import fi.spectrum.indexer.config.ApplicationConfig
 import fi.spectrum.indexer.services.Blocks
-import fi.spectrum.streaming.BlocksConsumer
+import fi.spectrum.streaming.kafka.BlocksConsumer
 import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals}
 import tofu.syntax.logging._

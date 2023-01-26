@@ -6,8 +6,8 @@ import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
 import cats.effect.{ExitCode, IO, IOApp}
 import dev.profunktor.redis4cats.RedisCommands
-import fi.spectrum.core.common.redis._
-import fi.spectrum.core.common.redis.codecs._
+import fi.spectrum.cache.redis.codecs.stringCodec
+import fi.spectrum.cache.redis.mkRedis
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
@@ -29,7 +29,7 @@ import fi.spectrum.streaming.domain.TransactionEvent._
 import fi.spectrum.streaming.kafka.Consumer._
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import fi.spectrum.streaming.kafka.serde.string._
-import fi.spectrum.streaming.kafka.{Consumer, MakeKafkaConsumer}
+import fi.spectrum.streaming.kafka.{Consumer, MakeKafkaConsumer, TxConsumer}
 import fs2.Chunk
 import fs2.kafka.RecordDeserializer
 import io.github.oskin1.rocksdb.scodec.TxRocksDB

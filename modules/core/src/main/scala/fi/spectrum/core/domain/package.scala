@@ -1,11 +1,10 @@
 package fi.spectrum.core
 
 import cats.instances.either._
-import cats.syntax.functor._
 import cats.syntax.either._
-import cats.{Applicative, Eq, Order, Show}
 import cats.syntax.eq._
-import cats.{Eq, Order, Show}
+import cats.syntax.functor._
+import cats.{Applicative, Eq, Order, Show}
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import derevo.pureconfig.pureconfigReader
@@ -13,6 +12,7 @@ import doobie.util.{Get, Put}
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.refineV
 import eu.timepit.refined.string.HexStringSpec
+import fi.spectrum.core.common.errors.RefinementFailed
 import fi.spectrum.core.domain.TypeConstraints.{AddressType, Base58Spec, HexStringType}
 import fi.spectrum.core.syntax.PubKeyOps
 import io.circe.refined._
@@ -22,34 +22,15 @@ import org.ergoplatform.ErgoBox
 import pureconfig.ConfigReader
 import scodec.bits.ByteVector
 import scorex.util.encode.Base16
+import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
+import tofu.Raise
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
-import cats.syntax.eq._
-import derevo.pureconfig.pureconfigReader
-import doobie.{Get, Put}
-import fi.spectrum.core.common.errors.RefinementFailed
-import pureconfig.ConfigReader
-import scodec.bits.ByteVector
-import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
-import tofu.{Raise, WithContext, WithLocal}
 import tofu.syntax.raise._
 
 import scala.util.Try
 
 package object domain {
-
-  @derive(loggable)
-  final case class Price(byX: BigDecimal, byY: BigDecimal)
-
-  @derive(loggable)
-  @newtype case class TraceId(value: String)
-
-  object TraceId {
-    type Local[F[_]] = WithLocal[F, TraceId]
-    type Has[F[_]]   = WithContext[F, TraceId]
-
-    def fromString(s: String): TraceId = apply(s)
-  }
 
   @newtype case class HexString(value: HexStringType) {
     final def unwrapped: String = value.value
