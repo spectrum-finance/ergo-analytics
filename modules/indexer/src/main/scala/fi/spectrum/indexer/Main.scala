@@ -5,13 +5,10 @@ import cats.effect.kernel.{Async, Clock, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
 import cats.effect.{ExitCode, IO, IOApp}
-import dev.profunktor.redis4cats.RedisCommands
-import fi.spectrum.core.common.redis._
-import fi.spectrum.core.common.redis.codecs._
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
-import fi.spectrum.core.domain.TxId
+import fi.spectrum.core.domain.{BlockId, TxId}
 import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.graphite.{GraphiteClient, Metrics}
 import fi.spectrum.indexer.config.ConfigBundle
@@ -19,17 +16,18 @@ import fi.spectrum.indexer.config.ConfigBundle._
 import fi.spectrum.indexer.db.local.storage.{OrderStorageTransactional, OrdersStorage}
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.repositories.AssetsRepo
-import fi.spectrum.indexer.processes.TransactionsProcessor
+import fi.spectrum.indexer.processes.{BlockProcessor, TransactionsProcessor}
 import fi.spectrum.indexer.services._
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
-import fi.spectrum.streaming._
-import fi.spectrum.streaming.domain.TransactionEvent
 import fi.spectrum.streaming.domain.TransactionEvent._
+import fi.spectrum.streaming.domain.{BlockEvent, TransactionEvent}
 import fi.spectrum.streaming.kafka.Consumer._
+import fi.spectrum.streaming.kafka.KafkaDecoder._
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
+import fi.spectrum.streaming.kafka.serde.json._
 import fi.spectrum.streaming.kafka.serde.string._
-import fi.spectrum.streaming.kafka.{Consumer, MakeKafkaConsumer}
+import fi.spectrum.streaming.kafka.{BlocksConsumer, Consumer, MakeKafkaConsumer, TxConsumer}
 import fs2.Chunk
 import fs2.kafka.RecordDeserializer
 import io.github.oskin1.rocksdb.scodec.TxRocksDB
@@ -43,7 +41,7 @@ import tofu.doobie.transactor.Txr
 import tofu.fs2.LiftStream
 import tofu.fs2Instances._
 import tofu.logging.Logging
-import tofu.streams.{Chunks, Evals}
+import tofu.streams.{Chunks, Evals, Temporal}
 import tofu.syntax.monadic._
 import tofu.{In, WithContext}
 
@@ -61,10 +59,9 @@ object Main extends IOApp {
     }
 
   def init[
-    S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad: LiftStream[*[_], F],
+    S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad: LiftStream[*[_], F]: Temporal[*[_], Chunk],
     F[_]: Async: In[Dispatcher[F], *[_]]: Clock
   ](configPathOpt: Option[String]): Resource[F, List[S[Unit]]] = {
-
     def makeConsumer[
       K: RecordDeserializer[F, *],
       V: RecordDeserializer[F, *]
@@ -87,11 +84,11 @@ object Main extends IOApp {
       implicit0(logsD: Logging.Make[xa.DB])       = Logging.Make.plain[xa.DB]
       implicit0(elh: EmbeddableLogHandler[xa.DB]) = makeEmbeddableHandler[F, xa.DB]("indexer-db")
       implicit0(txC: TxConsumer[S, F])            = makeConsumer[TxId, Option[TransactionEvent]](config.txConsumer)
-      implicit0(graphiteD: GraphiteClient[xa.DB])        <- GraphiteClient.make[F, xa.DB](config.graphite)
-      implicit0(graphiteF: GraphiteClient[F])            <- GraphiteClient.make[F, F](config.graphite)
-      implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
-      implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
-      implicit0(rocks: TxRocksDB[F])                     <- TxRocksDB.make[F, F](config.rocks.path)
+      implicit0(txB: BlocksConsumer[S, F])        = makeConsumer[BlockId, Option[BlockEvent]](config.blocksConsumer)
+      implicit0(graphiteD: GraphiteClient[xa.DB]) <- GraphiteClient.make[F, xa.DB](config.graphite)
+      implicit0(graphiteF: GraphiteClient[F])     <- GraphiteClient.make[F, F](config.graphite)
+      implicit0(sttp: SttpBackend[F, Any])        <- makeBackend
+      implicit0(rocks: TxRocksDB[F])              <- TxRocksDB.make[F, F](config.rocks.path)
       implicit0(assetsRepo: AssetsRepo[xa.DB]) = AssetsRepo.make[xa.DB]
       implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
       implicit0(metricsF: Metrics[F])          = Metrics.make[F]
@@ -100,12 +97,14 @@ object Main extends IOApp {
       implicit0(ordersParser: ProcessedOrderParser[F]) = ProcessedOrderParser.make[F](config.spfTokenId)
       implicit0(poolsParser: PoolParser)               = PoolParser.make
       implicit0(persistBundle: PersistBundle[xa.DB])   = PersistBundle.make[xa.DB]
+      implicit0(blocks: Blocks[F])                     = Blocks.make[F, xa.DB]
       implicit0(orders: Orders[F])                     = Orders.make[F, xa.DB]
       implicit0(pools: Pools[F])                       = Pools.make[F, xa.DB]
       implicit0(storage: OrderStorageTransactional[F]) = OrdersStorage.make[F]
       implicit0(transactions: Events[F])               = Events.make[F]
       txProcessor                                      = TransactionsProcessor.make[Chunk, F, S]
-    } yield List(txProcessor.run)
+      blockProcessor                                   = BlockProcessor.make[Chunk, F, S]
+    } yield List(txProcessor.run, blockProcessor.run)
   }
 
 }

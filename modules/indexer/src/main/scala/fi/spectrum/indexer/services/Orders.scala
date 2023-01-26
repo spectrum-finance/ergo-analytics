@@ -60,10 +60,10 @@ object Orders {
 
     private def handleWithMetrics(metric: String, f: D[Int]): D[Int] =
       for {
-        _      <- metrics.sendCount(s"db.order.$metric", 1)
         start  <- millis
         r      <- f
         finish <- millis
+        _      <- metrics.sendCount(s"db.order.$metric", 1)
         _      <- metrics.sendTs(s"db.order.$metric", (finish - start).toDouble)
       } yield r
   }

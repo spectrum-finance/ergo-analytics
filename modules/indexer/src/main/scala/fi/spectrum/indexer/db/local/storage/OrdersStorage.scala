@@ -121,23 +121,23 @@ object OrdersStorage {
 
     def insertPool(pool: Pool): Mid[F, Unit] =
       for {
-        _ <- trace"insertPool(${pool.poolId})"
+        _ <- info"insertPool(${pool.poolId})"
         _ <- _
-        _ <- trace"insertPool(${pool.poolId}) -> finish"
+        _ <- info"insertPool(${pool.poolId}) -> finish"
       } yield ()
 
     def getPool(id: List[BoxId]): Mid[F, Option[Pool]] =
       for {
-        _ <- trace"getPool($id)"
+        _ <- info"getPool($id)"
         r <- _
-        _ <- trace"getPool($id) -> $r"
+        _ <- info"getPool($id) -> $r"
       } yield r
 
     def deletePool(id: BoxId): Mid[F, Unit] =
       for {
-        _ <- trace"deletePool($id)"
+        _ <- info"deletePool($id)"
         _ <- _
-        _ <- trace"deletePool($id) -> finish"
+        _ <- info"deletePool($id) -> finish"
       } yield ()
   }
 }

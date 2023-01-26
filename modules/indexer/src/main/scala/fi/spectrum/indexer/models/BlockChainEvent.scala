@@ -13,8 +13,9 @@ object BlockChainEvent {
   type OrderEvent = BlockChainEvent[Processed.Any]
   type PoolEvent  = BlockChainEvent[Pool]
 
-  implicit def showOrderEvent: Show[OrderEvent] = o => s"OrderEvent(${o.event.order.id}, ${o.event.state}})"
-  implicit def showPoolEvent: Show[PoolEvent]   = p => s"PoolEvent(${p.event.poolId}, ${p.event.box.boxId}})"
+  implicit def showOrderEvent: Show[OrderEvent] = o =>
+    s"OrderEvent(${o.event.order.id}, ${o.event.order.orderType}, ${o.event.state})"
+  implicit def showPoolEvent: Show[PoolEvent] = p => s"PoolEvent(${p.event.poolId}, ${p.event.box.boxId})"
 
   implicit def loggableOrderEvent: Loggable[OrderEvent] = Loggable.show
   implicit def loggablePoolEvent: Loggable[PoolEvent]   = Loggable.show
