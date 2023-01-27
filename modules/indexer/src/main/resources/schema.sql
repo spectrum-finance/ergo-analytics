@@ -181,3 +181,15 @@ alter table public.assets
     owner to ergo_admin;
 
 create index assets__ticker on public.assets using btree (ticker);
+
+create table if not exists public.blocks
+(
+    id        public.hash32type primary key,
+    height    integer,
+    timestamp integer
+);
+
+alter table public.blocks
+    owner to ergo_admin;
+
+create index blocks__height on public.blocks using btree (height);

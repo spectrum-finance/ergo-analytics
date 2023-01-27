@@ -9,11 +9,11 @@ import derevo.derive
 import fi.spectrum.api.currencies.UsdUnits
 import fi.spectrum.api.db.models.amm
 import fi.spectrum.api.db.models.amm._
+import fi.spectrum.api.db.repositories.{Asset, Blocks, Orders, Pools}
 import fi.spectrum.api.domain.{CryptoVolume, Fees, TotalValueLocked, Volume}
 import fi.spectrum.api.models.{AssetClass, CryptoUnits, FullAsset}
 import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
-import fi.spectrum.api.repositories.{Asset, Blocks, Orders, Pools}
 import fi.spectrum.api.services.{Snapshots, Volumes24H}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.models.amm._

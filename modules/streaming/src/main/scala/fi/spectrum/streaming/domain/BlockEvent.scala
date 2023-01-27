@@ -2,7 +2,7 @@ package fi.spectrum.streaming.domain
 
 import fi.spectrum.core.domain.BlockId
 
-trait BlockEvent {
+sealed trait BlockEvent {
   val timestamp: Long
   val height: Long
   val id: BlockId

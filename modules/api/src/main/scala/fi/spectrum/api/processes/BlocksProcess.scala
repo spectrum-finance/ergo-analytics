@@ -2,6 +2,7 @@ package fi.spectrum.api.processes
 
 import cats.Monad
 import fi.spectrum.api.services.{Network, Snapshots, Volumes24H}
+import fi.spectrum.cache.middleware.HttpResponseCaching
 import fi.spectrum.streaming.kafka.BlocksConsumer
 import tofu.lift.Lift
 import tofu.logging.{Logging, Logs}
@@ -26,6 +27,7 @@ object BlocksProcess {
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     network: Network[F],
+    caching: HttpResponseCaching[F],
     lift: Lift[F, I],
     logs: Logs[I, F]
   ): I[BlocksProcess[S]] = logs.forService[BlocksProcess[S]].flatMap { implicit __ =>
@@ -37,14 +39,22 @@ object BlocksProcess {
   final private class Live[
     F[_]: Monad: Logging,
     S[_]: Evals[*[_], F]
-  ](height: Int)(implicit events: BlocksConsumer[S, F], snapshots: Snapshots[F], volumes24H: Volumes24H[F])
-    extends BlocksProcess[S] {
+  ](height: Int)(implicit
+    events: BlocksConsumer[S, F],
+    snapshots: Snapshots[F],
+    volumes24H: Volumes24H[F],
+    caching: HttpResponseCaching[F]
+  ) extends BlocksProcess[S] {
 
     def run: S[Unit] =
       events.stream.evalMap { event =>
         for {
           _ <- info"Got next block event: ${event.message.map(_.id)}"
-          _ <- Monad[F].whenA(event.message.exists(_.height > height))(snapshots.update >> volumes24H.update)
+          _ <- Monad[F].whenA(event.message.exists(_.height > height))(
+            snapshots.update >>
+              volumes24H.update >>
+              caching.invalidateAll
+          )
           _ <- info"Block ${event.message.map(_.id)} processed successfully"
         } yield ()
       }

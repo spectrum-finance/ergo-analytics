@@ -1,7 +1,7 @@
-package fi.spectrum.api.repositories
+package fi.spectrum.api.db.repositories
 
+import cats.tagless.syntax.functorK._
 import cats.{FlatMap, Functor}
-import derevo.derive
 import doobie.ConnectionIO
 import fi.spectrum.api.db.models.amm._
 import fi.spectrum.api.db.sql.AnalyticsSql
@@ -9,14 +9,11 @@ import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.core.domain.order.PoolId
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler
-import tofu.higherKind.Mid
-import tofu.higherKind.derived.representableK
+import tofu.higherKind.{Mid, RepresentableK}
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
-import cats.tagless.syntax.functorK._
 
-@derive(representableK)
 trait Pools[F[_]] {
 
   /** Get general info about the pool with the given `id`.
@@ -53,6 +50,9 @@ trait Pools[F[_]] {
 }
 
 object Pools {
+
+  implicit def representableK: RepresentableK[Pools] =
+    tofu.higherKind.derived.genRepresentableK
 
   def make[I[_]: Functor, D[_]: FlatMap: LiftConnectionIO](implicit
     elh: EmbeddableLogHandler[D],
@@ -129,16 +129,16 @@ object Pools {
 
     def prevTrace(id: PoolId, depth: Int, currHeight: Int): Mid[F, Option[PoolTrace]] =
       for {
-        _ <- trace"trace(poolId=$id, depth=$depth, currHeight=$currHeight)"
+        _ <- trace"prevTrace(poolId=$id, depth=$depth, currHeight=$currHeight)"
         r <- _
-        _ <- trace"trace(poolId=$id, depth=$depth, currHeight=$currHeight) -> ${r.size} trace snapshots selected"
+        _ <- trace"prevTrace(poolId=$id, depth=$depth, currHeight=$currHeight) -> ${r.size} trace snapshots selected"
       } yield r
 
     def avgAmounts(id: PoolId, window: TimeWindow, resolution: Int): Mid[F, List[AvgAssetAmounts]] =
       for {
-        _ <- trace"trace(poolId=$id, window=$window, resolution=$resolution)"
+        _ <- trace"avgAmounts(poolId=$id, window=$window, resolution=$resolution)"
         r <- _
-        _ <- trace"trace(poolId=$id, window=$window, resolution=$resolution) -> ${r.size} trace snapshots selected"
+        _ <- trace"avgAmounts(poolId=$id, window=$window, resolution=$resolution) -> ${r.size} trace snapshots selected"
       } yield r
 
     def snapshots: Mid[F, List[PoolSnapshot]] =

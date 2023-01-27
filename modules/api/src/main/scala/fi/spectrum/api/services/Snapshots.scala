@@ -5,7 +5,7 @@ import cats.effect.Ref
 import cats.effect.kernel.Sync
 import derevo.derive
 import fi.spectrum.api.db.models.amm.PoolSnapshot
-import fi.spectrum.api.repositories.Pools
+import fi.spectrum.api.db.repositories.Pools
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
@@ -42,7 +42,6 @@ object Snapshots {
     pools: Pools[D]
   ) extends Snapshots[F] {
 
-    //run only after chain sync
     def update: F[Unit] = for {
       snapshots <- pools.snapshots.trans
       _         <- cache.set(snapshots)

@@ -1,7 +1,7 @@
 package fi.spectrum.api.v1.services
 
 import cats.Functor
-import fi.spectrum.api.repositories.Locks
+import fi.spectrum.api.db.repositories.Locks
 import fi.spectrum.api.v1.models.locks.LiquidityLockInfo
 import fi.spectrum.core.domain.order.PoolId
 import tofu.doobie.transactor.Txr

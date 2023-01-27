@@ -4,6 +4,7 @@ import cats.Monad
 import cats.data.NonEmptyList
 import derevo.derive
 import fi.spectrum.indexer.db.persist.PersistBundle
+import fi.spectrum.indexer.models.Block
 import fi.spectrum.streaming.domain.BlockEvent
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
@@ -32,16 +33,16 @@ object Blocks {
     txr: Txr[F, D]
   ) extends Blocks[F] {
 
-    def process(events: NonEmptyList[BlockEvent]): F[Unit] =
-      ???
-//      def run: D[Int] = events
-//        .traverse {
-//          case BlockEvent.BlockApply(block)   => bundle.blocks.insert(block)
-//          case BlockEvent.BlockUnapply(block) => bundle.blocks.resolve(block)
-//        }
-//        .map(_.toList.sum)
-//
-//      run.trans.void
+    def process(events: NonEmptyList[BlockEvent]): F[Unit] = {
+      def run: D[Int] = events
+        .traverse {
+          case block: BlockEvent.BlockApply   => bundle.blocks.insert(Block.fromEvent(block))
+          case block: BlockEvent.BlockUnapply => bundle.blocks.resolve(Block.fromEvent(block))
+        }
+        .map(_.toList.sum)
+
+      run.trans.void
+    }
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Blocks[Mid[F, *]] {

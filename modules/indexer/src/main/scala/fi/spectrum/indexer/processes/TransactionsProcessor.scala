@@ -54,8 +54,8 @@ object TransactionsProcessor {
               NonEmptyList
                 .fromList(batchElems)
                 .fold((List.empty[OrderEvent], List.empty[PoolEvent]).pure[F])(transactions.process)
-            _ <- info"New orders: ${orderEvents.mkString(",")}"
-            _ <- info"New pools: ${poolEvents.mkString(",")}"
+            _ <- info"New orders: $orderEvents"
+            _ <- info"New pools: $poolEvents"
             _ <- NonEmptyList.fromList(orderEvents).fold(unit[F])(orders.process)
             _ <- NonEmptyList.fromList(poolEvents).fold(unit[F])(pools.process)
             _ <- batch.toList.lastOption.traverse_(_.commit)

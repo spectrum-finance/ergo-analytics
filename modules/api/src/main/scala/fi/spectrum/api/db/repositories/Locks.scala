@@ -1,25 +1,18 @@
-package fi.spectrum.api.repositories
+package fi.spectrum.api.db.repositories
 
 import cats.tagless.syntax.functorK._
 import cats.{FlatMap, Functor}
-import derevo.derive
 import doobie.ConnectionIO
 import fi.spectrum.api.db.models.locks.LiquidityLockStats
 import fi.spectrum.api.db.sql.LiquidityLocksSql
 import fi.spectrum.core.domain.order.PoolId
-import fi.spectrum.api.db.models.locks.LiquidityLockStats
-import fi.spectrum.api.db.sql.LiquidityLocksSql
-import fi.spectrum.api.db.models.locks.LiquidityLockStats
-import fi.spectrum.api.db.sql.LiquidityLocksSql
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler
-import tofu.higherKind.Mid
-import tofu.higherKind.derived.representableK
+import tofu.higherKind.{Mid, RepresentableK}
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 
-@derive(representableK)
 trait Locks[F[_]] {
 
   /** Get liquidity locks by the pool with the given `id`.
@@ -28,6 +21,9 @@ trait Locks[F[_]] {
 }
 
 object Locks {
+
+  implicit def representableK: RepresentableK[Locks] =
+    tofu.higherKind.derived.genRepresentableK
 
   def make[I[_]: Functor, D[_]: FlatMap: LiftConnectionIO](implicit
     elh: EmbeddableLogHandler[D],

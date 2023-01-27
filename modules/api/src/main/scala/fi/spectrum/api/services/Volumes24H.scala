@@ -5,7 +5,7 @@ import cats.effect.Ref
 import cats.effect.kernel.Sync
 import derevo.derive
 import fi.spectrum.api.db.models.amm.PoolVolumeSnapshot
-import fi.spectrum.api.repositories.Pools
+import fi.spectrum.api.db.repositories.Pools
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid

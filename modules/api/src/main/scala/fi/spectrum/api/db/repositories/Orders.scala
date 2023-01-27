@@ -1,25 +1,18 @@
-package fi.spectrum.api.repositories
+package fi.spectrum.api.db.repositories
 
 import cats.tagless.syntax.functorK._
 import cats.{FlatMap, Functor}
-import derevo.derive
 import doobie.ConnectionIO
 import fi.spectrum.api.db.models.amm.{DepositInfo, SwapInfo}
-import fi.spectrum.api.db.sql.AnalyticsSql
-import fi.spectrum.api.db.models.amm.{DepositInfo, SwapInfo}
-import fi.spectrum.api.db.sql.AnalyticsSql
-import fi.spectrum.api.db.models.amm._
 import fi.spectrum.api.db.sql.AnalyticsSql
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler
-import tofu.higherKind.Mid
-import tofu.higherKind.derived.representableK
+import tofu.higherKind.{Mid, RepresentableK}
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 
-@derive(representableK)
 trait Orders[F[_]] {
 
   def getSwapTxs(tw: TimeWindow): F[List[SwapInfo]]
@@ -29,6 +22,9 @@ trait Orders[F[_]] {
 }
 
 object Orders {
+
+  implicit def representableK: RepresentableK[Orders] =
+    tofu.higherKind.derived.genRepresentableK
 
   def make[I[_]: Functor, D[_]: FlatMap: LiftConnectionIO](implicit
     elh: EmbeddableLogHandler[D],
