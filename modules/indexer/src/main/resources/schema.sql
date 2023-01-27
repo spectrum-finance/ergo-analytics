@@ -1,3 +1,8 @@
+create sequence if not exists pool_seq;
+create sequence if not exists swaps_seq;
+create sequence if not exists redeems_seq;
+create sequence if not exists deposits_seq;
+
 create domain public.hash32type as varchar(64);
 
 create domain public.pubkey as varchar(66);
@@ -6,6 +11,7 @@ create domain public.ticker as varchar;
 
 create table if not exists public.pools
 (
+    id               bigint            not null default nextval('pool_seq'),
     pool_state_id    public.hash32type primary key,
     pool_id          public.hash32type not null,
     lp_id            public.hash32type not null,
@@ -30,6 +36,7 @@ create index pools__y_id on public.pools using btree (y_id);
 
 CREATE TABLE IF NOT EXISTS public.swaps
 (
+    id                               bigint            not null default nextval('swaps_seq'),
     order_id                         public.hash32type PRIMARY KEY,
     pool_id                          public.hash32type NOT NULL,
     pool_state_id                    public.hash32type,
@@ -64,6 +71,7 @@ create index swaps__min_quote_id on public.swaps using btree (min_quote_id);
 
 create table if not exists public.redeems
 (
+    id                               bigint            not null default nextval('redeems_seq'),
     order_id                         public.hash32type primary key,
     pool_id                          public.hash32type not null,
     pool_state_id                    public.hash32type,
@@ -98,6 +106,7 @@ create index redeems__lp_id on public.redeems using btree (lp_id);
 
 create table if not exists public.deposits
 (
+    id                               bigint            not null default nextval('deposits_seq'),
     order_id                         public.hash32type primary key,
     pool_id                          public.hash32type not null,
     pool_state_id                    public.hash32type,

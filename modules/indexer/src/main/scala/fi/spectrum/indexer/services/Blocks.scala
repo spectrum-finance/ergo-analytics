@@ -4,7 +4,7 @@ import cats.Monad
 import cats.data.NonEmptyList
 import derevo.derive
 import fi.spectrum.indexer.db.persist.PersistBundle
-import fi.spectrum.streaming.kafka.models.BlockEvent
+import fi.spectrum.streaming.domain.BlockEvent
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
@@ -32,23 +32,23 @@ object Blocks {
     txr: Txr[F, D]
   ) extends Blocks[F] {
 
-    def process(events: NonEmptyList[BlockEvent]): F[Unit] = {
-      def run: D[Int] = events
-        .traverse {
-          case BlockEvent.Apply(block)   => bundle.blocks.insert(block)
-          case BlockEvent.Unapply(block) => bundle.blocks.resolve(block)
-        }
-        .map(_.toList.sum)
-
-      run.trans.void
-    }
+    def process(events: NonEmptyList[BlockEvent]): F[Unit] =
+      ???
+//      def run: D[Int] = events
+//        .traverse {
+//          case BlockEvent.BlockApply(block)   => bundle.blocks.insert(block)
+//          case BlockEvent.BlockUnapply(block) => bundle.blocks.resolve(block)
+//        }
+//        .map(_.toList.sum)
+//
+//      run.trans.void
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Blocks[Mid[F, *]] {
 
     def process(events: NonEmptyList[BlockEvent]): Mid[F, Unit] =
       for {
-        _ <- info"Going to process next block events: $events"
+        _ <- info"Going to process next block events: ${events.map(_.id)}"
         r <- _
         _ <- info"Blocks result is: $r"
       } yield r

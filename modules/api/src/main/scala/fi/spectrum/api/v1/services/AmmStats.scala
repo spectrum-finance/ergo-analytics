@@ -14,6 +14,7 @@ import fi.spectrum.api.models.{AssetClass, CryptoUnits, FullAsset}
 import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.repositories.{Asset, Blocks, Orders, Pools}
+import fi.spectrum.api.services.{Snapshots, Volumes24H}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.amm.types.{MarketId, RealPrice}
@@ -72,7 +73,8 @@ object AmmStats {
     assets: Asset[D],
     blocks: Blocks[D],
     tokens: Ref[F, List[TokenId]],
-    snapshots: Ref[F, List[PoolSnapshot]],
+    snapshots: Snapshots[F],
+    volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
     ammMath: AmmStatsMath[F],
     metrics: Metrics[F]
@@ -85,7 +87,8 @@ object AmmStats {
     assets: Asset[D],
     blocks: Blocks[D],
     tokens: Ref[F, List[TokenId]],
-    snapshots: Ref[F, List[PoolSnapshot]],
+    snapshots: Snapshots[F],
+    volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
     ammMath: AmmStatsMath[F]
   ) extends AmmStats[F] {
@@ -130,13 +133,9 @@ object AmmStats {
         res         <- calculatePoolsSummary(s => validTokens.contains(s.lockedY.id))
       } yield res
 
-    private def calculatePoolsSummary(f: PoolSnapshot => Boolean): F[List[PoolSummary]] = {
-      val day = 3600000 * 24
-
+    private def calculatePoolsSummary(f: PoolSnapshot => Boolean): F[List[PoolSummary]] =
       for {
-        currTs <- millis[F]
-        tw = TimeWindow(Some(currTs - day), Some(currTs))
-        volumes <- pools.volumes(tw).trans
+        volumes <- volumes24H.get
         filtered <- snapshots.get.map(_.filter { s =>
                       s.lockedX.ticker.nonEmpty && s.lockedY.ticker.nonEmpty &&
                       s.lockedX.id == ErgoAssetId && f(s)
@@ -169,7 +168,6 @@ object AmmStats {
                 }
               }
       } yield res
-    }
 
     private def processPoolTvl(pool: PoolSnapshot): F[Option[TotalValueLocked]] =
       (for {

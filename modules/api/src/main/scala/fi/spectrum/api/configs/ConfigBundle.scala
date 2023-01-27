@@ -5,7 +5,8 @@ import derevo.pureconfig.pureconfigReader
 import fi.spectrum.cache.redis.RedisConfig
 import fi.spectrum.core.config.ConfigBundleCompanion
 import fi.spectrum.core.db.PgConfig
-import glass.macros.{ClassyOptics, promote}
+import fi.spectrum.streaming.kafka.config.ConsumerConfig
+import glass.macros.{promote, ClassyOptics}
 import tofu.WithContext
 import tofu.logging.derivation.loggable
 
@@ -17,7 +18,7 @@ final case class ConfigBundle(
   redis: RedisConfig,
   tokens: TokenFetcherConfig,
   request: RequestConfig,
-  consumers: Consumers
+  consumer: ConsumerConfig
 )
 
 object ConfigBundle extends WithContext.Companion[ConfigBundle] with ConfigBundleCompanion[ConfigBundle]

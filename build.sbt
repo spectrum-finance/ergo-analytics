@@ -100,7 +100,7 @@ lazy val graphite = mkModule("graphite", "graphite")
     libraryDependencies ++= List(
       CompilerPlugins.betterMonadicFor,
       CompilerPlugins.kindProjector
-    ) ++ derevo ++ List(fs2IO)
+    ) ++ derevo ++ List(fs2IO) ++ http4s
   )
   .settings(libraryDependencies ++= tofu)
 

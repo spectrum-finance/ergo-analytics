@@ -7,7 +7,22 @@ import tofu.WithContext
 import tofu.logging.derivation.loggable
 import fi.spectrum.core.common.instances._
 
+import scala.concurrent.duration.FiniteDuration
+
 @derive(pureconfigReader, loggable)
-final case class NetworkConfig(cmcUrl: Uri, cmcApiKey: String, verifiedTokeListUrl: Uri)
+final case class NetworkConfig(
+  cmcUrl: Uri,
+  cmcApiKey: String,
+  cmcRequestTime: FiniteDuration,
+  cmcLimitRetries: Int,
+  cmcRetryDelay: FiniteDuration,
+  verifiedTokenListUrl: Uri,
+  verifiedTokenListRequestTime: FiniteDuration,
+  verifiedTokenLimitRetries: Int,
+  verifiedTokenRetryDelay: FiniteDuration,
+  explorerUri: Uri,
+  explorerLimitRetries: Int,
+  explorerRetryDelay: FiniteDuration
+)
 
 object NetworkConfig extends WithContext.Companion[NetworkConfig]
