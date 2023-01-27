@@ -1,116 +1,129 @@
-package org.ergoplatform.api
+package fi.spectrum.api
 
-//import cats.effect.concurrent.Ref
-//import cats.effect.{Blocker, Resource}
-//import cats.tagless.syntax.functorK._
-//import fs2.kafka.serde._
-//import fs2.kafka.RecordDeserializer
-//import org.ergoplatform.common.EnvApp
-//import org.ergoplatform.common.cache.{Cache, MakeRedisTransaction, Redis}
-//import org.ergoplatform.common.db.{doobieLogging, PostgresTransactor}
-//import org.ergoplatform.common.http.cache.{CacheMiddleware, HttpCacheInvalidator, HttpResponseCaching}
-//import org.ergoplatform.common.http.cache.CacheMiddleware.CachingMiddleware
-//import org.ergoplatform.common.streaming.{Consumer, MakeKafkaConsumer}
-//import org.ergoplatform.dex.configs.ConsumerConfig
-//import org.ergoplatform.dex.index.streaming.BlocksConsumer
-//import org.ergoplatform.api.api.v1.HttpServer
-//import org.ergoplatform.api.api.v1.services.{AmmStats, LqLocks}
-//import org.ergoplatform.api.configs.ConfigBundle
-//import org.ergoplatform.api.modules.PriceSolver.{CryptoPriceSolver, FiatPriceSolver}
-//import org.ergoplatform.api.repositories.{Locks, Orders, Pools}
-//import org.ergoplatform.api.services.{FiatRates, Markets, TokenFetcher}
-//import org.ergoplatform.ergo.BlockId
-//import org.ergoplatform.ergo.domain.Block
-//import org.ergoplatform.ergo.modules.ErgoNetwork
-//import org.ergoplatform.ergo.services.explorer.ErgoExplorerStreaming
-//import org.ergoplatform.ergo.services.node.ErgoNode
-//import sttp.capabilities.fs2.Fs2Streams
-//import sttp.client3.SttpBackend
-//import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-//import sttp.tapir.server.http4s.Http4sServerOptions
-//import tofu.WithRun
-//import tofu.doobie.instances.implicits._
-//import tofu.doobie.log.EmbeddableLogHandler
-//import tofu.doobie.transactor.Txr
-//import tofu.fs2Instances._
-//import tofu.lift.{IsoK, Unlift}
-//import tofu.logging.Logs
-//import tofu.syntax.unlift._
-//import zio.interop.catz._
-//import zio.{ExitCode, URIO, ZEnv}
-//import cats.syntax.option._
-//import org.ergoplatform.api
-//import org.ergoplatform.api.processes.RatesProcess
-//import org.ergoplatform.graphite.MetricsMiddleware.MetricsMiddleware
-//import org.ergoplatform.graphite.{GraphiteClient, Metrics, MetricsMiddleware}
-//
-//object App extends EnvApp[AppContext] {
-//
-//  implicit val serverOptions: Http4sServerOptions[RunF, RunF] = Http4sServerOptions.default[RunF, RunF]
-//
-//  implicit val mtx: MakeRedisTransaction[RunF] = MakeRedisTransaction.make[RunF]
-//
-//  def run(args: List[String]): URIO[ZEnv, ExitCode] =
-//    init(args.headOption).use { case (processes, ctx) =>
-//      val appF = fs2.Stream(processes: _*).parJoinUnbounded.compile.drain
-//      appF.run(ctx) as ExitCode.success
-//    }.orDie
-//
-//  private def init(configPathOpt: Option[String]): Resource[InitF, (List[StreamF[Unit]], AppContext)] =
-//    for {
-//      blocker <- Blocker[InitF]
-//      configs <- Resource.eval(ConfigBundle.load[InitF](configPathOpt, blocker))
-//      ctx = AppContext.init(configs)
-//      trans <- PostgresTransactor.make("markets-api-pool", configs.db)
-//      implicit0(iso: IsoK[RunF, InitF])               = IsoK.byFunK(wr.runContextK(ctx))(wr.liftF)
-//      implicit0(ul: Unlift[RunF, InitF])              = Unlift.byIso(IsoK.byFunK(wr.runContextK(ctx))(wr.liftF))
-//      implicit0(xa: Txr.Contextual[RunF, AppContext]) = Txr.contextual[RunF](trans)
-//      implicit0(elh: EmbeddableLogHandler[xa.DB]) <-
-//        Resource.eval(doobieLogging.makeEmbeddableHandler[InitF, RunF, xa.DB]("matcher-db-logging"))
-//      implicit0(graphite: GraphiteClient[RunF]) <-
-//        GraphiteClient
-//          .make[InitF, RunF](configs.graphite, configs.graphitePathPrefix)
-//      implicit0(metrics: Metrics[RunF]) <- Resource.eval(Metrics.create[InitF, RunF])
-//      implicit0(logsDb: Logs[InitF, xa.DB]) = Logs.sync[InitF, xa.DB]
-//      implicit0(backend: SttpBackend[RunF, Fs2Streams[RunF]]) <- makeBackend(ctx, blocker)
-//      implicit0(client: ErgoExplorerStreaming[StreamF, RunF]) = ErgoExplorerStreaming.make[StreamF, RunF]
-//      //implicit0(blocksCons: BlocksConsumer[StreamF, RunF])    = makeConsumer[BlockId, Block](configs.consumers.blocks)
-//      implicit0(pools: Pools[xa.DB])                      <- Resource.eval(Pools.make[InitF, xa.DB])
-//      implicit0(orders: Orders[xa.DB])                    <- Resource.eval(Orders.make[InitF, xa.DB])
-//      implicit0(locks: Locks[xa.DB])                      <- Resource.eval(Locks.make[InitF, xa.DB])
-//      implicit0(redis: Redis.Plain[RunF])                 <- Redis.make[InitF, RunF](configs.redis)
-//      implicit0(cache: Cache[RunF])                       <- Resource.eval(Cache.make[InitF, RunF])
-//      implicit0(httpRespCache: HttpResponseCaching[RunF]) <- Resource.eval(HttpResponseCaching.make[InitF, RunF])
-//      implicit0(httpCache: CachingMiddleware[RunF])         = CacheMiddleware.make[RunF]
-//      implicit0(metricsMiddleware: MetricsMiddleware[RunF]) = MetricsMiddleware.make[RunF]
-//      implicit0(markets: Markets[RunF])                <- Resource.eval(Markets.make[InitF, RunF, xa.DB])
-//      implicit0(cache: Ref[RunF, Option[BigDecimal]])  <- Resource.eval(Ref.in[InitF, RunF, Option[BigDecimal]](none))
-//      implicit0(rates: FiatRates[RunF])                <- Resource.eval(FiatRates.make[InitF, RunF])
-//      implicit0(ratesProcess: RatesProcess[StreamF])   <- Resource.eval(RatesProcess.make[InitF, RunF, StreamF])
-//      implicit0(cryptoSolver: CryptoPriceSolver[RunF]) <- Resource.eval(CryptoPriceSolver.make[InitF, RunF])
-//      implicit0(fiatSolver: FiatPriceSolver[RunF])     <- Resource.eval(FiatPriceSolver.make[InitF, RunF])
-//      implicit0(tokenFetcher: TokenFetcher[RunF])      <- Resource.eval(TokenFetcher.make[InitF, RunF])
-//      implicit0(node: ErgoNode[RunF])                  <- Resource.eval(ErgoNode.make[InitF, RunF])
-//      implicit0(network: ErgoNetwork[RunF]) = ErgoNetwork.make[RunF]
-//      implicit0(stats: AmmStats[RunF])      = AmmStats.make[RunF, xa.DB]
-//      implicit0(locks: LqLocks[RunF])       = LqLocks.make[RunF, xa.DB]
-//
-//      //invalidator     = HttpCacheInvalidator.make[StreamF, RunF, fs2.Chunk]
-//      //invalidatorProc = invalidator.run
-//      serverProc      = HttpServer.make[InitF, RunF](configs.http, runtime.platform.executor.asEC, configs.request)
-//    } yield List(ratesProcess.run,/* invalidatorProc,*/ serverProc.translate(wr.liftF).drain) -> ctx
-//
-//  private def makeConsumer[K: RecordDeserializer[RunF, *], V: RecordDeserializer[RunF, *]](conf: ConsumerConfig) = {
-//    implicit val maker = MakeKafkaConsumer.make[InitF, RunF, K, V]
-//    Consumer.make[StreamF, RunF, K, V](conf)
-//  }
-//
-//  private def makeBackend(
-//    ctx: AppContext,
-//    blocker: Blocker
-//  )(implicit wr: WithRun[RunF, InitF, AppContext]): Resource[InitF, SttpBackend[RunF, Fs2Streams[RunF]]] =
-//    Resource
-//      .eval(wr.concurrentEffect)
-//      .flatMap(implicit ce => AsyncHttpClientFs2Backend.resource[RunF](blocker))
-//      .mapK(wr.runContextK(ctx))
-//}
+import cats.effect.std.Dispatcher
+import cats.effect.syntax.resource._
+import cats.effect.{Ref, Resource}
+import fi.spectrum.api.configs.ConfigBundle
+import fi.spectrum.api.db.repositories._
+import fi.spectrum.api.models.TraceId
+import fi.spectrum.api.modules.PriceSolver.{CryptoPriceSolver, FiatPriceSolver}
+import fi.spectrum.api.processes.{BlocksProcess, ErgPriceProcess, VerifiedTokensProcess}
+import fi.spectrum.api.services.{ErgRateCache, Network, Snapshots, Volumes24H}
+import fi.spectrum.api.v1.HttpServer
+import fi.spectrum.api.v1.services.{AmmStats, LqLocks}
+import fi.spectrum.cache.Cache
+import fi.spectrum.cache.Cache.Plain
+import fi.spectrum.cache.middleware.CacheMiddleware.CachingMiddleware
+import fi.spectrum.cache.middleware.{CacheMiddleware, HttpResponseCaching}
+import fi.spectrum.cache.redis.codecs._
+import fi.spectrum.cache.redis.mkRedis
+import fi.spectrum.core.db.PostgresTransactor
+import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
+import fi.spectrum.core.domain.{BlockId, TokenId}
+import fi.spectrum.core.syntax.WithContextOps.WithContextOps
+import fi.spectrum.graphite.MetricsMiddleware.MetricsMiddleware
+import fi.spectrum.graphite.{GraphiteClient, Metrics, MetricsMiddleware}
+import fi.spectrum.streaming.domain.BlockEvent
+import fi.spectrum.streaming.kafka.Consumer.Aux
+import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
+import fi.spectrum.streaming.kafka.serde.json._
+import fi.spectrum.streaming.kafka.{BlocksConsumer, Consumer, MakeKafkaConsumer}
+import fs2.kafka.RecordDeserializer
+import glass.Contains
+import org.apache.kafka.clients.consumer.OffsetAndMetadata
+import org.apache.kafka.common.TopicPartition
+import sttp.client3.SttpBackend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import sttp.tapir.server.http4s.Http4sServerOptions
+import tofu.doobie.log.EmbeddableLogHandler
+import tofu.doobie.transactor.Txr
+import tofu.fs2Instances._
+import tofu.lift.{IsoK, Unlift}
+import tofu.logging.Logs
+import tofu.{In, WithContext, WithLocal}
+import zio.interop.catz._
+import zio.{ExitCode, Task}
+
+object App extends EnvApp[AppContext] {
+
+  implicit val serverOptions: Http4sServerOptions[F] = Http4sServerOptions.default[F]
+
+  def run(args: List[String]): Task[ExitCode] =
+    Dispatcher
+      .parallel[I]
+      .use { dispatcher =>
+        implicit val cxt: WithContext[I, Dispatcher[I]] = WithContext.const(dispatcher)
+        init(args.headOption).use { case (processes, ctx) =>
+          val appF = fs2.Stream(processes: _*).parJoinUnbounded.compile.drain
+          appF.run(ctx) as ExitCode.success
+        }
+      }
+      .orDie
+
+  private def init(
+    configPathOpt: Option[String]
+  )(implicit in: In[Dispatcher[I], I]): Resource[I, (List[S[Unit]], AppContext)] =
+    for {
+      config <- ConfigBundle.load[I](configPathOpt).toResource
+      appContext                                     = AppContext.init(config)
+      implicit0(context: WithContext[F, AppContext]) = appContext.makeContext[F]
+      implicit0(context2: WithLocal[F, TraceId])     = wr.subcontext(implicitly[Contains[AppContext, TraceId]])
+      implicit0(iso: IsoK[F, I])                     = IsoK.byFunK(wr.runContextK(appContext))(wr.liftF)
+      implicit0(ul: Unlift[F, I])                    = Unlift.byIso(IsoK.byFunK(wr.runContextK(appContext))(wr.liftF))
+      transactor <- PostgresTransactor.make[F]("api").mapK(iso.tof)
+      implicit0(xa: Txr.Continuational[F])        = Txr.continuational[F](transactor)
+      implicit0(elh: EmbeddableLogHandler[xa.DB]) = makeEmbeddableHandler[F, xa.DB]("api-db")
+      implicit0(graphiteD: GraphiteClient[xa.DB]) <- GraphiteClient.make[F, xa.DB](config.graphite).mapK(iso.tof)
+      implicit0(graphiteF: GraphiteClient[F])     <- GraphiteClient.make[F, F](config.graphite).mapK(iso.tof)
+      implicit0(metricsD: Metrics[xa.DB]) = Metrics.make[xa.DB]
+      implicit0(metricsF: Metrics[F])     = Metrics.make[F]
+      implicit0(sttp: SttpBackend[F, Any]) <- makeBackend
+      implicit0(logs: Logs[I, xa.DB]) = Logs.sync[I, xa.DB]
+      implicit0(logs2: Logs[I, F])    = Logs.withContext[I, F]
+      implicit0(assets: Asset[xa.DB])                  <- Asset.make[I, xa.DB].toResource
+      implicit0(blocks: Blocks[xa.DB])                 <- Blocks.make[I, xa.DB].toResource
+      implicit0(pools: Pools[xa.DB])                   <- Pools.make[I, xa.DB].toResource
+      implicit0(orders: Orders[xa.DB])                 <- Orders.make[I, xa.DB].toResource
+      implicit0(locks: Locks[xa.DB])                   <- Locks.make[I, xa.DB].toResource
+      implicit0(redis: Plain[F])                       <- mkRedis[Array[Byte], Array[Byte], F].mapK(iso.tof)
+      implicit0(cache: Cache[F])                       <- Cache.make[I, F].toResource
+      implicit0(httpRespCache: HttpResponseCaching[F]) <- HttpResponseCaching.make[I, F].toResource
+      implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
+      implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
+      implicit0(network: Network[F])                   <- Network.make[I, F].toResource
+      implicit0(rateCache: Ref[F, Option[BigDecimal]]) <- Ref.in[I, F, Option[BigDecimal]](None).toResource
+      implicit0(ergRate: ErgRateCache[F])              <- ErgRateCache.make[I, F].toResource
+      implicit0(snapshots: Snapshots[F])               <- Snapshots.make[I, F, xa.DB].toResource
+      implicit0(volumes: Volumes24H[F])                <- Volumes24H.make[I, F, xa.DB].toResource
+      implicit0(blocksC: BlocksConsumer[S, F]) = makeConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
+      implicit0(ergProcess: ErgPriceProcess[S])          <- ErgPriceProcess.make[I, F, S].toResource
+      implicit0(tokens: Ref[F, List[TokenId]])           <- Ref.in[I, F, List[TokenId]](List.empty).toResource
+      implicit0(tokensProcess: VerifiedTokensProcess[S]) <- VerifiedTokensProcess.make[I, F, S].toResource
+      implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S].toResource
+      implicit0(cryptoSolver: CryptoPriceSolver[F])      <- CryptoPriceSolver.make[I, F].toResource
+      implicit0(fiatSolver: FiatPriceSolver[F])          <- FiatPriceSolver.make[I, F].toResource
+      implicit0(stats: AmmStats[F]) = AmmStats.make[F, xa.DB]
+      implicit0(locks: LqLocks[F])  = LqLocks.make[F, xa.DB]
+      serverProc                    = HttpServer.make[I, F](config.http, config.request)
+    } yield List(
+      ergProcess.run,
+      tokensProcess.run,
+      blocksProcess.run,
+      serverProc.translate(wr.liftF).drain
+    ) -> appContext
+
+  def makeConsumer[
+    K: RecordDeserializer[F, *],
+    V: RecordDeserializer[F, *]
+  ](conf: ConsumerConfig)(implicit
+    context: KafkaConfig.Has[F]
+  ): Aux[K, V, (TopicPartition, OffsetAndMetadata), S, F] = {
+    implicit val maker: MakeKafkaConsumer[F, K, V] = MakeKafkaConsumer.make[F, K, V]
+    Consumer.make[S, F, K, V](conf)
+  }
+
+  def makeBackend(implicit iso: IsoK[F, I]): Resource[I, SttpBackend[F, Any]] =
+    HttpClientFs2Backend
+      .resource[F]()
+      .mapK(iso.tof)
+}

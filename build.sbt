@@ -74,7 +74,7 @@ lazy val api = mkModule("api", "api")
     libraryDependencies ++= List(
       CompilerPlugins.betterMonadicFor,
       CompilerPlugins.kindProjector
-    ) ++ scodec ++ http4s ++ tapir ++ tests
+    ) ++ scodec ++ http4s ++ tapir ++ tests ++ List(zioInterop, zio)
   )
   .dependsOn(core, graphite, cache)
 

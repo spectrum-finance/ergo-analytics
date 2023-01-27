@@ -4,7 +4,8 @@ import derevo.derive
 import fi.spectrum.api
 import fi.spectrum.api.configs.ConfigBundle
 import fi.spectrum.api.models.TraceId
-import glass.macros.{ClassyOptics, promote}
+import glass.Contains
+import glass.macros.{ClassyOptics, GenContains, promote}
 import io.estatico.newtype.ops._
 import tofu.WithContext
 import tofu.logging.derivation.{hidden, loggable}
@@ -20,4 +21,6 @@ object AppContext extends WithContext.Companion[AppContext] {
 
   def init(configs: ConfigBundle): AppContext =
     api.AppContext(configs, "<Root>".coerce[TraceId])
+
+  implicit def contains: Contains[AppContext, TraceId] = GenContains[AppContext](_.traceId)
 }

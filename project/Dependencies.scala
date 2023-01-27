@@ -29,6 +29,8 @@ object Dependencies {
     val jawnFs2      = "2.0.0"
     val scodecCats   = "1.1.0"
     val http4s       = "0.23.12"
+    val zioInterop   = "23.0.0.1"
+    val zio          = "2.0.6"
 
     val scalaCheckVersion             = "1.14.1"
     val scalaCheckShapelessVersion    = "1.2.5"
@@ -44,10 +46,12 @@ object Dependencies {
     val kindProjector    = "0.13.2"
   }
 
-  val ce3   = "org.typelevel"    %% "cats-effect-kernel" % Version.ce3
-  val fs2IO = "co.fs2"           %% "fs2-io"             % Version.fs2IO
-  val kafka = "com.github.fd4s"  %% "fs2-kafka"          % Version.fs2Kafka
-  val retry = "com.github.cb372" %% "cats-retry"         % Version.retry
+  val ce3        = "org.typelevel"    %% "cats-effect-kernel" % Version.ce3
+  val fs2IO      = "co.fs2"           %% "fs2-io"             % Version.fs2IO
+  val kafka      = "com.github.fd4s"  %% "fs2-kafka"          % Version.fs2Kafka
+  val retry      = "com.github.cb372" %% "cats-retry"         % Version.retry
+  val zio        = "dev.zio"          %% "zio"                % Version.zio
+  val zioInterop = "dev.zio"          %% "zio-interop-cats"   % Version.zioInterop
 
   val rocksDB = "io.github.oskin1" %% "rocks4cats-scodec" % Version.rocksDB
 

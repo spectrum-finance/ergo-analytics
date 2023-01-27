@@ -8,39 +8,41 @@ import fi.spectrum.core.domain.TokenId
 import fi.spectrum.graphite.Metrics
 import tofu.lift.Lift
 import tofu.logging.{Logging, Logs}
+import tofu.streams.Evals
 import tofu.syntax.lift._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
+import tofu.syntax.streams.evals._
 
 import scala.concurrent.duration.FiniteDuration
 
-trait VerifiedTokensProcess[F[_]] {
-  def run: F[Unit]
+trait VerifiedTokensProcess[S[_]] {
+  def run: S[Unit]
 }
 
 object VerifiedTokensProcess {
 
-  def make[I[_]: Monad, F[_]: Temporal: NetworkConfig.Has](implicit
+  def make[I[_]: Monad, F[_]: Temporal: NetworkConfig.Has, S[_]: Monad: Evals[*[_], F]](implicit
     network: Network[F],
     metrics: Metrics[F],
     cache: Ref[F, List[TokenId]],
     logs: Logs[I, F],
     lift: Lift[F, I]
-  ): I[VerifiedTokensProcess[F]] =
+  ): I[VerifiedTokensProcess[S]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[VerifiedTokensProcess[F]]
-      config                         <- NetworkConfig.access.lift
-      tokens                         <- network.getVerifiedTokenList.lift
-      _                              <- cache.set(tokens).lift
-    } yield new Live[F](config.verifiedTokenListRequestTime)
+      config                         <- NetworkConfig.access.lift[I]
+      tokens                         <- network.getVerifiedTokenList.lift[I]
+      _                              <- cache.set(tokens).lift[I]
+    } yield new Live[S, F](config.verifiedTokenListRequestTime)
 
-  final private class Live[F[_]: Temporal: Logging](requestTime: FiniteDuration)(implicit
+  final private class Live[S[_]: Monad: Evals[*[_], F], F[_]: Temporal: Logging](requestTime: FiniteDuration)(implicit
     network: Network[F],
     metrics: Metrics[F],
     cache: Ref[F, List[TokenId]]
-  ) extends VerifiedTokensProcess[F] {
+  ) extends VerifiedTokensProcess[S] {
 
-    def run: F[Unit] = {
+    def run: S[Unit] = eval {
       for {
         _      <- info"It's time to update verified tokens list"
         tokens <- network.getVerifiedTokenList

@@ -12,5 +12,7 @@ object codecs {
 
   implicit val stringCodec: RedisCodec[String, String] = RedisCodec.Utf8
 
+  implicit val bytesCodec: RedisCodec[Array[Byte], Array[Byte]] = RedisCodec.Bytes
+
   private def stringLongEpi: SplitEpi[String, Long] = SplitEpi(s => Try(s.toLong).getOrElse(0), _.toString)
 }
