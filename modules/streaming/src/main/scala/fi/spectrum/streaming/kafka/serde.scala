@@ -18,7 +18,7 @@ object serde {
     implicit def blockIdDeserializer[F[_]: Sync]: RecordDeserializer[F, BlockId] = deserializerString(BlockId.apply)
 
     def deserializerString[F[_]: Sync, A](f: String => A): RecordDeserializer[F, A] =
-      RecordDeserializer.lift(Deserializer.string.map(f))
+      RecordDeserializer.lift(Deserializer.string.map{s => println(s"deserializerString: $s"); f(s)})
   }
 
   object json {
