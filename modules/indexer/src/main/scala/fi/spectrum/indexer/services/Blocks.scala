@@ -51,7 +51,7 @@ object Blocks {
       for {
         _ <- info"Going to process next block events: ${events.map(_.id)}"
         r <- _
-        _ <- info"Blocks result is: $r"
+        _ <- info"Blocks finished successfully."
       } yield r
   }
 }

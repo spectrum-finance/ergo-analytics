@@ -51,22 +51,24 @@ object Events {
       events.toList
         .traverse { next =>
           processOrder(next.transaction, next.timestamp).flatMap { order =>
-            val pool = processPool(next.transaction, next.timestamp)
             storage.runTransaction.use { tx =>
-              def run: F[(Option[OrderEvent], Option[PoolEvent])] = next match {
-                case TransactionApply(_, _) =>
-                  pool.traverse(storage.insertPool) >>
-                    order
-                      .traverse(o => Monad[F].whenA(o.state.status.in(Registered))(storage.insertOrder(o)))
-                      .void
-                      .as(order.map(BlockChainEvent.Apply(_)), pool.map(BlockChainEvent.Apply(_)))
-                case TransactionUnapply(_, _) =>
-                  pool.traverse(p => storage.deletePool(p.box.boxId)) >>
-                    order
-                      .traverse(o => Monad[F].whenA(o.state.status.in(Registered))(storage.deleteOrder(o.order.id)))
-                      .void
-                      .as(order.map(BlockChainEvent.Unapply(_)), pool.map(BlockChainEvent.Unapply(_)))
-              }
+              def run: F[(Option[OrderEvent], Option[PoolEvent])] =
+                processPool(next.transaction, next.timestamp).flatMap { pool =>
+                  next match {
+                    case TransactionApply(_, _) =>
+                      pool.traverse(storage.insertPool) >>
+                        order
+                          .traverse(o => Monad[F].whenA(o.state.status.in(Registered))(storage.insertOrder(o)))
+                          .void
+                          .as(order.map(BlockChainEvent.Apply(_)), pool.map(BlockChainEvent.Apply(_)))
+                    case TransactionUnapply(_, _) =>
+                      pool.traverse(p => storage.deletePool(p.box.boxId)) >>
+                        order
+                          .traverse(o => Monad[F].whenA(o.state.status.in(Registered))(storage.deleteOrder(o.order.id)))
+                          .void
+                          .as(order.map(BlockChainEvent.Unapply(_)), pool.map(BlockChainEvent.Unapply(_)))
+                  }
+                }
               run.flatTap(_ => tx.commit)
             }
           }
@@ -92,10 +94,12 @@ object Events {
           }
         }
 
-    private def processPool(tx: Transaction, timestamp: Long): Option[Pool] =
+    private def processPool(tx: Transaction, timestamp: Long): F[Option[Pool]] =
       tx.outputs
         .map(poolsParser.parse(_, timestamp))
         .collectFirst { case Some(p) => p }
+        .pure
+        .flatTap(_.traverse(pool => info"Found pool ${pool.poolId} in tx: ${tx.id} in box: ${pool.box.boxId}"))
   }
 
   final private class MetricsMid[F[_]: Monad](implicit metrics: Metrics[F]) extends Events[Mid[F, *]] {
