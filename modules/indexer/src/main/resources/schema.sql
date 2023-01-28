@@ -186,10 +186,11 @@ create table if not exists public.blocks
 (
     id        public.hash32type primary key,
     height    integer,
-    timestamp integer
+    timestamp bigint
 );
 
 alter table public.blocks
     owner to ergo_admin;
 
 create index blocks__height on public.blocks using btree (height);
+create index blocks__id on public.blocks using btree (id);

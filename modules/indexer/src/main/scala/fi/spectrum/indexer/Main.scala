@@ -5,9 +5,6 @@ import cats.effect.kernel.{Async, Clock, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
 import cats.effect.{ExitCode, IO, IOApp}
-import dev.profunktor.redis4cats.RedisCommands
-import fi.spectrum.cache.redis.codecs.stringCodec
-import fi.spectrum.cache.redis.mkRedis
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
@@ -23,15 +20,13 @@ import fi.spectrum.indexer.processes.{BlockProcessor, TransactionsProcessor}
 import fi.spectrum.indexer.services._
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
-import fi.spectrum.streaming._
-import fi.spectrum.streaming.kafka.serde.json._
-import fi.spectrum.streaming.domain.{BlockEvent, TransactionEvent}
 import fi.spectrum.streaming.domain.TransactionEvent._
+import fi.spectrum.streaming.domain.{BlockEvent, TransactionEvent}
 import fi.spectrum.streaming.kafka.Consumer._
-import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
-import fi.spectrum.streaming.kafka.serde.string._
-import fi.spectrum.streaming.kafka.serde.json._
 import fi.spectrum.streaming.kafka.KafkaDecoder._
+import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
+import fi.spectrum.streaming.kafka.serde.json._
+import fi.spectrum.streaming.kafka.serde.string._
 import fi.spectrum.streaming.kafka.{BlocksConsumer, Consumer, MakeKafkaConsumer, TxConsumer}
 import fs2.Chunk
 import fs2.kafka.RecordDeserializer
@@ -46,7 +41,7 @@ import tofu.doobie.transactor.Txr
 import tofu.fs2.LiftStream
 import tofu.fs2Instances._
 import tofu.logging.Logging
-import tofu.streams.{Chunks, Evals}
+import tofu.streams.{Chunks, Evals, Temporal}
 import tofu.syntax.monadic._
 import tofu.{In, WithContext}
 
@@ -64,10 +59,9 @@ object Main extends IOApp {
     }
 
   def init[
-    S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad: LiftStream[*[_], F],
+    S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad: LiftStream[*[_], F]: Temporal[*[_], Chunk],
     F[_]: Async: In[Dispatcher[F], *[_]]: Clock
   ](configPathOpt: Option[String]): Resource[F, List[S[Unit]]] = {
-
     def makeConsumer[
       K: RecordDeserializer[F, *],
       V: RecordDeserializer[F, *]

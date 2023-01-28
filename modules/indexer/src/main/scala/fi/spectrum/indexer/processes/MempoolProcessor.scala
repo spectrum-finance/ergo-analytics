@@ -11,7 +11,7 @@ import fi.spectrum.indexer.services.Mempool
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.streaming.kafka.MempoolConsumer
 import tofu.logging.Logging
-import tofu.streams.{Chunks, Evals}
+import tofu.streams.{Chunks, Evals, Temporal}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.all._
@@ -26,7 +26,7 @@ object MempoolProcessor {
   def make[
     C[_]: Functor: Foldable,
     F[_]: Monad: ApplicationConfig.Has: Clock,
-    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
+    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad: Temporal[*[_], C]
   ](implicit
     events: MempoolConsumer[S, F],
     mempoolCache: Mempool[F],
@@ -37,13 +37,13 @@ object MempoolProcessor {
   final private class Live[
     C[_]: Functor: Foldable,
     F[_]: Monad: ApplicationConfig.Has: Logging: Clock,
-    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
+    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad: Temporal[*[_], C]
   ](implicit events: MempoolConsumer[S, F], mempoolCache: Mempool[F], orderParser: ProcessedOrderParser[F])
     extends MempoolProcessor[S] {
 
     def run: S[Unit] = eval(ApplicationConfig.access).flatMap { config =>
       events.stream
-        .chunksN(config.mempoolBatchSize)
+        .groupWithin(config.mempoolBatchSize, config.mempoolGroupTime)
         .evalTap(batch => info"Got next mempool batch of size: ${batch.size}.")
         .flatMap { committableBatch =>
           def orders(ts: Long): List[Processed.Any] = List.empty
