@@ -8,6 +8,8 @@ import tofu.Throws
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
 
+import scala.util.Try
+
 trait KafkaDecoder[A, F[_]] {
   def decode(xs: Array[Byte]): F[A]
 }
@@ -38,6 +40,13 @@ private[streaming] trait KafkaDecoderLowPriority {
         a
       }
 
-      io.circe.parser.decode(raw).toRaise
+      import cats.syntax.either._
+
+      io.circe.parser.decode(raw).
+        leftMap { err =>
+          println(s"Err: ${err.getMessage}")
+          err
+        }
+        .toRaise
     }
 }

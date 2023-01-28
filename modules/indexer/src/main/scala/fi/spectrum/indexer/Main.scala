@@ -30,6 +30,8 @@ import fi.spectrum.streaming.domain.TransactionEvent._
 import fi.spectrum.streaming.kafka.Consumer._
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import fi.spectrum.streaming.kafka.serde.string._
+import fi.spectrum.streaming.kafka.serde.json._
+import fi.spectrum.streaming.kafka.KafkaDecoder._
 import fi.spectrum.streaming.kafka.{BlocksConsumer, Consumer, MakeKafkaConsumer, TxConsumer}
 import fs2.Chunk
 import fs2.kafka.RecordDeserializer

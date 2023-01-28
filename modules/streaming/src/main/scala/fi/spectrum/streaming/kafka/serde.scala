@@ -29,7 +29,8 @@ object serde {
       RecordDeserializer.lift {
         Deserializer.lift { r =>
           println(s"deserializerViaKafkaDecoder: ${new String(r)}")
-          decoder.decode(r) }
+          decoder.decode(r)
+        }
       }
 
     implicit def serializerViaCirceEncoder[F[_]: Sync, A: Encoder]: RecordSerializer[F, A] =
