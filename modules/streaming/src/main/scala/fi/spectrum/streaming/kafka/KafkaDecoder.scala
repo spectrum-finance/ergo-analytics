@@ -20,7 +20,6 @@ object KafkaDecoder extends KafkaDecoderLowPriority {
     (xs: Array[Byte]) => {
       val raw = {
         val a = new String(xs, charset)
-        println(s"optionalDeserializerByDecoder: $a")
         a
       }
 
@@ -36,17 +35,9 @@ private[streaming] trait KafkaDecoderLowPriority {
     (xs: Array[Byte]) => {
       val raw = {
         val a = new String(xs, charset)
-        println(s"deserializerByDecoder: $a")
         a
       }
 
-      import cats.syntax.either._
-
-      io.circe.parser.decode(raw).
-        leftMap { err =>
-          println(s"Err: $raw ${err.getMessage}, ${err.getStackTrace.toList}")
-          err
-        }
-        .toRaise
+      io.circe.parser.decode(raw).toRaise
     }
 }

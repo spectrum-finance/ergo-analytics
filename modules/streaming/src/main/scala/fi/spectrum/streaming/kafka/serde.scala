@@ -18,7 +18,7 @@ object serde {
     implicit def blockIdDeserializer[F[_]: Sync]: RecordDeserializer[F, BlockId] = deserializerString(BlockId.apply)
 
     def deserializerString[F[_]: Sync, A](f: String => A): RecordDeserializer[F, A] =
-      RecordDeserializer.lift(Deserializer.string.map{s => println(s"deserializerString: $s"); f(s)})
+      RecordDeserializer.lift(Deserializer.string.map(s => f(s)))
   }
 
   object json {
@@ -28,7 +28,6 @@ object serde {
     ): RecordDeserializer[F, A] =
       RecordDeserializer.lift {
         Deserializer.lift { r =>
-          println(s"deserializerViaKafkaDecoder: ${new String(r)}")
           decoder.decode(r)
         }
       }
