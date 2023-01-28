@@ -44,7 +44,7 @@ private[streaming] trait KafkaDecoderLowPriority {
 
       io.circe.parser.decode(raw).
         leftMap { err =>
-          println(s"Err: ${err.getMessage}")
+          println(s"Err: $raw ${err.getMessage}, ${err.getStackTrace.toList}")
           err
         }
         .toRaise
