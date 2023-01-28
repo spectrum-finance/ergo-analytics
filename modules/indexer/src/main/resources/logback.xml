@@ -22,7 +22,7 @@
         </encoder>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>indexer-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>/opt/docker/logs/indexer-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>100MB</maxFileSize>
             <maxHistory>20</maxHistory>
             <totalSizeCap>20GB</totalSizeCap>

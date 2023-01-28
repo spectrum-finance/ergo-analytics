@@ -66,7 +66,7 @@ object OrdersStorage {
     def deletePool(id: BoxId): F[Unit] = storage.deletePool(id)
   }
 
-  final private class RocksDBStorage[F[_]: Monad](implicit rocks: TxRocksDB[F]) extends OrdersStorage[F] {
+  final private class RocksDBStorage[F[_]: Monad: Logging](implicit rocks: TxRocksDB[F]) extends OrdersStorage[F] {
 
     implicit val scodec: Codec[String] = variableSizeBits(int32, utf8)
 
@@ -88,7 +88,13 @@ object OrdersStorage {
       ids
         .map(mkPoolKey)
         .traverse(rocks.get[String, String])
-        .map(_.flatten.map(decode[Pool](_).toOption).collectFirst { case Some(v) => v })
+        .map(_.flatten)
+        .flatMap { pools =>
+          pools.map(decode[Pool](_)).traverse { either =>
+            info"Pool decode result for ids ${ids} is: ${either.toString}" as either
+          }
+        }
+        .map(_.flatMap(_.toOption).headOption)
 
     def deletePool(id: BoxId): F[Unit] =
       rocks.delete(mkPoolKey(id))
@@ -121,9 +127,9 @@ object OrdersStorage {
 
     def insertPool(pool: Pool): Mid[F, Unit] =
       for {
-        _ <- info"insertPool(${pool.poolId})"
+        _ <- info"insertPool(${pool.poolId}, ${pool.box.boxId})"
         _ <- _
-        _ <- info"insertPool(${pool.poolId}) -> finish"
+        _ <- info"insertPool(${pool.poolId}, ${pool.box.boxId}) -> finish"
       } yield ()
 
     def getPool(id: List[BoxId]): Mid[F, Option[Pool]] =
