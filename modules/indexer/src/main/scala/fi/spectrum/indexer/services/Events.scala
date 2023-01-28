@@ -106,8 +106,8 @@ object Events {
 
     def process(events: NonEmptyList[TransactionEvent]): Mid[F, (List[OrderEvent], List[PoolEvent])] =
       for {
-        _ <- metrics.sendCount("tx.apply.received", events.collect { case t: TransactionApply => t }.length)
-        _ <- metrics.sendCount("tx.unapply.received", events.collect { case t: TransactionUnapply => t }.length)
+        _ <- metrics.sendCount("tx.apply", events.collect { case t: TransactionApply => t }.length.toDouble)
+        _ <- metrics.sendCount("tx.unapply", events.collect { case t: TransactionUnapply => t }.length.toDouble)
         r <- _
       } yield r
   }
