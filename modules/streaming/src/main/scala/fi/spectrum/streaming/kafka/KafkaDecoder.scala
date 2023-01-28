@@ -17,6 +17,7 @@ object KafkaDecoder extends KafkaDecoderLowPriority {
   implicit def optionalDeserializerByDecoder[A: Decoder, F[_]: Sync](opt: IsOption[A]): KafkaDecoder[A, F] =
     (xs: Array[Byte]) => {
       val raw = new String(xs, charset)
+      println(s"optionalDeserializerByDecoder: $raw")
       io.circe.parser.decode(raw).toOption.getOrElse(opt.none).pure
     }
 }
@@ -28,6 +29,7 @@ private[streaming] trait KafkaDecoderLowPriority {
   implicit def deserializerByDecoder[A: Decoder, F[_]: Applicative: Throws]: KafkaDecoder[A, F] =
     (xs: Array[Byte]) => {
       val raw = new String(xs, charset)
+      println(s"deserializerByDecoder: $raw")
       io.circe.parser.decode(raw).toRaise
     }
 }
