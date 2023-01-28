@@ -12,7 +12,9 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/tmp/logging/indexer.log</file>
+        <file>
+            /tmp/logging/indexer.log
+        </file>
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <layout class="tofu.logging.logback.ConsoleContextLayout">
                 <pattern>[%date{yyyy-MM-dd HH:mm:ss}] %-5level [%.15thread]%X{alias}[%-25logger{15}] - %msg%n</pattern>
@@ -21,11 +23,11 @@
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>
-                /tmp/logging/indexes-db-writer.%d{yyyy-MM-dd}.log
+                /tmp/logging/indexer.%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy
                     class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>50MB</maxFileSize>
+                <maxFileSize>100MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
     </appender>
@@ -37,7 +39,7 @@
     <logger name="org.http4s" level="INFO"/>
     <logger name="org.apache.kafka" level="INFO"/>
     <logger name="sttp.client3.asynchttpclient" level="INFO"/>
-    <root level="INFO">
+    <root level="info">
         <appender-ref ref="ASYNCSTDOUT"/>
         <appender-ref ref="ASYNCFILE"/>
     </root>
