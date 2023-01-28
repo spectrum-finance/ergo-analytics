@@ -45,7 +45,7 @@ import zio.interop.catz._
 import zio.{ExitCode, Task}
 
 object App extends EnvApp[AppContext] {
-
+  
   implicit val serverOptions: Http4sServerOptions[F] = Http4sServerOptions.default[F]
 
   def run(args: List[String]): Task[ExitCode] =
