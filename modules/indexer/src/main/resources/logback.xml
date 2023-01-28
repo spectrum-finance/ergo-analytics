@@ -13,7 +13,7 @@
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>
-            /tmp/logging/indexer.log
+            /usr/logging/indexer.log
         </file>
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <layout class="tofu.logging.logback.ConsoleContextLayout">
@@ -23,7 +23,7 @@
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>
-                /tmp/logging/indexer.%d{yyyy-MM-dd}.%i.log
+                /usr/logging/indexer.%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy
                     class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
