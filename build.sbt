@@ -20,7 +20,7 @@ lazy val commonScalacOption = List(
 
 lazy val root = (project in file("."))
   .settings(name := "ergo-analytics")
-  .aggregate(core, streaming, indexer, graphite)
+  .aggregate(core, streaming, indexer, graphite, cache, api)
 
 lazy val core = mkModule("core", "core")
   .settings(scalacOptions ++= commonScalacOption)
@@ -42,10 +42,9 @@ lazy val core = mkModule("core", "core")
       pureConfigCE,
       redis,
       rocksDB,
-      retry
-    ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums ++ doobie ++ sttp
+      retry,
       redis
-    ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums ++ doobie ++ sttp ++ scodec ++ tapir ++ jawnFs2
+    ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums ++ doobie ++ sttp ++ scodec ++ tapir
   )
 
 lazy val streaming = mkModule("streaming", "streaming")
@@ -69,15 +68,15 @@ lazy val parsers = mkModule("parsers", "parsers")
   )
   .dependsOn(core)
 
-lazy val api = mkModule("markets-api", "markets-api")
+lazy val api = mkModule("api", "api")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(
     libraryDependencies ++= List(
       CompilerPlugins.betterMonadicFor,
       CompilerPlugins.kindProjector
-    ) ++ scodec ++ http4s ++ tapir ++ tests
+    ) ++ scodec ++ http4s ++ tapir ++ tests ++ List(zioInterop, zio)
   )
-  .dependsOn(core)
+  .dependsOn(core, graphite, cache)
 
 lazy val indexer = mkModule("indexer", "indexer")
   .settings(scalacOptions ++= commonScalacOption)
@@ -88,7 +87,7 @@ lazy val indexer = mkModule("indexer", "indexer")
       CompilerPlugins.kindProjector
     ) ++ tests ++ tofu ++ List(rocksDB)
   )
-  .dependsOn(core, parsers, streaming, graphite)
+  .dependsOn(core, parsers, streaming, graphite, cache)
   .settings(
     assembly / mainClass := Some("fi.spectrum.indexer.Main")
   )
@@ -101,9 +100,20 @@ lazy val graphite = mkModule("graphite", "graphite")
     libraryDependencies ++= List(
       CompilerPlugins.betterMonadicFor,
       CompilerPlugins.kindProjector
+    ) ++ derevo ++ List(fs2IO) ++ http4s
+  )
+  .settings(libraryDependencies ++= tofu)
+
+lazy val cache = mkModule("cache", "cache")
+  .settings(scalacOptions ++= commonScalacOption)
+  .settings(
+    libraryDependencies ++= List(
+      CompilerPlugins.betterMonadicFor,
+      CompilerPlugins.kindProjector
     ) ++ derevo ++ List(fs2IO)
   )
   .settings(libraryDependencies ++= tofu)
+  .dependsOn(core, streaming)
 
 def nativePackagerSettings(moduleSig: String) = List(
   Universal / name := name.value,

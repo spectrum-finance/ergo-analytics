@@ -3,32 +3,34 @@ import sbt._
 object Dependencies {
 
   object Version {
-    val ce3        = "3.4.2"
-    val tofu       = "0.11.0"
-    val glass      = "0.1.0"
-    val derevo     = "0.13.0"
-    val newtype    = "0.4.4"
-    val refined    = "0.10.1"
-    val enumeratum = "1.7.0"
-    val circe      = "0.14.1"
-    val mouse      = "1.2.1"
-    val doobie     = "1.0.0-RC2"
-    val fs2Kafka   = "2.5.0"
-    val doobieTest = "0.13.4"
-    val pureConfig = "0.17.2"
-    val redis4Cats = "1.3.0"
-    val sttp       = "3.8.5"
-    val rocksDB    = "0.2.1"
-    val retry      = "3.1.0"
-    val fs2IO      = "3.5.0"
-    val tapir = "1.0.0" //"0.18.3"
+    val ce3          = "3.4.2"
+    val tofu         = "0.11.0"
+    val glass        = "0.1.0"
+    val derevo       = "0.13.0"
+    val newtype      = "0.4.4"
+    val refined      = "0.10.1"
+    val enumeratum   = "1.7.0"
+    val circe        = "0.14.1"
+    val mouse        = "1.2.1"
+    val doobie       = "1.0.0-RC2"
+    val fs2Kafka     = "2.5.0"
+    val doobieTest   = "0.13.4"
+    val pureConfig   = "0.17.2"
+    val redis4Cats   = "1.3.0"
+    val sttp         = "3.8.5"
+    val rocksDB      = "0.2.1"
+    val retry        = "3.1.0"
+    val fs2IO        = "3.5.0"
+    val tapir        = "1.0.0"
     val tapirOpenapi = "0.20.2"
-    val tapirRedoc = "0.19.0-M4"
-    val scodecCore = "1.11.7"
-    val scodecBits = "1.1.21"
-    val jawnFs2 = "2.0.0"
-    val scodecCats = "1.1.0"
-    val http4s = "0.23.12"
+    val tapirRedoc   = "0.19.0-M4"
+    val scodecCore   = "1.11.7"
+    val scodecBits   = "1.1.21"
+    val jawnFs2      = "2.0.0"
+    val scodecCats   = "1.1.0"
+    val http4s       = "0.23.12"
+    val zioInterop   = "23.0.0.1"
+    val zio          = "2.0.6"
 
     val scalaCheckVersion             = "1.14.1"
     val scalaCheckShapelessVersion    = "1.2.5"
@@ -44,10 +46,12 @@ object Dependencies {
     val kindProjector    = "0.13.2"
   }
 
-  val ce3   = "org.typelevel"    %% "cats-effect-kernel" % Version.ce3
-  val fs2IO = "co.fs2"           %% "fs2-io"             % Version.fs2IO
-  val kafka = "com.github.fd4s"  %% "fs2-kafka"          % Version.fs2Kafka
-  val retry = "com.github.cb372" %% "cats-retry"         % Version.retry
+  val ce3        = "org.typelevel"    %% "cats-effect-kernel" % Version.ce3
+  val fs2IO      = "co.fs2"           %% "fs2-io"             % Version.fs2IO
+  val kafka      = "com.github.fd4s"  %% "fs2-kafka"          % Version.fs2Kafka
+  val retry      = "com.github.cb372" %% "cats-retry"         % Version.retry
+  val zio        = "dev.zio"          %% "zio"                % Version.zio
+  val zioInterop = "dev.zio"          %% "zio-interop-cats"   % Version.zioInterop
 
   val rocksDB = "io.github.oskin1" %% "rocks4cats-scodec" % Version.rocksDB
 

@@ -6,6 +6,5 @@ import tofu.WithContext
 object WithContextOps {
 
   implicit final class WithContextOps[A](val value: A) extends AnyVal {
-    def makeContext[F[_]: Applicative]: WithContext[F, A] = WithContext.const[F, A](value)
-  }
+    def makeContext[F[_]: Applicative]: WithContext[F, A] = WithContext.const[F, A](value)}
 }
