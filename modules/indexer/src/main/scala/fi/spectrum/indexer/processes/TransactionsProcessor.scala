@@ -6,9 +6,9 @@ import cats.{Foldable, Functor, Monad}
 import fi.spectrum.indexer.config.ApplicationConfig
 import fi.spectrum.indexer.models.BlockChainEvent.{OrderEvent, PoolEvent}
 import fi.spectrum.indexer.services.{Events, Orders, Pools}
-import fi.spectrum.streaming.TxConsumer
+import fi.spectrum.streaming.kafka.TxConsumer
 import tofu.logging.Logging
-import tofu.streams.{Chunks, Evals}
+import tofu.streams.{Chunks, Evals, Temporal}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.all._
@@ -22,7 +22,7 @@ object TransactionsProcessor {
   def make[
     C[_]: Functor: Foldable,
     F[_]: Monad: ApplicationConfig.Has,
-    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
+    S[_]: Evals[*[_], F]: Temporal[*[_], C]: Chunks[*[_], C]: Monad
   ](implicit
     events: TxConsumer[S, F],
     orders: Orders[F],
@@ -34,7 +34,7 @@ object TransactionsProcessor {
   final private class Live[
     C[_]: Functor: Foldable,
     F[_]: Monad: Logging: ApplicationConfig.Has,
-    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Monad
+    S[_]: Evals[*[_], F]: Chunks[*[_], C]: Temporal[*[_], C]: Monad
   ](implicit
     events: TxConsumer[S, F],
     orders: Orders[F],
@@ -44,7 +44,7 @@ object TransactionsProcessor {
 
     override def run: S[Unit] = eval(ApplicationConfig.access).flatMap { config =>
       events.stream
-        .chunksN(config.transactionsBatchSize)
+        .groupWithin(config.transactionsBatchSize, config.transactionsGroupTime)
         .evalTap(batch => info"Received transactions: ${batch.size}.")
         .evalMap { batch =>
           val batchElems = batch.toList.flatMap(_.message)
@@ -54,8 +54,8 @@ object TransactionsProcessor {
               NonEmptyList
                 .fromList(batchElems)
                 .fold((List.empty[OrderEvent], List.empty[PoolEvent]).pure[F])(transactions.process)
-            _ <- info"New orders: ${orderEvents.mkString(",")}"
-            _ <- info"New pools: ${poolEvents.mkString(",")}"
+            _ <- info"New orders: $orderEvents"
+            _ <- info"New pools: $poolEvents"
             _ <- NonEmptyList.fromList(orderEvents).fold(unit[F])(orders.process)
             _ <- NonEmptyList.fromList(poolEvents).fold(unit[F])(pools.process)
             _ <- batch.toList.lastOption.traverse_(_.commit)
