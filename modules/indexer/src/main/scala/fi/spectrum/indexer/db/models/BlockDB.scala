@@ -1,8 +1,8 @@
 package fi.spectrum.indexer.db.models
 
 import fi.spectrum.core.domain.BlockId
-import fi.spectrum.core.domain.block.Block
 import fi.spectrum.indexer.classes.ToDB
+import fi.spectrum.indexer.models.Block
 
 final case class BlockDB(
   id: BlockId,

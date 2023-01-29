@@ -2,12 +2,12 @@ package fi.spectrum.indexer.config
 
 import derevo.derive
 import derevo.pureconfig.pureconfigReader
-import fi.spectrum.core.common.redis.RedisConfig
+import fi.spectrum.cache.redis.RedisConfig
 import fi.spectrum.core.config.{ConfigBundleCompanion, ProtocolConfig}
 import fi.spectrum.core.db.PgConfig
 import fi.spectrum.core.domain.TokenId
 import fi.spectrum.graphite.GraphiteSettings
-import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig, ProducerConfig}
+import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import glass.macros.{ClassyPOptics, promote}
 import tofu.WithContext
 import tofu.logging.Loggable

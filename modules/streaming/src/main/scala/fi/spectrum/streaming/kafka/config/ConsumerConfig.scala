@@ -2,7 +2,7 @@ package fi.spectrum.streaming.kafka.config
 
 import derevo.derive
 import derevo.pureconfig.pureconfigReader
-import fi.spectrum.streaming.kafka._
+import fi.spectrum.streaming.kafka.streaming._
 import tofu.WithContext
 import tofu.logging.derivation.loggable
 

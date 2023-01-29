@@ -1,7 +1,10 @@
 package fi.spectrum.core
 
+import cats.instances.either._
+import cats.syntax.either._
 import cats.syntax.eq._
-import cats.{Eq, Order, Show}
+import cats.syntax.functor._
+import cats.{Applicative, Eq, Order, Show}
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import derevo.pureconfig.pureconfigReader
@@ -9,6 +12,7 @@ import doobie.util.{Get, Put}
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.refineV
 import eu.timepit.refined.string.HexStringSpec
+import fi.spectrum.core.common.errors.RefinementFailed
 import fi.spectrum.core.domain.TypeConstraints.{AddressType, Base58Spec, HexStringType}
 import fi.spectrum.core.syntax.PubKeyOps
 import io.circe.refined._
@@ -18,8 +22,13 @@ import org.ergoplatform.ErgoBox
 import pureconfig.ConfigReader
 import scodec.bits.ByteVector
 import scorex.util.encode.Base16
+import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
+import tofu.Raise
 import tofu.logging.Loggable
 import tofu.logging.derivation.{loggable, show}
+import tofu.syntax.raise._
+
+import scala.util.Try
 
 package object domain {
 
@@ -51,8 +60,28 @@ package object domain {
 
     implicit val order: Order[HexString] = (x: HexString, y: HexString) => x.value.value.compare(y.value.value)
 
+    implicit def schema: Schema[HexString] =
+      Schema.schemaForString.description("Hex-encoded string").asInstanceOf[Schema[HexString]]
+
+    implicit def validator: Validator[HexString] =
+      Schema.schemaForString.validator.contramap[HexString](_.unwrapped)
+
+    implicit def plainCodec: Codec.PlainCodec[HexString] =
+      deriveCodec[String, CodecFormat.TextPlain, HexString](
+        fromString[Either[Throwable, *]](_),
+        _.unwrapped
+      )
+
     def fromBytes(bytes: Array[Byte]): HexString =
       unsafeFromString(scorex.util.encode.Base16.encode(bytes))
+
+    def fromString[F[_]: Raise[*[_], RefinementFailed]: Applicative](
+      s: String
+    ): F[HexString] =
+      refineV[HexStringSpec](s)
+        .leftMap(RefinementFailed)
+        .toRaise[F]
+        .map(HexString.apply)
 
     def unsafeFromString(s: String): HexString = HexString(Refined.unsafeApply(s))
   }
@@ -124,7 +153,9 @@ package object domain {
   }
 
   @derive(encoder, decoder, loggable, show, pureconfigReader)
-  @newtype final case class TokenId(value: HexString)
+  @newtype final case class TokenId(value: HexString) {
+    def unwrapped: String = value.unwrapped
+  }
 
   object TokenId {
 
@@ -137,6 +168,14 @@ package object domain {
     def unsafeFromString(s: String): TokenId = TokenId(HexString.unsafeFromString(s))
 
     implicit val order: Order[TokenId] = deriving
+
+    implicit def plainCodec: Codec.PlainCodec[TokenId] = deriving
+
+    implicit def validator: Validator[TokenId] =
+      implicitly[Validator[HexString]].contramap[TokenId](_.value)
+
+    implicit def schema: Schema[TokenId] =
+      Schema.schemaForString.description("Token ID").asInstanceOf[Schema[TokenId]]
   }
 
   @derive(encoder, decoder, loggable, show)
@@ -171,14 +210,42 @@ package object domain {
   }
 
   @derive(encoder, decoder)
-  @newtype case class Address(value: AddressType)
+  @newtype case class Address(value: AddressType) {
+    final def unwrapped: String = value.value
+  }
 
   object Address {
+
+    implicit val schema: Schema[Address] = Schema.schemaForString.map(fromString[Try](_).toOption)(_.unwrapped)
 
     implicit val show: Show[Address]         = _.value.value
     implicit val loggable: Loggable[Address] = Loggable.show
 
+    implicit val get: Get[Address] =
+      Get[String]
+        .temap(s => refineV[Base58Spec](s))
+        .map(rs => Address(rs))
+
+    implicit val put: Put[Address] =
+      Put[String].contramap[Address](_.unwrapped)
+
+    def fromString[F[_]: Raise[*[_], RefinementFailed]: Applicative](
+      s: String
+    ): F[Address] =
+      refineV[Base58Spec](s)
+        .leftMap(RefinementFailed)
+        .toRaise[F]
+        .map(Address.apply)
+
     def fromStringUnsafe(s: String): Address =
       Address(refineV[Base58Spec].unsafeFrom(s))
   }
+
+  private def deriveCodec[A, CF <: CodecFormat, T](
+    at: A => Either[Throwable, T],
+    ta: T => A
+  )(implicit c: Codec[String, A, CF]): Codec[String, T, CF] =
+    c.mapDecode { x =>
+      at(x).fold(DecodeResult.Error(x.toString, _), DecodeResult.Value(_))
+    }(ta)
 }

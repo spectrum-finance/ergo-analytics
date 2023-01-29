@@ -1,11 +1,11 @@
-package fi.spectrum.streaming
+package fi.spectrum.streaming.kafka
 
 import derevo.derive
 import io.estatico.newtype.macros.newtype
 import pureconfig.ConfigReader
 import tofu.logging.derivation.loggable
 
-package object kafka {
+object streaming {
 
   @derive(loggable)
   @newtype case class TopicId(value: String)

@@ -21,13 +21,15 @@ import tofu.logging.derivation.loggable
   */
 
 @derive(encoder, decoder, loggable)
-sealed trait Order {
+sealed trait Order { self =>
   val box: Output
   val redeemer: Redeemer
 
   val version: Version
 
   def id: OrderId = OrderId(box.boxId.value)
+
+  def orderType: String = self.getClass.getName
 }
 
 object Order {

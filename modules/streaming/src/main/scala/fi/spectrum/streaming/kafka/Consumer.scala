@@ -1,7 +1,7 @@
 package fi.spectrum.streaming.kafka
 
 import cats.tagless.FunctorK
-import cats.{FlatMap, Functor, Monad, MonoidK, ~>}
+import cats.{~>, FlatMap, Functor, Monad, MonoidK}
 import fi.spectrum.streaming.kafka.config.ConsumerConfig
 import fi.spectrum.streaming.kafka.types.KafkaOffset
 import fs2.Stream

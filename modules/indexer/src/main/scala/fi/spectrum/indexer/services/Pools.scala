@@ -71,9 +71,9 @@ object Pools {
 
     def process(events: NonEmptyList[PoolEvent]): Mid[F, Unit] =
       for {
-        _ <- info"Going to process next pool events: ${events.toList.mkString(",")}"
+        _ <- info"Going to process next pool events: $events"
         r <- _
-        _ <- info"Pools result is: $r"
+        _ <- info"Pools processed successfully."
       } yield r
   }
 }

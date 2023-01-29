@@ -1,6 +1,5 @@
 package fi.spectrum.core.domain
 
-
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.constants.ErgoAssetId
@@ -9,7 +8,7 @@ import tofu.logging.derivation.{loggable, show}
 
 @derive(encoder, decoder, loggable, show)
 final case class AssetAmount(tokenId: TokenId, amount: Long) {
-  def withAmount(x: Long): AssetAmount = copy(amount = x)
+  def withAmount(x: Long): AssetAmount  = copy(amount = x)
   def -(that: AssetAmount): AssetAmount = withAmount(amount - that.amount)
 
   def isNative: Boolean = tokenId == ErgoAssetId
@@ -18,6 +17,7 @@ final case class AssetAmount(tokenId: TokenId, amount: Long) {
 }
 
 object AssetAmount {
+
   def native(value: Long): AssetAmount =
     AssetAmount(ErgoAssetId, value)
 
