@@ -3,7 +3,7 @@ package fi.spectrum.api.configs
 import derevo.derive
 import derevo.pureconfig.pureconfigReader
 import fi.spectrum.cache.redis.RedisConfig
-import fi.spectrum.core.config.ConfigBundleCompanion
+import fi.spectrum.core.config.{ConfigBundleCompanion, ProtocolConfig}
 import fi.spectrum.core.db.PgConfig
 import fi.spectrum.graphite.GraphiteSettings
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
@@ -22,7 +22,8 @@ final case class ConfigBundle(
   graphite: GraphiteSettings,
   @promote network: NetworkConfig,
   @promote kafka: KafkaConfig,
-  @promote blocks: BlocksProcessConfig
+  @promote blocks: BlocksProcessConfig,
+  protocol: ProtocolConfig
 )
 
 object ConfigBundle extends WithContext.Companion[ConfigBundle] with ConfigBundleCompanion[ConfigBundle]

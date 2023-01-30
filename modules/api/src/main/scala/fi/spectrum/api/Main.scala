@@ -34,6 +34,7 @@ import fs2.kafka.RecordDeserializer
 import glass.Contains
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
+import org.ergoplatform.ErgoAddressEncoder
 import sttp.client3.SttpBackend
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import sttp.tapir.server.http4s.Http4sServerOptions
@@ -69,6 +70,7 @@ object Main extends EnvApp[AppContext] {
       config <- ConfigBundle.load[I](configPathOpt).toResource
       appContext                                     = AppContext.init(config)
       implicit0(context: WithContext[F, AppContext]) = appContext.makeContext[F]
+      implicit0(e: ErgoAddressEncoder)               = appContext.config.protocol.networkType.addressEncoder
       implicit0(context2: WithLocal[F, TraceId])     = wr.subcontext(implicitly[Contains[AppContext, TraceId]])
       implicit0(iso: IsoK[F, I])                     = IsoK.byFunK(wr.runContextK(appContext))(wr.liftF)
       implicit0(ul: Unlift[F, I])                    = Unlift.byIso(IsoK.byFunK(wr.runContextK(appContext))(wr.liftF))
