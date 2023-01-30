@@ -42,7 +42,7 @@ object VerifiedTokens {
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends VerifiedTokens[Mid[F, *]] {
-    def update: Mid[F, Unit] = _ <* info"It's time to update verified tokens list!"
+    def update: Mid[F, Unit] = info"It's time to update verified tokens list!" >> _
 
     def get: Mid[F, List[TokenId]] =
       for {

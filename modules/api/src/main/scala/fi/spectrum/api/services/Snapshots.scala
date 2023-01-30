@@ -46,9 +46,9 @@ object Snapshots {
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Snapshots[Mid[F, *]] {
-    def update: Mid[F, Unit] = _ <* trace"It's time to update snapshots!"
+    def update: Mid[F, Unit] = trace"It's time to update snapshots!" >> _
 
-    def get: Mid[F, List[PoolSnapshot]] = _ <* trace"Get current snapshots"
+    def get: Mid[F, List[PoolSnapshot]] = trace"Get current snapshots" >> _
   }
 
 }

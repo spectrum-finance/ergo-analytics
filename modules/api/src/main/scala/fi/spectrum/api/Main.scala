@@ -27,6 +27,7 @@ import fi.spectrum.streaming.domain.BlockEvent
 import fi.spectrum.streaming.kafka.Consumer.Aux
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import fi.spectrum.streaming.kafka.serde.json._
+import fi.spectrum.streaming.kafka.serde.string._
 import fi.spectrum.streaming.kafka.{BlocksConsumer, Consumer, MakeKafkaConsumer}
 import fs2.kafka.RecordDeserializer
 import glass.Contains
@@ -48,7 +49,7 @@ object Main extends EnvApp[AppContext] {
 
   implicit val serverOptions: Http4sServerOptions[F] = Http4sServerOptions.default[F]
 
-  override def run(args: List[String]): zio.URIO[Any, zio.ExitCode] = {
+  override def run(args: List[String]): zio.URIO[Any, zio.ExitCode] =
     Dispatcher
       .parallel[I]
       .use { dispatcher =>
@@ -59,7 +60,6 @@ object Main extends EnvApp[AppContext] {
         }
       }
       .orDie
-  }
 
   private def init(
     configPathOpt: Option[String]

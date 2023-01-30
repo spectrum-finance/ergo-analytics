@@ -55,7 +55,7 @@ object ErgRate {
         _ <- trace"rateOf($units) -> $r"
       } yield r
 
-    def update: Mid[F, Option[BigDecimal]] = _ <* info"It's time to update erg rate!"
+    def update: Mid[F, Option[BigDecimal]] = info"It's time to update erg rate!" >> _
 
   }
 }
