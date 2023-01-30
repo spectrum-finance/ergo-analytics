@@ -18,7 +18,7 @@ trait Pools[F[_]] {
 
   /** Get general info about the pool with the given `id`.
     */
-  def info(id: PoolId): F[Option[PoolInfo]]
+  def getFirstPoolSwapTime(id: PoolId): F[Option[PoolInfo]]
 
   /** Get snapshots of all pools.
     */
@@ -64,8 +64,8 @@ object Pools {
 
   final class Live(sql: AnalyticsSql) extends Pools[ConnectionIO] {
 
-    def info(id: PoolId): ConnectionIO[Option[PoolInfo]] =
-      sql.getInfo(id).option
+    def getFirstPoolSwapTime(id: PoolId): ConnectionIO[Option[PoolInfo]] =
+      sql.getFirstPoolSwapTime(id).option
 
     def snapshots: ConnectionIO[List[PoolSnapshot]] =
       sql.getPoolSnapshots.to[List]
@@ -92,7 +92,7 @@ object Pools {
 
   final class PoolsTracing[F[_]: FlatMap: Logging] extends Pools[Mid[F, *]] {
 
-    def info(poolId: PoolId): Mid[F, Option[PoolInfo]] =
+    def getFirstPoolSwapTime(poolId: PoolId): Mid[F, Option[PoolInfo]] =
       for {
         _ <- trace"info(poolId=$poolId)"
         r <- _

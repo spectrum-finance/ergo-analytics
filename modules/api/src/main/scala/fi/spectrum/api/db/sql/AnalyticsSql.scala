@@ -9,24 +9,48 @@ import fi.spectrum.core.domain.order.PoolId
 
 final class AnalyticsSql(implicit lg: LogHandler) {
 
-  def getInfo(id: PoolId): Query0[PoolInfo] =
-    sql"""select s.timestamp from swaps s where s.pool_id = $id order by s.timestamp asc limit 1""".stripMargin.query
+  def getFirstPoolSwapTime(id: PoolId): Query0[PoolInfo] =
+    sql"""
+         |SELECT
+         |	executed_transaction_timestamp
+         |FROM
+         |	swaps
+         |WHERE
+         |	pool_id = $id
+         |	AND executed_transaction_timestamp IS NOT NULL
+         |ORDER BY
+         |	executed_transaction_timestamp ASC
+         |LIMIT 1;
+       """.stripMargin.query
 
   def getPoolSnapshots: Query0[PoolSnapshot] =
     sql"""
-         |select
-         |    p.pool_id, p.x_id, p.x_amount, ax.ticker, ax.decimals,
-         |    p.y_id, p.y_amount, ay.ticker, ay.decimals, (p.x_amount::decimal) * p.y_amount as lq
-         |from pools p
-         |left join (select pool_id, max(height) as height from pools group by pool_id ) as px
-         |  on p.pool_id = px.pool_id and p.height = px.height
-         |left join assets ax on ax.id = p.x_id
-         |left join assets ay on ay.id = p.y_id
-         |where px.height = p.height
-         |order by lq desc
+         |SELECT
+         |	p.pool_id,
+         |	p.x_id,
+         |	p.x_amount,
+         |	ax.ticker,
+         |	ax.decimals,
+         |	p.y_id,
+         |	p.y_amount,
+         |	ay.ticker,
+         |	ay.decimals,
+         |	(p.x_amount::decimal) * p.y_amount AS lq
+         |FROM
+         |	pools p
+         |	LEFT JOIN (SELECT pool_id, max(height) AS height FROM pools GROUP BY pool_id) AS px ON p.pool_id = px.pool_id AND p.height = px.height
+         |	LEFT JOIN assets ax ON ax.id = p.x_id
+         |	LEFT JOIN assets ay ON ay.id = p.y_id
+         |WHERE px.height = p.height ORDER BY lq DESC
          """.stripMargin.query[PoolSnapshot]
 
-  def getPoolVolumes(tw: TimeWindow): Query0[PoolVolumeSnapshot] =
+  def mkTimestamp(window: TimeWindow, key: String): Fragment =
+    Fragment.const(s"$key is not null") ++
+    Fragment.const(window.from.map(ts => s"and $key >= $ts ").getOrElse("")) ++
+    Fragment.const(window.to.map(ts => s"and $key <= $ts ").getOrElse(""))
+
+  def getPoolVolumes(tw: TimeWindow): Query0[PoolVolumeSnapshot] = {
+    val fragment = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
          |select distinct on (p.pool_id)
          |  p.pool_id,
@@ -45,20 +69,17 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |    cast(sum(case when (s.base_id = p.y_id) then s.quote_amount else 0 end) as BIGINT) as tx,
          |    cast(sum(case when (s.base_id = p.x_id) then s.quote_amount else 0 end) as BIGINT) as ty
          |  from swaps s
-         |  left join pools p on p.pool_state_id = s.pool_state_id
-         |  ${timeWindowCond(tw, "where", "s")}
+         |  left join pools p on p.pool_state_id = s.pool_state_id and $fragment
          |  group by s.pool_id
          |) as sx on sx.pool_id = p.pool_id
          |left join assets ax on ax.id = p.x_id
          |left join assets ay on ay.id = p.y_id
          |where sx.pool_id is not null
          """.stripMargin.query[PoolVolumeSnapshot]
+  }
 
   def getPoolVolumes(id: PoolId, tw: TimeWindow): Query0[PoolVolumeSnapshot] = {
-    val tsCond =
-      Fragment.const(
-        s"${tw.from.map(ts => s"and s.timestamp >= $ts").getOrElse("")} ${tw.to.map(ts => s"and s.timestamp <= $ts").getOrElse("")}"
-      )
+    val fragment = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
          |select distinct on (p.pool_id)
          |  p.pool_id,
@@ -78,7 +99,7 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |    cast(sum(case when (s.base_id = p.x_id) then s.quote_amount else 0 end) as BIGINT) as ty
          |  from swaps s
          |  left join pools p on p.pool_state_id = s.pool_state_id
-         |  where s.pool_id = $id $tsCond
+         |  where s.pool_id = $id and $fragment
          |  group by s.pool_id
          |) as sx on sx.pool_id = p.pool_id
          |left join assets ax on ax.id = p.x_id
@@ -88,10 +109,7 @@ final class AnalyticsSql(implicit lg: LogHandler) {
   }
 
   def getPoolFees(poolId: PoolId, tw: TimeWindow): Query0[PoolFeesSnapshot] = {
-    val tsCond =
-      Fragment.const(
-        s"${tw.from.map(ts => s"and s.timestamp >= $ts").getOrElse("")} ${tw.to.map(ts => s"and s.timestamp <= $ts").getOrElse("")}"
-      )
+    val fragment = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
          |select distinct on (p.pool_id)
          |  p.pool_id,
@@ -111,7 +129,7 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |    cast(sum(case when (s.base_id = p.x_id) then s.quote_amount::decimal * (1000 - p.fee_num) / 1000 else 0 end) as bigint) as ty
          |  from swaps s
          |  left join pools p on p.pool_state_id = s.pool_state_id
-         |  where p.pool_id = $poolId $tsCond
+         |  where p.pool_id = $poolId and $fragment
          |  group by s.pool_id
          |) as sx on sx.pool_id = p.pool_id
          |left join assets ax on ax.id = p.x_id
@@ -142,48 +160,38 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |and p.height >= $currHeight - $depth
          """.stripMargin.query[PoolTrace]
 
-  def getAvgPoolSnapshot(id: PoolId, tw: TimeWindow, resolution: Int): Query0[AvgAssetAmounts] =
+  def getAvgPoolSnapshot(id: PoolId, tw: TimeWindow, resolution: Int): Query0[AvgAssetAmounts] = {
+    val fragment = mkTimestamp(tw, "b.timestamp")
     sql"""
          |select avg(p.x_amount) as avg_x_amount, avg(p.y_amount) as avg_y_amount, avg(b.timestamp), ((p.height / $resolution)::integer) as k
          |from pools p
          |left join blocks b on b.height = p.height
-         |where pool_id = $id and b.height is not null and ${blockTimeWindowMapping(tw)}
+         |where pool_id = $id and b.height and $fragment
          |group by k
          |order by k
          """.stripMargin.query[AvgAssetAmounts]
+  }
 
-  def getSwapTransactions(tw: TimeWindow): Query0[SwapInfo] =
+  def getSwapTransactions(tw: TimeWindow): Query0[SwapInfo] = {
+    val fragment  = mkTimestamp(tw, "sx.executed_transaction_timestamp")
+    val fragment2 = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
-         |select s.min_output_id, s.output_amount, a.ticker, a.decimals,
-         |(select count(*) from swaps sx where quote_amount is not null ${timeWindowCond(tw, "and", "sx")}) as numTxs from swaps s
-         |left join assets a on a.id = s.min_output_id
-         |where s.output_amount is not null
-         |${timeWindowCond(tw, "and", "s")}
+         |select s.min_quote_id, s.min_quote_amount, a.ticker, a.decimals,
+         |(select count(*) from swaps sx where quote_amount is not null and $fragment) as numTxs from swaps s
+         |left join assets a on a.id = s.min_quote_id
+         |where s.quote_amount is not null and $fragment2
          """.stripMargin.query[SwapInfo]
+  }
 
-  def getDepositTransactions(tw: TimeWindow): Query0[DepositInfo] =
+  def getDepositTransactions(tw: TimeWindow): Query0[DepositInfo] = {
+    val fragment  = mkTimestamp(tw, "sx.executed_transaction_timestamp")
+    val fragment2 = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
          |select s.input_id_x, s.input_amount_x, ax.ticker, ax.decimals, s.input_id_y, s.input_amount_y, ay.ticker, ay.decimals,
-         |(select count(*) from deposits sx where output_amount_lp is not null ${timeWindowCond(tw, "and", "sx")}) as numTxs from deposits s
+         |(select count(*) from deposits sx where output_amount_lp is not null and $fragment) as numTxs from deposits s
          |left join assets ax on ax.id = s.input_id_x  
          |left join assets ay on ay.id = s.input_id_y
-         |where output_amount_lp is not null
-         |${timeWindowCond(tw, "and", "s")}
+         |where output_amount_lp is not null and $fragment2
          """.stripMargin.query[DepositInfo]
-
-  private def timeWindowCond(tw: TimeWindow, condKeyword: String, alias: String): Fragment =
-    if (tw.from.nonEmpty || tw.to.nonEmpty)
-      Fragment.const(
-        s"$condKeyword ${tw.from.map(ts => s"$alias.timestamp >= $ts").getOrElse("")} ${if (tw.from.isDefined && tw.to.isDefined) "and"
-        else ""} ${tw.to.map(ts => s"$alias.timestamp <= $ts").getOrElse("")}"
-      )
-    else Fragment.empty
-
-  private def blockTimeWindowMapping(tw: TimeWindow): Fragment =
-    if (tw.from.nonEmpty || tw.to.nonEmpty)
-      Fragment.const(
-        s"${tw.from.map(ts => s"b.timestamp >= $ts").getOrElse("")} ${if (tw.from.isDefined && tw.to.isDefined) "and"
-        else ""} ${tw.to.map(ts => s"b.timestamp <= $ts").getOrElse("")}"
-      )
-    else Fragment.const("true")
+  }
 }

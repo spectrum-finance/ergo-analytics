@@ -192,7 +192,7 @@ object AmmStats {
 
       def poolData: D[Option[(PoolInfo, Option[amm.PoolFeesSnapshot], Option[PoolVolumeSnapshot])]] =
         (for {
-          info     <- OptionT(pools.info(poolId))
+          info     <- OptionT(pools.getFirstPoolSwapTime(poolId))
           feesSnap <- OptionT.liftF(pools.fees(poolId, window))
           vol      <- OptionT.liftF(pools.volume(poolId, window))
         } yield (info, feesSnap, vol)).value
@@ -238,7 +238,7 @@ object AmmStats {
     def getPoolStats(poolId: PoolId, window: TimeWindow): F[Option[PoolStats]] = {
       val queryPoolStats =
         (for {
-          info     <- OptionT(pools.info(poolId))
+          info     <- OptionT(pools.getFirstPoolSwapTime(poolId))
           vol      <- OptionT.liftF(pools.volume(poolId, window))
           feesSnap <- OptionT.liftF(pools.fees(poolId, window))
         } yield (info, vol, feesSnap)).value
@@ -276,40 +276,37 @@ object AmmStats {
         currHeight   <- blocks.getCurrentHeight
         initialState <- pools.prevTrace(poolId, depth, currHeight)
         traces       <- pools.trace(poolId, depth, currHeight)
-        poolOpt      <- pools.info(poolId)
-      } yield (traces, initialState, poolOpt)
+      } yield (traces, initialState)
 
-      query.trans.map { case (traces, initStateOpt, poolOpt) =>
-        poolOpt.flatMap { _ =>
-          traces match {
-            case Nil => Some(PoolSlippage.zero)
-            case xs =>
-              val groupedTraces = xs
-                .sortBy(_.height)
-                .groupBy(_.height / slippageWindowScale)
-                .toList
-                .sortBy(_._1)
-              val initState                  = initStateOpt.getOrElse(xs.minBy(_.height))
-              val maxState                   = groupedTraces.head._2.maxBy(_.height)
-              val firstWindowSlippagePercent = calculatePoolSlippagePercent(initState, maxState)
+      query.trans.map { case (traces, initStateOpt) =>
+        traces match {
+          case Nil => Some(PoolSlippage.zero)
+          case xs =>
+            val groupedTraces = xs
+              .sortBy(_.height)
+              .groupBy(_.height / slippageWindowScale)
+              .toList
+              .sortBy(_._1)
+            val initState                  = initStateOpt.getOrElse(xs.minBy(_.height))
+            val maxState                   = groupedTraces.head._2.maxBy(_.height)
+            val firstWindowSlippagePercent = calculatePoolSlippagePercent(initState, maxState)
 
-              groupedTraces.drop(1) match {
-                case Nil => Some(PoolSlippage(firstWindowSlippagePercent).scale(PoolSlippage.defaultScale))
-                case restTraces =>
-                  val restWindowsSlippage = restTraces
-                    .map { case (_, heightWindow) =>
-                      val windowMinGindex = heightWindow.minBy(_.height).height
-                      val min = xs.filter(_.height < windowMinGindex) match {
-                        case Nil      => heightWindow.minBy(_.height)
-                        case filtered => filtered.maxBy(_.height)
-                      }
-                      val max = heightWindow.maxBy(_.height)
-                      calculatePoolSlippagePercent(min, max)
+            groupedTraces.drop(1) match {
+              case Nil => Some(PoolSlippage(firstWindowSlippagePercent).scale(PoolSlippage.defaultScale))
+              case restTraces =>
+                val restWindowsSlippage = restTraces
+                  .map { case (_, heightWindow) =>
+                    val windowMinGindex = heightWindow.minBy(_.height).height
+                    val min = xs.filter(_.height < windowMinGindex) match {
+                      case Nil      => heightWindow.minBy(_.height)
+                      case filtered => filtered.maxBy(_.height)
                     }
-                  val slippageBySegment = firstWindowSlippagePercent +: restWindowsSlippage
-                  Some(PoolSlippage(slippageBySegment.sum / slippageBySegment.size).scale(PoolSlippage.defaultScale))
-              }
-          }
+                    val max = heightWindow.maxBy(_.height)
+                    calculatePoolSlippagePercent(min, max)
+                  }
+                val slippageBySegment = firstWindowSlippagePercent +: restWindowsSlippage
+                Some(PoolSlippage(slippageBySegment.sum / slippageBySegment.size).scale(PoolSlippage.defaultScale))
+            }
         }
       }
     }

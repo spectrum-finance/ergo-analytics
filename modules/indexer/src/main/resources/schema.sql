@@ -34,6 +34,7 @@ create index pools__protocol_version on public.pools using btree (protocol_versi
 create index pools__x_id on public.pools using btree (x_id);
 create index pools__y_id on public.pools using btree (y_id);
 
+
 CREATE TABLE IF NOT EXISTS public.swaps
 (
     id                               bigint            not null default nextval('swaps_seq'),
