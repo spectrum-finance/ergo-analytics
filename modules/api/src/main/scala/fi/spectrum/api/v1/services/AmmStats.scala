@@ -1,10 +1,9 @@
 package fi.spectrum.api.v1.services
 
 import cats.data.OptionT
-import cats.effect.Ref
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{Monad, Parallel}
+import cats.{Functor, Monad, Parallel}
 import derevo.derive
 import fi.spectrum.api.currencies.UsdUnits
 import fi.spectrum.api.db.models.amm
@@ -14,7 +13,7 @@ import fi.spectrum.api.domain.{CryptoVolume, Fees, TotalValueLocked, Volume}
 import fi.spectrum.api.models.{AssetClass, CryptoUnits, FullAsset}
 import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
-import fi.spectrum.api.services.{Snapshots, Volumes24H}
+import fi.spectrum.api.services.{Snapshots, VerifiedTokens, Volumes24H}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.amm.types.{MarketId, RealPrice}
@@ -25,8 +24,10 @@ import fi.spectrum.graphite.Metrics
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
+import tofu.logging.{Logging, Logs}
 import tofu.syntax.doobie.txr._
 import tofu.syntax.monadic._
+import tofu.syntax.logging._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
 
@@ -66,19 +67,21 @@ object AmmStats {
 
   private val slippageWindowScale = 2
 
-  def make[F[_]: Monad: Clock: Parallel, D[_]: Monad](implicit
+  def make[I[_]: Functor, F[_]: Monad: Clock: Parallel, D[_]: Monad](implicit
     txr: Txr[F, D],
     pools: Pools[D],
     orders: Orders[D],
     assets: Asset[D],
     blocks: Blocks[D],
-    tokens: Ref[F, List[TokenId]],
+    tokens: VerifiedTokens[F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
     ammMath: AmmStatsMath[F],
-    metrics: Metrics[F]
-  ): AmmStats[F] = new AmmMetrics[F] attach new Live[F, D]
+    metrics: Metrics[F],
+    logs: Logs[I, F]
+  ): I[AmmStats[F]] =
+    logs.forService[AmmStats[F]].map(implicit __ => new AmmMetrics[F] attach (new Tracing[F] attach new Live[F, D]))
 
   final class Live[F[_]: Monad: Clock: Parallel, D[_]: Monad](implicit
     txr: Txr[F, D],
@@ -86,7 +89,7 @@ object AmmStats {
     orders: Orders[D],
     assets: Asset[D],
     blocks: Blocks[D],
-    tokens: Ref[F, List[TokenId]],
+    tokens: VerifiedTokens[F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
@@ -193,7 +196,7 @@ object AmmStats {
 
       def poolData: D[Option[(PoolInfo, Option[amm.PoolFeesSnapshot], Option[PoolVolumeSnapshot])]] =
         (for {
-          info     <- OptionT(pools.info(poolId))
+          info     <- OptionT(pools.getFirstPoolSwapTime(poolId))
           feesSnap <- OptionT.liftF(pools.fees(poolId, window))
           vol      <- OptionT.liftF(pools.volume(poolId, window))
         } yield (info, feesSnap, vol)).value
@@ -239,7 +242,7 @@ object AmmStats {
     def getPoolStats(poolId: PoolId, window: TimeWindow): F[Option[PoolStats]] = {
       val queryPoolStats =
         (for {
-          info     <- OptionT(pools.info(poolId))
+          info     <- OptionT(pools.getFirstPoolSwapTime(poolId))
           vol      <- OptionT.liftF(pools.volume(poolId, window))
           feesSnap <- OptionT.liftF(pools.fees(poolId, window))
         } yield (info, vol, feesSnap)).value
@@ -250,8 +253,8 @@ object AmmStats {
         lockedX               <- OptionT(solver.convert(pool.lockedX, UsdUnits, pools))
         lockedY               <- OptionT(solver.convert(pool.lockedY, UsdUnits, pools))
         tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
-        volume            <- processPoolVolume(vol, window, List.empty)
-        fees              <- processPoolFee(feesSnap, window, List.empty)
+        volume            <- processPoolVolume(vol, window, pools)
+        fees              <- processPoolFee(feesSnap, window, pools)
         yearlyFeesPercent <- OptionT.liftF(ammMath.feePercentProjection(tvl, fees, info, MillisInYear))
       } yield PoolStats(poolId, pool.lockedX, pool.lockedY, tvl, volume, fees, yearlyFeesPercent)).value
     }
@@ -277,40 +280,37 @@ object AmmStats {
         currHeight   <- blocks.getCurrentHeight
         initialState <- pools.prevTrace(poolId, depth, currHeight)
         traces       <- pools.trace(poolId, depth, currHeight)
-        poolOpt      <- pools.info(poolId)
-      } yield (traces, initialState, poolOpt)
+      } yield (traces, initialState)
 
-      query.trans.map { case (traces, initStateOpt, poolOpt) =>
-        poolOpt.flatMap { _ =>
-          traces match {
-            case Nil => Some(PoolSlippage.zero)
-            case xs =>
-              val groupedTraces = xs
-                .sortBy(_.height)
-                .groupBy(_.height / slippageWindowScale)
-                .toList
-                .sortBy(_._1)
-              val initState                  = initStateOpt.getOrElse(xs.minBy(_.height))
-              val maxState                   = groupedTraces.head._2.maxBy(_.height)
-              val firstWindowSlippagePercent = calculatePoolSlippagePercent(initState, maxState)
+      query.trans.map { case (traces, initStateOpt) =>
+        traces match {
+          case Nil => Some(PoolSlippage.zero)
+          case xs =>
+            val groupedTraces = xs
+              .sortBy(_.height)
+              .groupBy(_.height / slippageWindowScale)
+              .toList
+              .sortBy(_._1)
+            val initState                  = initStateOpt.getOrElse(xs.minBy(_.height))
+            val maxState                   = groupedTraces.head._2.maxBy(_.height)
+            val firstWindowSlippagePercent = calculatePoolSlippagePercent(initState, maxState)
 
-              groupedTraces.drop(1) match {
-                case Nil => Some(PoolSlippage(firstWindowSlippagePercent).scale(PoolSlippage.defaultScale))
-                case restTraces =>
-                  val restWindowsSlippage = restTraces
-                    .map { case (_, heightWindow) =>
-                      val windowMinGindex = heightWindow.minBy(_.height).height
-                      val min = xs.filter(_.height < windowMinGindex) match {
-                        case Nil      => heightWindow.minBy(_.height)
-                        case filtered => filtered.maxBy(_.height)
-                      }
-                      val max = heightWindow.maxBy(_.height)
-                      calculatePoolSlippagePercent(min, max)
+            groupedTraces.drop(1) match {
+              case Nil => Some(PoolSlippage(firstWindowSlippagePercent).scale(PoolSlippage.defaultScale))
+              case restTraces =>
+                val restWindowsSlippage = restTraces
+                  .map { case (_, heightWindow) =>
+                    val windowMinGindex = heightWindow.minBy(_.height).height
+                    val min = xs.filter(_.height < windowMinGindex) match {
+                      case Nil      => heightWindow.minBy(_.height)
+                      case filtered => filtered.maxBy(_.height)
                     }
-                  val slippageBySegment = firstWindowSlippagePercent +: restWindowsSlippage
-                  Some(PoolSlippage(slippageBySegment.sum / slippageBySegment.size).scale(PoolSlippage.defaultScale))
-              }
-          }
+                    val max = heightWindow.maxBy(_.height)
+                    calculatePoolSlippagePercent(min, max)
+                  }
+                val slippageBySegment = firstWindowSlippagePercent +: restWindowsSlippage
+                Some(PoolSlippage(slippageBySegment.sum / slippageBySegment.size).scale(PoolSlippage.defaultScale))
+            }
         }
       }
     }
@@ -405,6 +405,93 @@ object AmmStats {
           }
         }
 
+  }
+
+  final private class Tracing[F[_]: Monad: Logging] extends AmmStats[Mid[F, *]] {
+
+    def platformStatsVerified(window: TimeWindow): Mid[F, PlatformStats] =
+      for {
+        _ <- info"platformStatsVerified($window)"
+        r <- _
+        _ <- info"platformStatsVerified($window) - $r"
+      } yield r
+
+    def platformStats(window: TimeWindow): Mid[F, PlatformStats] =
+      for {
+        _ <- info"platformStats($window)"
+        r <- _
+        _ <- info"platformStats($window) - $r"
+      } yield r
+
+    def getPoolStats(poolId: PoolId, window: TimeWindow): Mid[F, Option[PoolStats]] =
+      for {
+        _ <- info"getPoolStats($poolId, $window)"
+        r <- _
+        _ <- info"getPoolStats($poolId, $window) - $r"
+      } yield r
+
+    def getPoolsStats(window: TimeWindow): Mid[F, List[PoolStats]] =
+      for {
+        _ <- info"getPoolsStats($window)"
+        r <- _
+        _ <- info"getPoolsStats($window) - $r"
+      } yield r
+
+    def convertToFiat(id: TokenId, amount: Long): Mid[F, Option[FiatEquiv]] =
+      for {
+        _ <- info"convertToFiat($id, $amount)"
+        r <- _
+        _ <- info"convertToFiat($id, $amount) - $r"
+      } yield r
+
+    def getPoolsSummaryVerified: Mid[F, List[PoolSummary]] =
+      for {
+        _ <- info"getPoolsSummaryVerified()"
+        r <- _
+        _ <- info"getPoolsSummaryVerified() - $r"
+      } yield r
+
+    def getPoolsSummary: Mid[F, List[PoolSummary]] =
+      for {
+        _ <- info"getPoolsSummary()"
+        r <- _
+        _ <- info"getPoolsSummary() - $r"
+      } yield r
+
+    def getAvgPoolSlippage(poolId: PoolId, depth: Int): Mid[F, Option[PoolSlippage]] =
+      for {
+        _ <- info"getAvgPoolSlippage($poolId, $depth)"
+        r <- _
+        _ <- info"getAvgPoolSlippage($poolId, $depth) - $r"
+      } yield r
+
+    def getPoolPriceChart(poolId: PoolId, window: TimeWindow, resolution: Int): Mid[F, List[PricePoint]] =
+      for {
+        _ <- info"getPoolPriceChart($poolId, $window, $resolution)"
+        r <- _
+        _ <- info"getPoolPriceChart($poolId, $window, $resolution) - $r"
+      } yield r
+
+    def getSwapTransactions(window: TimeWindow): Mid[F, TransactionsInfo] =
+      for {
+        _ <- info"getSwapTransactions($window)"
+        r <- _
+        _ <- info"getSwapTransactions($window) - $r"
+      } yield r
+
+    def getDepositTransactions(window: TimeWindow): Mid[F, TransactionsInfo] =
+      for {
+        _ <- info"getDepositTransactions($window)"
+        r <- _
+        _ <- info"getDepositTransactions($window) - $r"
+      } yield r
+
+    def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
+      for {
+        _ <- info"getMarkets($window)"
+        r <- _
+        _ <- info"getMarkets($window) - $r"
+      } yield r
   }
 
   final private class AmmMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F]) extends AmmStats[Mid[F, *]] {

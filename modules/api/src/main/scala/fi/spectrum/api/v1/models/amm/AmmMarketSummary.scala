@@ -7,8 +7,9 @@ import fi.spectrum.core.domain.TokenId
 import fi.spectrum.api.models.Ticker
 import fi.spectrum.api.v1.models.amm.types.{MarketId, RealPrice}
 import sttp.tapir.Schema
+import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder)
+@derive(encoder, decoder, loggable)
 case class AmmMarketSummary(
   id: MarketId,
   baseId: TokenId,

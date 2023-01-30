@@ -12,13 +12,13 @@ import fi.spectrum.parser.domain.AmmType.{N2T, T2T}
   * @tparam T - pool type
   */
 trait AmmPoolParser[+V <: Version, +T <: AmmType] { self =>
-  def pool(output: Output, timestamp: Long): Option[AmmPool]
+  def pool(output: Output, timestamp: Long, height: Int): Option[AmmPool]
 
   def or(that: => AmmPoolParser[Version, AmmType]): AmmPoolParser[Version, AmmType] =
-    (output: Output, timestamp: Long) =>
-      self.pool(output, timestamp) match {
+    (output: Output, timestamp: Long, height: Int) =>
+      self.pool(output, timestamp, height) match {
         case s @ Some(_) => s
-        case None        => that.pool(output, timestamp)
+        case None        => that.pool(output, timestamp, height)
       }
 }
 

@@ -584,7 +584,7 @@ object Transactions {
       |""".stripMargin
   ).toOption.get.toTransaction
 
-  def swapPool = PoolParser.make.parse(swapPoolTx.outputs.head, 0)
+  def swapPool = PoolParser.make.parse(swapPoolTx.outputs.head, 0, 10)
 
   def swapPoolTx = decode[TransactionTest](
     """
@@ -1231,7 +1231,7 @@ object Transactions {
       |}
       |""".stripMargin
     ).toOption.get.toTransaction.outputs.head,
-    0
+    0, 10
   )
 
   def redeemRegisterRefundTransaction = decode[TransactionTest](
@@ -2224,7 +2224,7 @@ object Transactions {
       |    "size": 817
       |}""".stripMargin
     ).toOption.get.toTransaction.outputs.head,
-    0
+    0, 10
   )
 
   def swapRegisterRefundTransaction = decode[TransactionTest](

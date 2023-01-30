@@ -7,8 +7,9 @@ import fi.spectrum.api.models.{Currency, CurrencyId, FiatUnits}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import io.circe.syntax._
 import sttp.tapir.Schema
+import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder)
+@derive(encoder, decoder, loggable)
 final case class PlatformStats(tvl: TotalValueLocked, volume: Volume)
 
 object PlatformStats {

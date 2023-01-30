@@ -4,6 +4,7 @@ import cats.instances.either._
 import cats.syntax.either._
 import cats.syntax.eq._
 import cats.syntax.functor._
+import cats.syntax.option._
 import cats.{Applicative, Eq, Order, Show}
 import derevo.circe.{decoder, encoder}
 import derevo.derive
@@ -13,6 +14,7 @@ import eu.timepit.refined.api.Refined
 import eu.timepit.refined.refineV
 import eu.timepit.refined.string.HexStringSpec
 import fi.spectrum.core.common.errors.RefinementFailed
+import fi.spectrum.core.domain.Address.fromString
 import fi.spectrum.core.domain.TypeConstraints.{AddressType, Base58Spec, HexStringType}
 import fi.spectrum.core.syntax.PubKeyOps
 import io.circe.refined._
@@ -194,6 +196,8 @@ package object domain {
     def unsafeFromString(s: String): PubKey = PubKey(HexString.unsafeFromString(s))
 
     def fromBytes(bytes: Array[Byte]): PubKey = PubKey(HexString.fromBytes(bytes))
+
+    implicit def schema: Schema[PubKey] = HexString.schema.map(s => PubKey(s).some)(_.value)
 
   }
 

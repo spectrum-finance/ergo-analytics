@@ -4,7 +4,7 @@ import cats.Monad
 import cats.data.EitherT
 import tofu.Catches
 
-/** Adapt effect which can fail with any [[Throwable]] to some effect with narrower static error type `E`.
+/** Adapt effect which can fail with any Throwable to some effect with narrower static error type `E`.
   */
 trait AdaptThrowable[F[_], G[_, _], E] {
 
