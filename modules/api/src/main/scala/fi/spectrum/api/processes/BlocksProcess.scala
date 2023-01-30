@@ -51,10 +51,11 @@ object BlocksProcess {
         for {
           _ <- info"Got next block event: ${event.message.map(_.id)}"
           _ <- Monad[F].whenA(event.message.exists(_.height > height))(
-            snapshots.update >>
-              volumes24H.update >>
-              caching.invalidateAll
-          )
+                 snapshots.update >>
+                 volumes24H.update >>
+                 caching.invalidateAll
+               )
+          _ <- event.commit
           _ <- info"Block ${event.message.map(_.id)} processed successfully"
         } yield ()
       }
