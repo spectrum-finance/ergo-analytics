@@ -70,13 +70,19 @@ lazy val parsers = mkModule("parsers", "parsers")
 
 lazy val api = mkModule("api", "api")
   .settings(scalacOptions ++= commonScalacOption)
+  .settings(dockerBaseImage := "openjdk:11-jre-slim")
   .settings(
     libraryDependencies ++= List(
       CompilerPlugins.betterMonadicFor,
       CompilerPlugins.kindProjector
-    ) ++ scodec ++ http4s ++ tapir ++ tests ++ List(zioInterop, zio)
+    ) ++ scodec ++ http4s ++ tapir ++ tests ++ List(zioInterop)
   )
   .dependsOn(core, graphite, cache)
+  .settings(
+    assembly / mainClass := Some("fi.spectrum.api.Main")
+  )
+  .settings(nativePackagerSettings("api"))
+  .enablePlugins(JavaAppPackaging, UniversalPlugin, DockerPlugin)
 
 lazy val indexer = mkModule("indexer", "indexer")
   .settings(scalacOptions ++= commonScalacOption)

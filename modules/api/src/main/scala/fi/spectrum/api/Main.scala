@@ -41,14 +41,14 @@ import tofu.fs2Instances._
 import tofu.lift.{IsoK, Unlift}
 import tofu.logging.Logs
 import tofu.{In, WithContext, WithLocal}
+import zio.ExitCode
 import zio.interop.catz._
-import zio.{ExitCode, Task}
 
-object App extends EnvApp[AppContext] {
+object Main extends EnvApp[AppContext] {
 
   implicit val serverOptions: Http4sServerOptions[F] = Http4sServerOptions.default[F]
 
-  def run(args: List[String]): Task[ExitCode] =
+  override def run(args: List[String]): zio.URIO[Any, zio.ExitCode] = {
     Dispatcher
       .parallel[I]
       .use { dispatcher =>
@@ -59,6 +59,7 @@ object App extends EnvApp[AppContext] {
         }
       }
       .orDie
+  }
 
   private def init(
     configPathOpt: Option[String]

@@ -1,9 +1,8 @@
 <configuration>
-
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <layout class="tofu.logging.logback.ConsoleContextLayout">
-                <pattern>[%date{yyyy-MM-dd HH:mm:ss.SSS}] %-5level [%.15thread]%X{alias}[%-25logger{15}] - %msg%n</pattern>
+                <pattern>[%date{yyyy-MM-dd HH:mm:ss}] %-5level [%.15thread]%X{alias}[%-25logger{15}] - %msg%n</pattern>
             </layout>
         </encoder>
     </appender>
@@ -13,18 +12,20 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/dex-backend/markets-api.log</file>
+        <file>
+            /opt/docker/logs/api.log
+        </file>
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-            <layout class="tofu.logging.ELKLayout"/>
+            <layout class="tofu.logging.logback.ConsoleContextLayout">
+                <pattern>[%date{yyyy-MM-dd HH:mm:ss}] %-5level [%.15thread]%X{alias}[%-25logger{15}] - %msg%n</pattern>
+            </layout>
         </encoder>
 
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>/var/log/dex-backend/markets-api.%d{yyyy-MM-dd}.%i.log
-            </fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy
-                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>50MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>/opt/docker/logs/api-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>20</maxHistory>
+            <totalSizeCap>20GB</totalSizeCap>
         </rollingPolicy>
     </appender>
 
@@ -32,12 +33,12 @@
         <appender-ref ref="FILE"/>
     </appender>
 
-    <logger name="org.ergoplatform" level="TRACE"/>
     <logger name="org.http4s" level="INFO"/>
     <logger name="org.apache.kafka" level="INFO"/>
     <logger name="sttp.client3.asynchttpclient" level="INFO"/>
     <root level="INFO">
         <appender-ref ref="ASYNCSTDOUT"/>
+<!--        <appender-ref ref="ASYNCFILE"/>-->
     </root>
 
 </configuration>

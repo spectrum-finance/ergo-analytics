@@ -14,10 +14,9 @@ import tofu.logging.derivation.loggable
 @derive(pureconfigReader, loggable)
 @ClassyOptics
 final case class ConfigBundle(
-  @promote db: PgConfig,
+  @promote postgres: PgConfig,
   http: HttpConfig,
   @promote redis: RedisConfig,
-  tokens: TokenFetcherConfig,
   request: RequestConfig,
   blockConsumer: ConsumerConfig,
   graphite: GraphiteSettings,

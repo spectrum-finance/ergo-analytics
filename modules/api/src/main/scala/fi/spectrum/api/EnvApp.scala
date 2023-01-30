@@ -8,7 +8,7 @@ import tofu.{Delay, WithRun}
 import zio.Task
 import zio.interop.catz._
 
-abstract class EnvApp[C: Loggable] extends App {
+abstract class EnvApp[C: Loggable] extends zio.interop.catz.CatsApp {
 
   type I[+A] = Task[A]
   type F[A]  = ReaderT[I, C, A]
