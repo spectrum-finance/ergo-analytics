@@ -17,7 +17,7 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
   property("Parse swap evaluation") {
     val order =
       swapRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
-    val pool = swapEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
+    val pool = swapEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0, 10)).collectFirst { case Some(v) => v }.get
     parser.parse(order, swapEvaluateTransaction.outputs.toList, pool).get shouldEqual swapEval
   }
 
@@ -25,7 +25,7 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val order =
       redeemRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
     val pool =
-      redeemEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
+      redeemEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0, 10)).collectFirst { case Some(v) => v }.get
     parser.parse(order, redeemEvaluateTransaction.outputs.toList, pool).get shouldEqual redeemEval
   }
 
@@ -33,7 +33,7 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val order =
       depositRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
     val pool =
-      depositEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
+      depositEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0, 10)).collectFirst { case Some(v) => v }.get
     parser.parse(order, depositEvaluateTransaction.outputs.toList, pool).get shouldEqual depositEval
   }
 

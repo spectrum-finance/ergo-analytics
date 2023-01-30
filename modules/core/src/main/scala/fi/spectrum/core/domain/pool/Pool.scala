@@ -19,6 +19,7 @@ sealed trait Pool {
   val poolId: PoolId
   val box: Output
 
+  val height: Int
   val version: Version
 }
 
@@ -33,7 +34,8 @@ object Pool {
     feeNum: Int,
     timestamp: Long,
     box: Output,
-    version: V1
+    version: V1,
+    height: Int
   ) extends Pool
 
   object AmmPool {

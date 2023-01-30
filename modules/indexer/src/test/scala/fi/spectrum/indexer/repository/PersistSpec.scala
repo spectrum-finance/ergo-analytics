@@ -35,8 +35,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   val poolsParser                      = PoolParser.make
 
   "Amm pool" should "work correct" in {
-    val pool         = redeemPool.get
-    val expectedPool = implicitly[ToDB[Pool, PoolDB]].toDB(pool)
+    val pool: Pool = redeemPool.get
+    val expectedPool = implicitly[ToDB[Pool, PoolDB]].toDB(pool).copy(height = 751721)
 
     def run = for {
       insertResult  <- repo.pools.insert(pool).trans
@@ -56,7 +56,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
 
   "Off-chain fee" should "work correct" in {
     val register    = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().get
-    val executed    = parser.evaluated(swapEvaluateTransaction, 0, register, swapPool.get).unsafeRunSync().get
+    val executed    = parser.evaluated(swapEvaluateTransaction, 0, register, swapPool.get, 10).unsafeRunSync().get
     val expectedFee = implicitly[ToDB[OffChainFee, OffChainFeeDB]].toDB(executed.offChainFee.get)
 
     Optional[Processed.Any, OffChainFee].getOption(register) shouldEqual None
@@ -86,7 +86,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     val register  = parser.registered(redeemRegisterTransaction, 0).unsafeRunSync().get
     val register2 = parser.registered(redeemRegisterRefundTransaction, 0).unsafeRunSync().get
     val refund    = parser.refunded(redeemRefundTransaction, 0, register2).unsafeRunSync()
-    val executed  = parser.evaluated(redeemEvaluateTransaction, 0, register, redeemPool.get).unsafeRunSync().get
+    val executed  = parser.evaluated(redeemEvaluateTransaction, 0, register, redeemPool.get, 10).unsafeRunSync().get
 
     val register1Expected =
       implicitly[ToDB[Processed[Redeem], RedeemDB]].toDB(register.asInstanceOf[Processed[Redeem]])
@@ -132,7 +132,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     val register  = parser.registered(depositRegisterTransaction, 0).unsafeRunSync().get
     val register2 = parser.registered(depositRegisterRefundTransaction, 0).unsafeRunSync().get
     val refund    = parser.refunded(depositRefundTransaction, 0, register2).unsafeRunSync()
-    val executed  = parser.evaluated(depositEvaluateTransaction, 0, register, depositPool.get).unsafeRunSync().get
+    val executed  = parser.evaluated(depositEvaluateTransaction, 0, register, depositPool.get, 10).unsafeRunSync().get
 
     val register1Expected =
       implicitly[ToDB[Processed[Deposit], DepositDB]].toDB(register.asInstanceOf[Processed[Deposit]])
@@ -177,7 +177,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     val register  = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().get
     val register2 = parser.registered(swapRegisterRefundTransaction, 0).unsafeRunSync().get
     val refunded  = parser.refunded(swapRefundTransaction, 0, register2).unsafeRunSync()
-    val executed  = parser.evaluated(swapEvaluateTransaction, 0, register, swapPool.get).unsafeRunSync().get
+    val executed  = parser.evaluated(swapEvaluateTransaction, 0, register, swapPool.get, 10).unsafeRunSync().get
 
     val expectedRegister: SwapDB =
       implicitly[ToDB[Processed[Swap], SwapDB]]

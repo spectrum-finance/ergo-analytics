@@ -1,18 +1,20 @@
 package fi.spectrum.api.db.repositories
 
 import cats.tagless.syntax.functorK._
-import cats.{FlatMap, Functor}
+import cats.{FlatMap, Functor, Monad}
 import doobie.ConnectionIO
 import fi.spectrum.api.db.models.amm._
 import fi.spectrum.api.db.sql.AnalyticsSql
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.core.domain.order.PoolId
+import fi.spectrum.graphite.Metrics
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler
 import tofu.higherKind.{Mid, RepresentableK}
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
+import tofu.time.Clock
 
 trait Pools[F[_]] {
 
@@ -54,12 +56,17 @@ object Pools {
   implicit def representableK: RepresentableK[Pools] =
     tofu.higherKind.derived.genRepresentableK
 
-  def make[I[_]: Functor, D[_]: FlatMap: LiftConnectionIO](implicit
+  def make[I[_]: Functor, D[_]: Monad: LiftConnectionIO: Clock](implicit
     elh: EmbeddableLogHandler[D],
+    metrics: Metrics[D],
     logs: Logs[I, D]
   ): I[Pools[D]] =
     logs.forService[Pools[D]].map { implicit l =>
-      elh.embed(implicit lh => new PoolsTracing[D] attach new Live(new AnalyticsSql()).mapK(LiftConnectionIO[D].liftF))
+      elh.embed { implicit lh =>
+        new PoolsMetrics[D] attach (
+          new PoolsTracing[D] attach new Live(new AnalyticsSql()).mapK(LiftConnectionIO[D].liftF)
+        )
+      }
     }
 
   final class Live(sql: AnalyticsSql) extends Pools[ConnectionIO] {
@@ -147,5 +154,32 @@ object Pools {
         r <- _
         _ <- trace"snapshots() -> ${r.size} trace snapshots selected"
       } yield r
+  }
+
+  final class PoolsMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F]) extends Pools[Mid[F, *]] {
+
+    def getFirstPoolSwapTime(id: PoolId): Mid[F, Option[PoolInfo]] =
+      processMetric(_, s"db.pools.get.first.pool.swap.time.$id")
+
+    def snapshots: Mid[F, List[PoolSnapshot]] =
+      processMetric(_, s"db.pools.snapshots")
+
+    def volumes(window: TimeWindow): Mid[F, List[PoolVolumeSnapshot]] =
+      processMetric(_, s"db.pools.volumes")
+
+    def volume(id: PoolId, window: TimeWindow): Mid[F, Option[PoolVolumeSnapshot]] =
+      processMetric(_, s"db.pools.volume.$id")
+
+    def fees(id: PoolId, window: TimeWindow): Mid[F, Option[PoolFeesSnapshot]] =
+      processMetric(_, s"db.pools.fees.$id")
+
+    def trace(id: PoolId, depth: Int, currHeight: Int): Mid[F, List[PoolTrace]] =
+      processMetric(_, s"db.pools.trace.$id")
+
+    def prevTrace(id: PoolId, depth: Int, currHeight: Int): Mid[F, Option[PoolTrace]] =
+      processMetric(_, s"db.pools.prev.trace.$id")
+
+    def avgAmounts(id: PoolId, window: TimeWindow, resolution: Int): Mid[F, List[AvgAssetAmounts]] =
+      processMetric(_, s"db.pools.avg.amounts.$id")
   }
 }
