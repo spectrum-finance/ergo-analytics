@@ -93,6 +93,25 @@ services:
       options:
         max-size: "10m"
         max-file: "10"
+  api:
+    user: "${UID}:${GID}"
+    build:
+      context: /data/ergoAnalyticsV2/sources/ergo-analytics/modules/api/target/docker/stage
+      dockerfile: Dockerfile
+    volumes:
+      - "${PWD}/conf/api.conf:/etc/api.conf"
+      - "${PWD}/logs/api:/opt/docker/logs"
+    command: /etc/api.conf
+    depends_on:
+      - redisV2
+      - kafkaV21
+      - kafkaV22
+      - kafkaV23
+      - postgresV2
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "10"
   redisV2:
     image: redis:latest
     hostname: redisV2
