@@ -81,10 +81,6 @@ lazy val api = mkModule("api", "api")
 lazy val indexer = mkModule("indexer", "indexer")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(dockerBaseImage := "openjdk:11-jre-slim")
-  .settings(dockerEntrypoint := Seq(
-    "-Dlogback.configurationFile=/etc/logback-prod.xml",
-    "/opt/docker/bin/indexer"
-  ))
   .settings(
     libraryDependencies ++= List(
       CompilerPlugins.betterMonadicFor,
