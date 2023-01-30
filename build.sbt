@@ -18,6 +18,8 @@ lazy val commonScalacOption = List(
   "-Ymacro-annotations"
 )
 
+def compilerDependencies = List(CompilerPlugins.betterMonadicFor, CompilerPlugins.kindProjector)
+
 lazy val root = (project in file("."))
   .settings(name := "ergo-analytics")
   .aggregate(core, streaming, indexer, graphite, cache, api)
@@ -25,13 +27,7 @@ lazy val root = (project in file("."))
 lazy val core = mkModule("core", "core")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(
-    libraryDependencies ++= List(
-      CompilerPlugins.betterMonadicFor,
-      CompilerPlugins.kindProjector
-    )
-  )
-  .settings(
-    libraryDependencies ++= List(
+    libraryDependencies ++= compilerDependencies ++ List(
       ce3,
       sigma,
       newtype,
@@ -49,76 +45,40 @@ lazy val core = mkModule("core", "core")
 
 lazy val streaming = mkModule("streaming", "streaming")
   .settings(scalacOptions ++= commonScalacOption)
-  .settings(
-    libraryDependencies ++= List(
-      CompilerPlugins.betterMonadicFor,
-      CompilerPlugins.kindProjector
-    )
-  )
+  .settings(libraryDependencies ++= compilerDependencies)
   .dependsOn(core)
 
 lazy val parsers = mkModule("parsers", "parsers")
   .settings(libraryDependencies ++= tests)
   .settings(scalacOptions ++= commonScalacOption)
-  .settings(
-    libraryDependencies ++= List(
-      CompilerPlugins.betterMonadicFor,
-      CompilerPlugins.kindProjector
-    )
-  )
+  .settings(libraryDependencies ++= compilerDependencies)
   .dependsOn(core)
 
 lazy val api = mkModule("api", "api")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(dockerBaseImage := "openjdk:11-jre-slim")
-  .settings(
-    libraryDependencies ++= List(
-      CompilerPlugins.betterMonadicFor,
-      CompilerPlugins.kindProjector
-    ) ++ scodec ++ http4s ++ tapir ++ tests ++ List(zioInterop)
-  )
+  .settings(libraryDependencies ++= compilerDependencies ++ scodec ++ http4s ++ tapir ++ tests ++ List(zioInterop))
   .dependsOn(core, graphite, cache)
-  .settings(
-    assembly / mainClass := Some("fi.spectrum.api.Main")
-  )
+  .settings(assembly / mainClass := Some("fi.spectrum.api.Main"))
   .settings(nativePackagerSettings("api"))
   .enablePlugins(JavaAppPackaging, UniversalPlugin, DockerPlugin)
 
 lazy val indexer = mkModule("indexer", "indexer")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(dockerBaseImage := "openjdk:11-jre-slim")
-  .settings(
-    libraryDependencies ++= List(
-      CompilerPlugins.betterMonadicFor,
-      CompilerPlugins.kindProjector
-    ) ++ tests ++ tofu ++ List(rocksDB)
-  )
+  .settings(libraryDependencies ++= compilerDependencies ++ tests ++ tofu ++ List(rocksDB))
   .dependsOn(core, parsers, streaming, graphite, cache)
-  .settings(
-    assembly / mainClass := Some("fi.spectrum.indexer.Main")
-  )
+  .settings(assembly / mainClass := Some("fi.spectrum.indexer.Main"))
   .settings(nativePackagerSettings("indexer"))
   .enablePlugins(JavaAppPackaging, UniversalPlugin, DockerPlugin)
 
 lazy val graphite = mkModule("graphite", "graphite")
   .settings(scalacOptions ++= commonScalacOption)
-  .settings(
-    libraryDependencies ++= List(
-      CompilerPlugins.betterMonadicFor,
-      CompilerPlugins.kindProjector
-    ) ++ derevo ++ List(fs2IO) ++ http4s
-  )
-  .settings(libraryDependencies ++= tofu)
+  .settings(libraryDependencies ++= compilerDependencies ++ derevo ++ List(fs2IO) ++ http4s ++ tofu)
 
 lazy val cache = mkModule("cache", "cache")
   .settings(scalacOptions ++= commonScalacOption)
-  .settings(
-    libraryDependencies ++= List(
-      CompilerPlugins.betterMonadicFor,
-      CompilerPlugins.kindProjector
-    ) ++ derevo ++ List(fs2IO)
-  )
-  .settings(libraryDependencies ++= tofu)
+  .settings(libraryDependencies ++= compilerDependencies ++ derevo ++ List(fs2IO) ++ tofu)
   .dependsOn(core, streaming)
 
 def nativePackagerSettings(moduleSig: String) = List(
