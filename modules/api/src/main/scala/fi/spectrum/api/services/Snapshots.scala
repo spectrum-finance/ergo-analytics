@@ -9,10 +9,8 @@ import fi.spectrum.api.db.repositories.Pools
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
-import tofu.lift.Lift
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.doobie.txr._
-import tofu.syntax.lift._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 
@@ -27,15 +25,12 @@ object Snapshots {
   def make[I[_]: Sync, F[_]: Sync, D[_]](implicit
     txr: Txr[F, D],
     pools: Pools[D],
-    lift: Lift[F, I],
     logs: Logs[I, F]
   ): I[Snapshots[F]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[Snapshots[F]]
       cache                          <- Ref.in[I, F, List[PoolSnapshot]](List.empty)
-      service = new Tracing[F] attach new Live[F, D](cache)
-      _ <- service.update.lift
-    } yield service
+    } yield new Tracing[F] attach new Live[F, D](cache)
 
   final private class Live[F[_]: Monad, D[_]](cache: Ref[F, List[PoolSnapshot]])(implicit
     txr: Txr[F, D],

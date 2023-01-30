@@ -1,7 +1,6 @@
 package fi.spectrum.api.v1.services
 
 import cats.data.OptionT
-import cats.effect.Ref
 import cats.syntax.parallel._
 import cats.syntax.traverse._
 import cats.{Monad, Parallel}
@@ -14,7 +13,7 @@ import fi.spectrum.api.domain.{CryptoVolume, Fees, TotalValueLocked, Volume}
 import fi.spectrum.api.models.{AssetClass, CryptoUnits, FullAsset}
 import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
-import fi.spectrum.api.services.{Snapshots, Volumes24H}
+import fi.spectrum.api.services.{Snapshots, VerifiedTokens, Volumes24H}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.amm.types.{MarketId, RealPrice}
@@ -72,7 +71,7 @@ object AmmStats {
     orders: Orders[D],
     assets: Asset[D],
     blocks: Blocks[D],
-    tokens: Ref[F, List[TokenId]],
+    tokens: VerifiedTokens[F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
@@ -86,7 +85,7 @@ object AmmStats {
     orders: Orders[D],
     assets: Asset[D],
     blocks: Blocks[D],
-    tokens: Ref[F, List[TokenId]],
+    tokens: VerifiedTokens[F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],

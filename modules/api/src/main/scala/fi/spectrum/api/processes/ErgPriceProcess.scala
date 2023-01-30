@@ -1,10 +1,10 @@
 package fi.spectrum.api.processes
 
 import cats.Monad
-import cats.effect.{Ref, Temporal}
+import cats.effect.Temporal
 import cats.syntax.traverse._
 import fi.spectrum.api.configs.NetworkConfig
-import fi.spectrum.api.services.Network
+import fi.spectrum.api.services.ErgRate
 import fi.spectrum.graphite.Metrics
 import tofu.lift.Lift
 import tofu.logging.{Logging, Logs}
@@ -23,30 +23,25 @@ trait ErgPriceProcess[S[_]] {
 object ErgPriceProcess {
 
   def make[I[_]: Monad, F[_]: Temporal: NetworkConfig.Has, S[_]: Monad: Evals[*[_], F]](implicit
-    network: Network[F],
+    ergRate: ErgRate[F],
     metrics: Metrics[F],
-    cache: Ref[F, Option[BigDecimal]],
     logs: Logs[I, F],
     lift: Lift[F, I]
   ): I[ErgPriceProcess[S]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[ErgPriceProcess[F]]
       config                         <- NetworkConfig.access.lift[I]
-      rate                           <- network.getErgPriceCMC.lift[I]
-      _                              <- cache.set(rate).lift[I]
     } yield new Live[S, F](config.cmcRequestTime)
 
   final private class Live[S[_]: Monad: Evals[*[_], F], F[_]: Temporal: Logging](requestTime: FiniteDuration)(implicit
-    network: Network[F],
-    metrics: Metrics[F],
-    cache: Ref[F, Option[BigDecimal]]
+    ergRate: ErgRate[F],
+    metrics: Metrics[F]
   ) extends ErgPriceProcess[S] {
 
     def run: S[Unit] = eval {
       for {
         _    <- info"It's time to request new ERG price!"
-        rate <- network.getErgPriceCMC
-        _    <- cache.set(rate)
+        rate <- ergRate.update
         _    <- metrics.sendCount("fetch.erg.price", 1.0)
         _    <- rate.traverse(r => metrics.sendCount("fetch.erg.price", r.toDouble))
         _    <- info"Going to sleep $requestTime"
