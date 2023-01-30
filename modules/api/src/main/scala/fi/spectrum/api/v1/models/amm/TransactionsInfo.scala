@@ -6,10 +6,11 @@ import fi.spectrum.api.models.FiatUnits
 import fi.spectrum.api.currencies.UsdUnits
 import fi.spectrum.api.models.FiatUnits
 import sttp.tapir.Schema
+import tofu.logging.derivation.loggable
 
 import scala.math.BigDecimal.RoundingMode
 
-@derive(encoder, decoder)
+@derive(encoder, decoder, loggable)
 case class TransactionsInfo(numTxs: Int, avgTxValue: BigDecimal, maxTxValue: BigDecimal, units: FiatUnits) {
   def roundAvgValue: TransactionsInfo = TransactionsInfo(numTxs, avgTxValue.setScale(0, RoundingMode.DOWN), maxTxValue, units)
 }

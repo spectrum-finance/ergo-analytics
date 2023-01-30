@@ -103,11 +103,11 @@ object Main extends EnvApp[AppContext] {
       implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S, Chunk].toResource
       implicit0(cryptoSolver: CryptoPriceSolver[F])      <- CryptoPriceSolver.make[I, F].toResource
       implicit0(fiatSolver: FiatPriceSolver[F])          <- FiatPriceSolver.make[I, F].toResource
-      implicit0(stats: AmmStats[F])                      = AmmStats.make[F, xa.DB]
       implicit0(locks: LqLocks[F])                       = LqLocks.make[F, xa.DB]
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
-      serverProc                                         = HttpServer.make[I, F](config.http, config.request)
+      implicit0(stats: AmmStats[F]) <- AmmStats.make[I, F, xa.DB].toResource
+      serverProc = HttpServer.make[I, F](config.http, config.request)
     } yield List(
       ergProcess.run,
       tokensProcess.run,

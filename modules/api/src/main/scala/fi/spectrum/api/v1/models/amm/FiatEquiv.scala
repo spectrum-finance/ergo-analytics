@@ -5,8 +5,9 @@ import derevo.derive
 import fi.spectrum.api.models.FiatUnits
 import fi.spectrum.api.models.FiatUnits
 import sttp.tapir.Schema
+import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder)
+@derive(encoder, decoder, loggable)
 case class FiatEquiv(value: BigDecimal, units: FiatUnits)
 
 object FiatEquiv {

@@ -8,6 +8,8 @@ import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import sttp.tapir.{Schema, Validator}
 import tofu.logging.Loggable
+import tofu.logging.derivation.loggable
+
 import scala.math.BigDecimal.RoundingMode
 
 object types {
@@ -30,7 +32,7 @@ object types {
     implicit val validator: Validator[MarketId] = schema.validator
   }
 
-  @derive(encoder, decoder)
+  @derive(encoder, decoder, loggable)
   @newtype case class RealPrice(value: BigDecimal) {
     def setScale(scale: Int): RealPrice = RealPrice(value.setScale(scale, RoundingMode.HALF_UP))
   }

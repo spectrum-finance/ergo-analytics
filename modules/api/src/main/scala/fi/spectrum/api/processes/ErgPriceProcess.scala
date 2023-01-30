@@ -40,7 +40,6 @@ object ErgPriceProcess {
 
     def run: S[Unit] = eval {
       for {
-        _    <- info"It's time to request new ERG price!"
         rate <- ergRate.update
         _    <- metrics.sendCount("fetch.erg.price", 1.0)
         _    <- rate.traverse(r => metrics.sendCount("fetch.erg.price", r.toDouble))
