@@ -1,7 +1,7 @@
 package fi.spectrum.api.db.models
 
 import fi.spectrum.core.domain.order.PoolId
-import fi.spectrum.core.domain.Address
+import fi.spectrum.core.domain.{Address, PubKey}
 
 object locks {
 
@@ -10,6 +10,6 @@ object locks {
     deadline: Int,
     amount: Long,
     percent: BigDecimal,
-    redeemer: Address
+    redeemer: PubKey
   )
 }

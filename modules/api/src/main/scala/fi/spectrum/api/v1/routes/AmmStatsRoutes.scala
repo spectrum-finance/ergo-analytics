@@ -57,7 +57,7 @@ final class AmmStatsRoutes[
     interpreter
       .toRoutes(getPoolsStatsE.serverLogic(stats.getPoolsStats(_).adaptThrowable.value))
 
-  def getPoolsSummaryVerifiedR: HttpRoutes[F] = interpreter.toRoutes(getPoolsSummaryE.serverLogic { _ =>
+  def getPoolsSummaryVerifiedR: HttpRoutes[F] = interpreter.toRoutes(getPoolsSummaryVerifiedE.serverLogic { _ =>
     stats.getPoolsSummaryVerified.adaptThrowable.value
   })
 

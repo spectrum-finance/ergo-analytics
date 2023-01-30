@@ -66,6 +66,7 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .name("Pools statistics")
       .description("Provides pool's statistic of every known pool")
 
+  // todo !
   def getPoolsSummaryVerifiedE: Endpoint[Unit, Unit, HttpError, List[PoolSummary], Any] =
     baseEndpoint.get
       .in(PathPrefix / "pools" / "summary")
@@ -90,6 +91,8 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .tag(Group)
       .name("Pool slippage")
       .description("Provides average slippage by pool")
+
+  // todo !
 
   def getPoolPriceChartE: Endpoint[Unit, (PoolId, TimeWindow, Int), HttpError, List[PricePoint], Any] =
     baseEndpoint.get
@@ -128,6 +131,7 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .name("Deposit txs")
       .description("Get deposit txs info")
 
+  // todo!
   def getPoolLocksE: Endpoint[Unit, (PoolId, Int), HttpError, List[LiquidityLockInfo], Any] =
     baseEndpoint.get
       .in(PathPrefix / "pool" / path[PoolId].description("Asset reference") / "locks")

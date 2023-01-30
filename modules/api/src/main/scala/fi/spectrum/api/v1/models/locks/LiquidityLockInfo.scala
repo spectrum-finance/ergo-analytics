@@ -3,14 +3,12 @@ package fi.spectrum.api.v1.models.locks
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.api.db.models.locks.LiquidityLockStats
-import fi.spectrum.core.domain.Address
+import fi.spectrum.core.domain.PubKey
 import fi.spectrum.core.domain.order.PoolId
-import fi.spectrum.api.db.models.locks.LiquidityLockStats
-import fi.spectrum.api.db.models.locks.LiquidityLockStats
 import sttp.tapir.Schema
 
 @derive(encoder, decoder)
-final case class LiquidityLockInfo(poolId: PoolId, deadline: Int, amount: Long, percent: BigDecimal, redeemer: Address)
+final case class LiquidityLockInfo(poolId: PoolId, deadline: Int, amount: Long, percent: BigDecimal, redeemer: PubKey)
 
 object LiquidityLockInfo {
 
