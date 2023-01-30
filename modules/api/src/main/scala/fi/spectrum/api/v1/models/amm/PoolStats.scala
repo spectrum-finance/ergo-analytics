@@ -8,8 +8,9 @@ import fi.spectrum.core.domain.order.PoolId
 import fi.spectrum.api.domain.{FeePercentProjection, Fees, TotalValueLocked, Volume}
 import fi.spectrum.api.models.FullAsset
 import sttp.tapir.Schema
+import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder)
+@derive(encoder, decoder, loggable)
 final case class PoolStats(
   id: PoolId,
   lockedX: FullAsset,

@@ -16,15 +16,16 @@ import scala.util.Try
 sealed trait TransactionEvent {
   val transaction: Transaction
   val timestamp: Long
+  val height: Int
 }
 
 object TransactionEvent {
 
   @derive(loggable)
-  final case class TransactionApply(transaction: Transaction, timestamp: Long) extends TransactionEvent
+  final case class TransactionApply(transaction: Transaction, timestamp: Long, height: Int) extends TransactionEvent
 
   @derive(loggable)
-  final case class TransactionUnapply(transaction: Transaction, timestamp: Long) extends TransactionEvent
+  final case class TransactionUnapply(transaction: Transaction, timestamp: Long, height: Int) extends TransactionEvent
 
   implicit def transactionEventDeserializer[F[_]: Sync]: RecordDeserializer[F, Option[TransactionEvent]] =
     RecordDeserializer.lift(Deserializer.string.map { str =>
@@ -34,8 +35,9 @@ object TransactionEvent {
   private def fromKafkaEvent(event: KafkaTxEvent): Option[TransactionEvent] =
     Base64.decode(event.tx).flatMap(b => Try(ErgoLikeTransactionSerializer.fromBytes(b))).toOption.map { tx =>
       event match {
-        case KafkaTxEvent.AppliedEvent(timestamp, _) => TransactionApply(Transaction.fromErgoLike(tx), timestamp)
-        case KafkaTxEvent.UnappliedEvent(_)          => TransactionUnapply(Transaction.fromErgoLike(tx), 0)
+        case KafkaTxEvent.AppliedEvent(timestamp, _, height) =>
+          TransactionApply(Transaction.fromErgoLike(tx), timestamp, height)
+        case KafkaTxEvent.UnappliedEvent(_) => TransactionUnapply(Transaction.fromErgoLike(tx), 0, 0)
       }
     }
 }

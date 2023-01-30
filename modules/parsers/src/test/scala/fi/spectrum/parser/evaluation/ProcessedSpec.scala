@@ -17,7 +17,7 @@ class ProcessedSpec extends AnyPropSpec with Matchers with CatsPlatform {
   property("Parse executed order") {
     val ts         = System.currentTimeMillis()
     val registered = processedParser.registered(swapRegisterTransaction, ts).unsafeRunSync().get
-    val processed  = processedParser.evaluated(swapEvaluateTransaction, ts, registered, swapPool.get).unsafeRunSync().get
+    val processed  = processedParser.evaluated(swapEvaluateTransaction, ts, registered, swapPool.get, 10).unsafeRunSync().get
 
     processed.poolBoxId shouldBe Some(BoxId("000bde68859c4ca2430c992604d80ea3bd0bf1c97bfa26ed60e8b9bccbffa79f"))
     processed.evaluation shouldBe Some(swapEval)

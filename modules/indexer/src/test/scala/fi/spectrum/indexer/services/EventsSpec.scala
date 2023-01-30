@@ -26,12 +26,12 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     implicit val (rocks, release) = TxRocksDB.make[IO, IO]("rocks").allocated.unsafeRunSync()
     implicit val storage          = OrdersStorage.make[IO]
     val events                    = Events.make[IO]
-    val deployPool                = TransactionApply(swapPoolTx, 0)
-    val swap1                     = TransactionApply(swapRegisterTransaction, 0)
-    val swapRollback1             = TransactionUnapply(swapRegisterTransaction, 0)
-    val swap2                     = TransactionApply(swapEvaluateTransaction, 0)
-    val swapRollback2             = TransactionUnapply(swapEvaluateTransaction, 0)
-    val swap3                     = TransactionApply(swapEvaluateTransaction, 0)
+    val deployPool                = TransactionApply(swapPoolTx, 0, 10)
+    val swap1                     = TransactionApply(swapRegisterTransaction, 0, 10)
+    val swapRollback1             = TransactionUnapply(swapRegisterTransaction, 0, 10)
+    val swap2                     = TransactionApply(swapEvaluateTransaction, 0, 10)
+    val swapRollback2             = TransactionUnapply(swapEvaluateTransaction, 0, 10)
+    val swap3                     = TransactionApply(swapEvaluateTransaction, 0, 10)
 
     def run = for {
       stageDeploy            <- events.process(NonEmptyList.one(deployPool))
@@ -79,10 +79,10 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     implicit val (rocks, release) = TxRocksDB.make[IO, IO]("rocks").allocated.unsafeRunSync()
     implicit val storage          = OrdersStorage.make[IO]
     val events                    = Events.make[IO]
-    val deployPool                = TransactionApply(swapPoolTx, 0)
-    val swap1                     = TransactionApply(swapRegisterTransaction, 0)
-    val swap2                     = TransactionApply(swapEvaluateTransaction, 0)
-    val swapRollback2             = TransactionUnapply(swapEvaluateTransaction, 0)
+    val deployPool                = TransactionApply(swapPoolTx, 0, 10)
+    val swap1                     = TransactionApply(swapRegisterTransaction, 0, 10)
+    val swap2                     = TransactionApply(swapEvaluateTransaction, 0, 10)
+    val swapRollback2             = TransactionUnapply(swapEvaluateTransaction, 0, 10)
 
     def run = for {
       _             <- events.process(NonEmptyList.one(deployPool))
@@ -115,11 +115,11 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     implicit val (rocks, release) = TxRocksDB.make[IO, IO]("rocks").allocated.unsafeRunSync()
     implicit val storage          = OrdersStorage.make[IO]
     val events                    = Events.make[IO]
-    val deployPool                = TransactionApply(swapPoolTx, 0)
-    val swap1                     = TransactionApply(swapRegisterTransaction, 0)
-    val swapRollback1             = TransactionUnapply(swapRegisterTransaction, 0)
-    val swap2                     = TransactionApply(swapEvaluateTransaction, 0)
-    val swapRollback2             = TransactionUnapply(swapEvaluateTransaction, 0)
+    val deployPool                = TransactionApply(swapPoolTx, 0, 10)
+    val swap1                     = TransactionApply(swapRegisterTransaction, 0, 10)
+    val swapRollback1             = TransactionUnapply(swapRegisterTransaction, 0, 10)
+    val swap2                     = TransactionApply(swapEvaluateTransaction, 0, 10)
+    val swapRollback2             = TransactionUnapply(swapEvaluateTransaction, 0, 10)
 
     def run = for {
       result     <- events.process(NonEmptyList.of(deployPool, swap1, swapRollback1, swap1, swap2, swapRollback2, swap2))
@@ -137,7 +137,8 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
               swap2.transaction,
               swap2.timestamp,
               parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
-              swapPool.get
+              swapPool.get,
+              10
             )
             .unsafeRunSync()
             .get
@@ -148,7 +149,8 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
               swap2.transaction,
               swap2.timestamp,
               parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
-              swapPool.get
+              swapPool.get,
+              10
             )
             .unsafeRunSync()
             .get
@@ -159,7 +161,8 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
               swap2.transaction,
               swap2.timestamp,
               parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
-              swapPool.get
+              swapPool.get,
+              10
             )
             .unsafeRunSync()
             .get
@@ -172,13 +175,13 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
       val expectedPools = List(
         BlockChainEvent.Apply(swapPool.get),
         BlockChainEvent.Apply(
-          swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp)).head
+          swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10)).head
         ),
         BlockChainEvent.Unapply(
-          swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp)).head
+          swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10)).head
         ),
         BlockChainEvent.Apply(
-          swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp)).head
+          swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10)).head
         )
       )
       result._2.zip(expectedPools).foreach { case (actual, expected) =>
@@ -187,7 +190,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
 
       startPool.get shouldEqual swapPool.get
       finishPool.get shouldEqual swap2.transaction.outputs.toList
-        .flatMap(r => PoolParser.make.parse(r, swap2.timestamp))
+        .flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10))
         .head
 
       order.get shouldEqual result._1.head.event
@@ -202,10 +205,10 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     implicit val (rocks, release) = TxRocksDB.make[IO, IO]("rocks").allocated.unsafeRunSync()
     implicit val storage          = OrdersStorage.make[IO]
     val events                    = Events.make[IO]
-    val deployPool                = TransactionApply(swapPoolTx, 0)
-    val swap1                     = TransactionApply(swapRegisterTransaction, 0)
-    val swapRollback1             = TransactionUnapply(swapRegisterTransaction, 0)
-    val swap2                     = TransactionApply(swapEvaluateTransaction, 0)
+    val deployPool                = TransactionApply(swapPoolTx, 0, 10)
+    val swap1                     = TransactionApply(swapRegisterTransaction, 0, 10)
+    val swapRollback1             = TransactionUnapply(swapRegisterTransaction, 0, 10)
+    val swap2                     = TransactionApply(swapEvaluateTransaction, 0, 10)
 
     def run = for {
       _ <- events.process(NonEmptyList.of(deployPool, swap1, swapRollback1))
@@ -213,7 +216,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     } yield {
       r._1.isEmpty shouldBe true
       r._2.head.event shouldBe swap2.transaction.outputs.toList
-        .flatMap(r => PoolParser.make.parse(r, swap2.timestamp))
+        .flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10))
         .head
     }
 

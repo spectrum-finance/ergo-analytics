@@ -29,7 +29,7 @@ object PoolDB {
       pool.y,
       pool.feeNum,
       pool.timestamp,
-      pool.box.creationHeight,
+      pool.height,
       ProtocolVersion.init
     )
   }

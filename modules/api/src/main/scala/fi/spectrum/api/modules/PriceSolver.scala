@@ -3,9 +3,9 @@ package fi.spectrum.api.modules
 import cats.data.OptionT
 import cats.{FlatMap, Functor, Monad}
 import fi.spectrum.api.db.models.amm.PoolSnapshot
-import fi.spectrum.api.models.constants.{ErgoAssetClass, ErgoUnits}
 import fi.spectrum.api.models._
-import fi.spectrum.api.services.ErgRateCache
+import fi.spectrum.api.models.constants.ErgoUnits
+import fi.spectrum.api.services.ErgRate
 import fi.spectrum.core.domain.constants.ErgoAssetDecimals
 import tofu.higherKind.{Mid, RepresentableK}
 import tofu.logging.{Logging, Logs}
@@ -60,7 +60,7 @@ object PriceSolver {
       tofu.higherKind.derived.genRepresentableK
 
     def make[I[_]: Functor, F[_]: Monad](implicit
-      rates: ErgRateCache[F],
+      rates: ErgRate[F],
       cryptoSolver: CryptoPriceSolver[F],
       logs: Logs[I, F]
     ): I[FiatPriceSolver[F]] =
@@ -73,7 +73,7 @@ object PriceSolver {
         )
   }
 
-  final class ViaErgFiatSolver[F[_]: Monad](rates: ErgRateCache[F], cryptoSolver: CryptoPriceSolver[F])
+  final class ViaErgFiatSolver[F[_]: Monad](rates: ErgRate[F], cryptoSolver: CryptoPriceSolver[F])
     extends PriceSolver[F, FiatSolverType] {
 
     def convert(
@@ -85,7 +85,7 @@ object PriceSolver {
         case fiat @ FiatUnits(_) =>
           (for {
             ergEquiv <- OptionT(cryptoSolver.convert(asset, ErgoUnits, knownPools))
-            ergRate  <- OptionT(rates.rateOf(ErgoAssetClass, fiat))
+            ergRate  <- OptionT(rates.rateOf(fiat))
             fiatEquiv    = ergEquiv.value / math.pow(10, ErgoAssetDecimals - fiat.currency.decimals) * ergRate
             fiatEquivFmt = fiatEquiv.setScale(0, RoundingMode.FLOOR)
           } yield AssetEquiv(asset, fiat, fiatEquivFmt)).value
@@ -106,7 +106,7 @@ object PriceSolver {
         case CryptoUnits(units) =>
           if (asset.id != units.tokenId) {
             parsePools(knownPools.filter(p => p.lockedX.id == asset.id || p.lockedY.id == asset.id)).pure
-              .flatTap(_ => info"Convert $asset using known pools.")
+              .flatTap(_ => trace"Convert $asset using known pools.")
               .map(_.find(_.contains(units.tokenId)).map { market =>
                 val amountEquiv = BigDecimal(asset.amount) * market.priceBy(asset.id)
                 AssetEquiv(asset, target, amountEquiv)

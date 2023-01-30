@@ -50,20 +50,20 @@ object Events {
     def process(events: NonEmptyList[TransactionEvent]): F[(List[OrderEvent], List[PoolEvent])] =
       events.toList
         .traverse { next =>
-          processOrder(next.transaction, next.timestamp).flatMap { order =>
+          processOrder(next.transaction, next.timestamp, next.height).flatMap { order =>
             storage.runTransaction.use { tx =>
               def run: F[(Option[OrderEvent], Option[PoolEvent])] =
-                processPool(next.transaction, next.timestamp)
+                processPool(next.transaction, next.timestamp, next.height)
                   .flatMap { pool =>
-                    info"Run next rocks tx for pool: ${pool.map(_.box.boxId)}".flatMap { _ =>
+                    info"Run next rocks tx for pool: ${pool.map(_.box.boxId)}, ${order.map(_.order.id)}".flatMap { _ =>
                       next match {
-                        case TransactionApply(_, _) =>
+                        case TransactionApply(_, _, _) =>
                           pool.traverse(storage.insertPool) >>
                             order
                               .traverse(o => Monad[F].whenA(o.state.status.in(Registered))(storage.insertOrder(o)))
                               .void
                               .as(order.map(BlockChainEvent.Apply(_)), pool.map(BlockChainEvent.Apply(_)))
-                        case TransactionUnapply(_, _) =>
+                        case TransactionUnapply(_, _, _) =>
                           pool.traverse(p => storage.deletePool(p.box.boxId)) >>
                             order
                               .traverse(o =>
@@ -81,7 +81,7 @@ object Events {
         }
         .map(elems => elems.flatMap(_._1) -> elems.flatMap(_._2))
 
-    private def processOrder(tx: Transaction, timestamp: Long): F[Option[Processed.Any]] =
+    private def processOrder(tx: Transaction, timestamp: Long, height: Int): F[Option[Processed.Any]] =
       orderParser
         .registered(tx, timestamp)
         .orElseF {
@@ -92,7 +92,7 @@ object Events {
 
           getState.flatMap {
             case (Some(order), Some(pool)) =>
-              orderParser.evaluated(tx, timestamp, order, pool)
+              orderParser.evaluated(tx, timestamp, order, pool, height)
             case (Some(order), _) =>
               orderParser.refunded(tx, timestamp, order).someIn
             case _ => //todo arbitrage bots
@@ -100,9 +100,9 @@ object Events {
           }
         }
 
-    private def processPool(tx: Transaction, timestamp: Long): F[Option[Pool]] =
+    private def processPool(tx: Transaction, timestamp: Long, height: Int): F[Option[Pool]] =
       tx.outputs
-        .map(poolsParser.parse(_, timestamp))
+        .map(poolsParser.parse(_, timestamp, height))
         .collectFirst { case Some(p) => p }
         .pure
         .flatTap(_.traverse(pool => info"Found pool ${pool.poolId} in tx: ${tx.id} in box: ${pool.box.boxId}"))
@@ -110,12 +110,15 @@ object Events {
 
   final private class MetricsMid[F[_]: Monad](implicit metrics: Metrics[F]) extends Events[Mid[F, *]] {
 
-    def process(events: NonEmptyList[TransactionEvent]): Mid[F, (List[OrderEvent], List[PoolEvent])] =
+    def process(events: NonEmptyList[TransactionEvent]): Mid[F, (List[OrderEvent], List[PoolEvent])] = {
+      val apply   = events.collect { case t: TransactionApply => t }.length
+      val unapply = events.collect { case t: TransactionUnapply => t }.length
       for {
-        _ <- metrics.sendCount("tx.apply", events.collect { case t: TransactionApply => t }.length.toDouble)
-        _ <- metrics.sendCount("tx.unapply", events.collect { case t: TransactionUnapply => t }.length.toDouble)
+        _ <- Monad[F].whenA(apply > 0)(metrics.sendCount("tx.apply", apply.toDouble))
+        _ <- Monad[F].whenA(unapply > 0)(metrics.sendCount("tx.unapply", unapply.toDouble))
         r <- _
       } yield r
+    }
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Events[Mid[F, *]] {

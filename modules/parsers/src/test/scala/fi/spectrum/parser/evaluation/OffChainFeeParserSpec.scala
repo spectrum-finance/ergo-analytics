@@ -18,7 +18,7 @@ class OffChainFeeParserSpec extends AnyPropSpec with Matchers with CatsPlatform 
   property("Parse off-chain fee") {
     val order =
       swapRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
-    val pool = swapEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0)).collectFirst { case Some(v) => v }.get
+    val pool = swapEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0, 10)).collectFirst { case Some(v) => v }.get
     val fee  = feeParser.parse(swapEvaluateTransaction.outputs.toList, order, pool.poolId).get
     fee shouldEqual expectedFee
   }
