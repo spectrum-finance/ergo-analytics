@@ -29,6 +29,7 @@ import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import fi.spectrum.streaming.kafka.serde.json._
 import fi.spectrum.streaming.kafka.serde.string._
 import fi.spectrum.streaming.kafka.{BlocksConsumer, Consumer, MakeKafkaConsumer}
+import fs2.Chunk
 import fs2.kafka.RecordDeserializer
 import glass.Contains
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
@@ -97,7 +98,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(ergProcess: ErgPriceProcess[S])          <- ErgPriceProcess.make[I, F, S].toResource
       implicit0(tokens: VerifiedTokens[F])               <- VerifiedTokens.make[I, F].toResource
       implicit0(tokensProcess: VerifiedTokensProcess[S]) <- VerifiedTokensProcess.make[I, F, S].toResource
-      implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S].toResource
+      implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S, Chunk].toResource
       implicit0(cryptoSolver: CryptoPriceSolver[F])      <- CryptoPriceSolver.make[I, F].toResource
       implicit0(fiatSolver: FiatPriceSolver[F])          <- FiatPriceSolver.make[I, F].toResource
       implicit0(stats: AmmStats[F])                      = AmmStats.make[F, xa.DB]

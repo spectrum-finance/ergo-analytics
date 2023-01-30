@@ -21,7 +21,8 @@ final case class ConfigBundle(
   blockConsumer: ConsumerConfig,
   graphite: GraphiteSettings,
   @promote network: NetworkConfig,
-  @promote kafka: KafkaConfig
+  @promote kafka: KafkaConfig,
+  @promote blocks: BlocksProcessConfig
 )
 
 object ConfigBundle extends WithContext.Companion[ConfigBundle] with ConfigBundleCompanion[ConfigBundle]
