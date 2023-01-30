@@ -6,8 +6,9 @@ import fi.spectrum.core.domain.TokenId
 import fi.spectrum.api.models.Ticker
 import fi.spectrum.api.v1.models.amm.types.RealPrice
 import sttp.tapir.Schema
+import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder)
+@derive(encoder, decoder, loggable)
 final case class PoolSummary(
   baseId: TokenId,
   baseName: Ticker,

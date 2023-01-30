@@ -106,7 +106,7 @@ object PriceSolver {
         case CryptoUnits(units) =>
           if (asset.id != units.tokenId) {
             parsePools(knownPools.filter(p => p.lockedX.id == asset.id || p.lockedY.id == asset.id)).pure
-              .flatTap(_ => info"Convert $asset using known pools.")
+              .flatTap(_ => trace"Convert $asset using known pools.")
               .map(_.find(_.contains(units.tokenId)).map { market =>
                 val amountEquiv = BigDecimal(asset.amount) * market.priceBy(asset.id)
                 AssetEquiv(asset, target, amountEquiv)

@@ -88,12 +88,12 @@ object Cache {
   final class CacheTracing[F[_]: Monad: Logging] extends Cache[Mid[F, *]] {
 
     def set[K: Codec: Loggable, V: Codec: Loggable](key: K, value: V): Mid[F, Unit] =
-      _ <* trace"set(key=$key, value=$value) -> ()"
+      _ <* info"set -> success"
 
     def get[K: Codec: Loggable, V: Codec: Loggable](key: K): Mid[F, Option[V]] =
-      _ >>= (r => trace"get(key=$key) -> $r" as r)
+      _ >>= (r => info"get -> success" as r)
 
     def flushAll: Mid[F, Unit] =
-      _ <* trace"flushAll -> ()"
+      _ <* info"flushAll -> ()"
   }
 }

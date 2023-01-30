@@ -11,12 +11,12 @@ import fi.spectrum.parser.domain.AmmType
 /** Parses any pool no matter what version or type it has.
   */
 trait PoolParser { self =>
-  def parse(box: Output, timestamp: Long): Option[Pool]
+  def parse(box: Output, timestamp: Long, height: Int): Option[Pool]
 
-  def or(that: => PoolParser): PoolParser = (box: Output, timestamp: Long) =>
-    self.parse(box, timestamp) match {
+  def or(that: => PoolParser): PoolParser = (box: Output, timestamp: Long, height: Int) =>
+    self.parse(box, timestamp, height) match {
       case r @ Some(_) => r
-      case None        => that.parse(box, timestamp)
+      case None        => that.parse(box, timestamp, height)
     }
 }
 
@@ -26,6 +26,6 @@ object PoolParser {
 
   private def ammPoolParser: PoolParser = {
     val poolParser: AmmPoolParser[Version, AmmType] = AmmPoolParser.make
-    (box: Output, timestamp: Long) => poolParser.pool(box, timestamp)
+    (box: Output, timestamp: Long, height: Int) => poolParser.pool(box, timestamp, height)
   }
 }

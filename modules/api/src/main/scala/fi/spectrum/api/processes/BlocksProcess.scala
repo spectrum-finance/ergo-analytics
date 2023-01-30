@@ -64,7 +64,9 @@ object BlocksProcess {
                      caching.invalidateAll
                    )
               _ <- batch.toList.lastOption.traverse(_.commit)
-              _ <- info"Block ${batch.toList.map(_.message.map(_.id))} processed successfully"
+              blocks       = batch.toList.map(_.message.map(_.id))
+              latestHeight = batch.toList.lastOption.flatMap(_.message).map(_.height)
+              _ <- info"Block $blocks processed successfully. height is: $latestHeight. Height on app start is: $height"
             } yield ()
           }
       }

@@ -15,7 +15,7 @@ class N2TAmmPoolSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse n2t pool v1 contract") {
     val box                      = N2T.output
-    val poolResult: Pool.AmmPool = parser.pool(box, N2T.pool.timestamp).get
+    val poolResult: Pool.AmmPool = parser.pool(box, N2T.pool.timestamp, 10).get
     poolResult shouldEqual N2T.pool
     (poolResult shouldEqual N2T.pool)
   }

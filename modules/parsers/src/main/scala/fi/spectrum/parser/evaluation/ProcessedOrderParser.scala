@@ -22,7 +22,13 @@ sealed trait ProcessedOrderParser[F[_]] {
 
   def registered(tx: Transaction, timestamp: Long): F[Option[Processed[Order]]]
 
-  def evaluated(tx: Transaction, timestamp: Long, order: Processed.Any, pool: Pool): F[Option[Processed[Order]]]
+  def evaluated(
+    tx: Transaction,
+    timestamp: Long,
+    order: Processed.Any,
+    pool: Pool,
+    height: Int
+  ): F[Option[Processed[Order]]]
 
   def refunded(tx: Transaction, timestamp: Long, order: Processed.Any): F[Processed[Order]]
 
@@ -59,11 +65,17 @@ object ProcessedOrderParser {
         .map(Processed.make(OrderState(tx.id, timestamp, OrderStatus.Registered), _))
         .pure
 
-    def evaluated(tx: Transaction, timestamp: Long, order: Processed.Any, pool: Pool): F[Option[Processed[Order]]] =
+    def evaluated(
+      tx: Transaction,
+      timestamp: Long,
+      order: Processed.Any,
+      pool: Pool,
+      height: Int
+    ): F[Option[Processed[Order]]] =
       tx.outputs.toList
-        .map(poolParser.parse(_, timestamp))
+        .map(poolParser.parse(_, timestamp, height))
         .collectFirst { case Some(v) => v }
-        .map { _ =>
+        .map { _ => // we have to have pool in outputs if the order is evaluated
           order
             .copy(
               state       = OrderState(tx.id, timestamp, OrderStatus.Evaluated),
@@ -88,7 +100,13 @@ object ProcessedOrderParser {
         _ <- info"registered(${tx.id}) -> ${r.map(_.order.id)}"
       } yield r
 
-    def evaluated(tx: Transaction, timestamp: Long, order: Any, pool: Pool): Mid[F, Option[Processed[Order]]] =
+    def evaluated(
+      tx: Transaction,
+      timestamp: Long,
+      order: Any,
+      pool: Pool,
+      height: Int
+    ): Mid[F, Option[Processed[Order]]] =
       for {
         _ <- info"evaluated(${tx.id})"
         r <- _

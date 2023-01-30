@@ -11,7 +11,7 @@ sealed trait KafkaTxEvent {
 object KafkaTxEvent {
 
   @derive(encoder, decoder)
-  final case class AppliedEvent(timestamp: Long, tx: String) extends KafkaTxEvent
+  final case class AppliedEvent(timestamp: Long, tx: String, height: Int) extends KafkaTxEvent
 
   @derive(encoder, decoder)
   final case class UnappliedEvent(tx: String) extends KafkaTxEvent
