@@ -89,11 +89,7 @@ object OrdersStorage {
         .map(mkPoolKey)
         .traverse(rocks.get[String, String])
         .map(_.flatten)
-        .flatMap { pools =>
-          pools.map(decode[Pool](_)).traverse { either =>
-            info"Pool decode result for ids ${ids} is: ${either.toString}" as either
-          }
-        }
+        .map(_.map(decode[Pool](_)))
         .map(_.flatMap(_.toOption).headOption)
 
     def deletePool(id: BoxId): F[Unit] =
@@ -115,7 +111,7 @@ object OrdersStorage {
       for {
         _ <- trace"getOrder($id)"
         r <- _
-        _ <- trace"getOrder($id) -> $r"
+        _ <- trace"getOrder($id) -> ${r.map(_.order.id)}"
       } yield r
 
     def deleteOrder(orderId: OrderId): Mid[F, Unit] =
@@ -136,7 +132,7 @@ object OrdersStorage {
       for {
         _ <- info"getPool($id)"
         r <- _
-        _ <- info"getPool($id) -> $r"
+        _ <- info"getPool($id) -> ${r.map(_.poolId)}"
       } yield r
 
     def deletePool(id: BoxId): Mid[F, Unit] =

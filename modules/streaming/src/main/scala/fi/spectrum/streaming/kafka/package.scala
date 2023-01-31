@@ -1,8 +1,7 @@
 package fi.spectrum.streaming
 
 import fi.spectrum.core.domain.{BlockId, TxId}
-import fi.spectrum.streaming.domain.{BlockEvent, TransactionEvent}
-import fi.spectrum.streaming.kafka.models.MempoolEvent
+import fi.spectrum.streaming.domain.{BlockEvent, MempoolEvent, TransactionEvent}
 import fi.spectrum.streaming.kafka.types.KafkaOffset
 
 package object kafka {

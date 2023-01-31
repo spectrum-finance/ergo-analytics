@@ -6,7 +6,7 @@ import cats.effect.unsafe.implicits.global
 import fi.spectrum.core.domain.TokenId
 import fi.spectrum.indexer.db.Indexer
 import fi.spectrum.indexer.db.local.storage.OrdersStorage
-import fi.spectrum.indexer.mocks.MetricsMock
+import fi.spectrum.indexer.mocks.{MempoolMock, MetricsMock, RedisCacheMock}
 import fi.spectrum.indexer.models.BlockChainEvent
 import fi.spectrum.parser.{CatsPlatform, PoolParser}
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
@@ -21,6 +21,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
 
   implicit val parser  = ProcessedOrderParser.make[IO](TokenId.unsafeFromString(""))
   implicit val metrics = MetricsMock.make[IO]
+  implicit val mempool = MempoolMock.make[IO]
 
   "Events service" should "keep valid order state after rollback" in {
     implicit val (rocks, release) = TxRocksDB.make[IO, IO]("rocks").allocated.unsafeRunSync()

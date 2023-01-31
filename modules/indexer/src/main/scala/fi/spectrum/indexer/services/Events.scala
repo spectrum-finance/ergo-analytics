@@ -36,6 +36,7 @@ object Events {
     orderParser: ProcessedOrderParser[F],
     poolsParser: PoolParser,
     storage: OrderStorageTransactional[F],
+    mempool: Mempool[F],
     metrics: Metrics[F],
     logs: Logging.Make[F]
   ): Events[F] =
@@ -44,7 +45,8 @@ object Events {
   final private class Live[F[_]: MonadCancel[*[_], Throwable]: Logging](implicit
     orderParser: ProcessedOrderParser[F],
     poolsParser: PoolParser,
-    storage: OrderStorageTransactional[F]
+    storage: OrderStorageTransactional[F],
+    mempool: Mempool[F]
   ) extends Events[F] {
 
     def process(events: NonEmptyList[TransactionEvent]): F[(List[OrderEvent], List[PoolEvent])] =
@@ -55,26 +57,24 @@ object Events {
               def run: F[(Option[OrderEvent], Option[PoolEvent])] =
                 processPool(next.transaction, next.timestamp, next.height)
                   .flatMap { pool =>
-                    info"Run next rocks tx for pool: ${pool.map(_.box.boxId)}, ${order.map(_.order.id)}".flatMap { _ =>
-                      next match {
-                        case TransactionApply(_, _, _) =>
+                    next match {
+                      case TransactionApply(_, _, _) =>
+                        mempool.del(pool, order) *>
                           pool.traverse(storage.insertPool) >>
-                            order
-                              .traverse(o => Monad[F].whenA(o.state.status.in(Registered))(storage.insertOrder(o)))
-                              .void
-                              .as(order.map(BlockChainEvent.Apply(_)), pool.map(BlockChainEvent.Apply(_)))
-                        case TransactionUnapply(_, _, _) =>
-                          pool.traverse(p => storage.deletePool(p.box.boxId)) >>
-                            order
-                              .traverse(o =>
-                                Monad[F].whenA(o.state.status.in(Registered))(storage.deleteOrder(o.order.id))
-                              )
-                              .void
-                              .as(order.map(BlockChainEvent.Unapply(_)), pool.map(BlockChainEvent.Unapply(_)))
-                      }
+                          order
+                            .traverse(o => Monad[F].whenA(o.state.status.in(Registered))(storage.insertOrder(o)))
+                            .void
+                            .as(order.map(BlockChainEvent.Apply(_)), pool.map(BlockChainEvent.Apply(_)))
+                      case TransactionUnapply(_, _, _) =>
+                        pool.traverse(p => storage.deletePool(p.box.boxId)) >>
+                          order
+                            .traverse(o =>
+                              Monad[F].whenA(o.state.status.in(Registered))(storage.deleteOrder(o.order.id))
+                            )
+                            .void
+                            .as(order.map(BlockChainEvent.Unapply(_)), pool.map(BlockChainEvent.Unapply(_)))
                     }
                   }
-              info"Run next rocks tx for order: ${order.map(_.order.id)}" >>
               run.flatTap(_ => tx.commit)
             }
           }

@@ -22,7 +22,7 @@ final case class ConfigBundle(
   @promote mempool: MempoolConfig,
   @promote network: NetworkConfig,
   txConsumer: ConsumerConfig,
-  mempoolTxConsumer: ConsumerConfig,
+  mempoolConsumer: ConsumerConfig,
   blocksConsumer: ConsumerConfig,
   @promote kafka: KafkaConfig,
   @promote redis: RedisConfig,
