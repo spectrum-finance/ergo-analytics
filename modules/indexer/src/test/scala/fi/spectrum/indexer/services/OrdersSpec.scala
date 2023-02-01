@@ -11,7 +11,7 @@ import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.indexer.db.models.{DepositDB, SwapDB, TxInfo}
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.{Indexer, PGContainer}
-import fi.spectrum.indexer.mocks.{MetricsMock, OrdersMempoolMock}
+import fi.spectrum.indexer.mocks.MetricsMock
 import fi.spectrum.indexer.models.BlockChainEvent
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import org.scalatest.flatspec.AnyFlatSpec
@@ -23,10 +23,9 @@ class OrdersSpec extends AnyFlatSpec with Matchers with PGContainer with Indexer
 
   "Orders service" should "process forks correct" in {
     implicit val repo: PersistBundle[ConnectionIO] = PersistBundle.make[ConnectionIO]
-    implicit val mempool                           = OrdersMempoolMock.mock[IO]
     implicit val metrics                           = MetricsMock.make[ConnectionIO]
 
-    val parser = ProcessedOrderParser.make[IO](TokenId.unsafeFromString(""))
+    val parser = ProcessedOrderParser.make[IO]
 
     val service = Orders.make[IO, ConnectionIO]
 

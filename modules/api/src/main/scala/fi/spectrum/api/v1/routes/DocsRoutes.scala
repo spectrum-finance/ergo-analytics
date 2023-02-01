@@ -7,8 +7,8 @@ import cats.syntax.either._
 import cats.syntax.option._
 import cats.syntax.semigroupk._
 import fi.spectrum.api.configs.RequestConfig
-import fi.spectrum.api.v1.endpoints.{AmmStatsEndpoints, DocsEndpoints, VersionPrefix}
-import fi.spectrum.api.v1.http.HttpError
+import fi.spectrum.api.v1.endpoints.{AmmStatsEndpoints, DocsEndpoints}
+import fi.spectrum.common.http.{HttpError, VersionPrefix}
 import org.http4s.HttpRoutes
 import sttp.apispec.Tag
 import sttp.tapir.apispec.{Tag => TapirTag}

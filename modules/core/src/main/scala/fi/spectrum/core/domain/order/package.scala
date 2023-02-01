@@ -15,8 +15,9 @@ package object order {
   @newtype final case class OrderId(value: String)
 
   object OrderId {
-    implicit val get: Get[OrderId] = deriving
-    implicit val put: Put[OrderId] = deriving
+    implicit val get: Get[OrderId]       = deriving
+    implicit val put: Put[OrderId]       = deriving
+    implicit val schema: Schema[OrderId] = deriving
 
     implicit def codec: scodec.Codec[OrderId] =
       scodec.codecs

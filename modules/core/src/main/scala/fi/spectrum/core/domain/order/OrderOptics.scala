@@ -1,13 +1,14 @@
 package fi.spectrum.core.domain.order
 
 import fi.spectrum.core.domain.AssetAmount
+import fi.spectrum.core.domain.analytics.OrderEvaluation.DepositEvaluation
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.Order.Deposit._
 import fi.spectrum.core.domain.order.Order.Lock._
 import fi.spectrum.core.domain.order.Order.Redeem._
 import fi.spectrum.core.domain.order.Order.Swap._
 import glass.Contains
-import glass.classic.{Lens, Optional}
+import glass.classic.{Lens, Optional, Prism}
 import glass.macros.{GenContains, GenSubset}
 
 object OrderOptics {
@@ -26,6 +27,8 @@ object OrderOptics {
   val redeemV3       = redeemPrism >> GenSubset[Redeem, RedeemV3]
   val redeemLegacyV1 = redeemPrism >> GenSubset[Redeem, RedeemLegacyV1]
 
+  val lockV1 = lockPrism >> GenSubset[Lock, LockV1]
+
   implicit val optionalSwapQuote: Optional[Order, AssetAmount] = {
     (swapV1 >> GenContains[SwapV1](_.params.minQuote)) orElse
     (swapV2 >> GenContains[SwapV2](_.params.minQuote)) orElse
@@ -38,6 +41,19 @@ object OrderOptics {
     (depositPrism >> GenSubset[Deposit, DepositV3] >> GenContains[DepositV3](_.params)) orElse
     (depositPrism >> GenSubset[Deposit, DepositLegacyV1] >> GenContains[DepositLegacyV1](_.params)) orElse
     (depositPrism >> GenSubset[Deposit, DepositLegacyV2] >> GenContains[DepositLegacyV2](_.params))
+  }
+
+  implicit val optionalRedeemParams: Optional[Order, RedeemParams] = {
+    (redeemPrism >> GenSubset[Redeem, RedeemLegacyV1] >> GenContains[RedeemLegacyV1](_.params)) orElse
+    (redeemPrism >> GenSubset[Redeem, RedeemV1] >> GenContains[RedeemV1](_.params)) orElse
+    (redeemPrism >> GenSubset[Redeem, RedeemV3] >> GenContains[RedeemV3](_.params))
+  }
+
+  implicit val optionalSwapParams: Optional[Order, SwapParams] = {
+    (swapPrism >> GenSubset[Swap, SwapLegacyV1] >> GenContains[SwapLegacyV1](_.params)) orElse
+    (swapPrism >> GenSubset[Swap, SwapV1] >> GenContains[SwapV1](_.params)) orElse
+    (swapPrism >> GenSubset[Swap, SwapV2] >> GenContains[SwapV2](_.params)) orElse
+    (swapPrism >> GenSubset[Swap, SwapV3] >> GenContains[SwapV3](_.params))
   }
 
   implicit val lensOrderIdLock: Lens[LockV1, OrderId] = Contains[LockV1, OrderId]

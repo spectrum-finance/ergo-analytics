@@ -1,6 +1,6 @@
 package fi.spectrum.api.v1.endpoints
 
-import fi.spectrum.api.v1.http.HttpError
+import fi.spectrum.common.http.{baseEndpoint, HttpError}
 import sttp.tapir._
 
 object DocsEndpoints {

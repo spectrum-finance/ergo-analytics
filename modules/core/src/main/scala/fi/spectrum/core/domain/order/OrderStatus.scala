@@ -44,7 +44,7 @@ object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
 
   implicit val show: Show[OrderStatus] = _.entryName
 
-  implicit val loggable: Loggable[OrderStatus] = Loggable.show
+  implicit val loggableL: Loggable[OrderStatus] = Loggable.show
 
   def mapToMempool(order: OrderStatus): OrderStatus =
     order match {

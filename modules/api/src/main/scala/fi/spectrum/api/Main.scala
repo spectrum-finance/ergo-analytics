@@ -90,6 +90,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(pools: Pools[xa.DB])                     <- Pools.make[I, xa.DB].toResource
       implicit0(orders: Orders[xa.DB])                   <- Orders.make[I, xa.DB].toResource
       implicit0(locks: Locks[xa.DB])                     <- Locks.make[I, xa.DB].toResource
+      implicit0(history: History[xa.DB])                 <- History.make[I, xa.DB].toResource
       implicit0(redis: Plain[F])                         <- mkRedis[Array[Byte], Array[Byte], F].mapK(iso.tof)
       implicit0(cache: Cache[F])                         <- Cache.make[I, F].toResource
       implicit0(httpRespCache: HttpResponseCaching[F])   <- HttpResponseCaching.make[I, F].toResource
@@ -106,7 +107,9 @@ object Main extends EnvApp[AppContext] {
       implicit0(locks: LqLocks[F])                       = LqLocks.make[F, xa.DB]
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
-      implicit0(stats: AmmStats[F]) <- AmmStats.make[I, F, xa.DB].toResource
+      implicit0(stats: AmmStats[F])     <- AmmStats.make[I, F, xa.DB].toResource
+      implicit0(mempool: MempoolApi[F]) <- MempoolApi.make[I, F, xa.DB].toResource
+
       serverProc = HttpServer.make[I, F](config.http, config.request)
     } yield List(
       ergProcess.run,
