@@ -1,6 +1,7 @@
 package fi.spectrum.api.v1
 
-import fi.spectrum.api.v1.endpoints.models.{HeightWindow, TimeWindow}
+import cats.implicits.catsSyntaxOptionId
+import fi.spectrum.api.v1.endpoints.models.{HeightWindow, Paging, TimeWindow}
 import fi.spectrum.api.v1.http.HttpError
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
@@ -25,6 +26,15 @@ package object endpoints {
           oneOfDefaultVariant(jsonBody[HttpError.Unknown].description("unknown"))
         )
       )
+
+  def paging: EndpointInput[Paging] =
+    (query[Option[Int]]("offset").validateOption(Validator.min(0)) and
+      query[Option[Int]]("limit")
+        .validateOption(Validator.min(1))
+        .validateOption(Validator.max(Int.MaxValue)))
+      .map { input =>
+        Paging(input._1.getOrElse(0), input._2.getOrElse(20))
+      } { case Paging(offset, limit) => offset.some -> limit.some }
 
   def timeWindow: EndpointInput[TimeWindow] =
     (query[Option[Long]]("from")

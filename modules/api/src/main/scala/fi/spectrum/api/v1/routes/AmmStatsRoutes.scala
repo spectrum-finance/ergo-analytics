@@ -35,7 +35,8 @@ final class AmmStatsRoutes[
     getDepositTxsR <+>
     getPoolLocksR <+>
     convertToFiatR <+>
-    getAmmMarketsR
+    getAmmMarketsR <+>
+    getUsersOrderHistoryR
 
   def platformStatsVerifiedR: HttpRoutes[F] =
     interpreter
@@ -91,6 +92,11 @@ final class AmmStatsRoutes[
 
   def getAmmMarketsR: HttpRoutes[F] = interpreter.toRoutes(getAmmMarketsE.serverLogic { tw =>
     stats.getMarkets(tw).adaptThrowable.value
+  })
+
+  def getUsersOrderHistoryR: HttpRoutes[F] = interpreter.toRoutes(getUsersOrderHistory.serverLogic {
+    case (paging, tw, req) =>
+      stats.getOrderHistory(paging, tw, req).adaptThrowable.value
   })
 }
 

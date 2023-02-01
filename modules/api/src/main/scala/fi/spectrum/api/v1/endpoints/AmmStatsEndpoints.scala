@@ -3,6 +3,7 @@ package fi.spectrum.api.v1.endpoints
 import fi.spectrum.api.configs.RequestConfig
 import fi.spectrum.core.domain.order.PoolId
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
+import fi.spectrum.api.v1.endpoints.models.Paging
 import fi.spectrum.api.v1.http.HttpError
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.locks.LiquidityLockInfo
@@ -27,7 +28,8 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
     getSwapTxsE,
     getDepositTxsE,
     getPoolLocksE,
-    convertToFiatE
+    convertToFiatE,
+    getUsersOrderHistory
   )
 
   def platformStatsVerifiedE: Endpoint[Unit, TimeWindow, HttpError, PlatformStats, Any] =
@@ -145,4 +147,15 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .tag(Group)
       .name("Crypto/Fiat conversion")
       .description("Convert crypto units to fiat")
+
+  def getUsersOrderHistory: Endpoint[Unit, (Paging, TimeWindow, OrdersRequest), HttpError, List[Order], Any] =
+    baseEndpoint.post
+      .in(PathPrefix / "orders")
+      .in(paging)
+      .in(timeWindow)
+      .in(jsonBody[OrdersRequest])
+      .out(jsonBody[List[Order]])
+      .tag(Group)
+      .name("Users orders")
+      .description("Get users order history")
 }
