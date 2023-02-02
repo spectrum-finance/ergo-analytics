@@ -7,17 +7,18 @@ import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderOptics._
 import fi.spectrum.core.domain.order.{Order, Redeemer}
 import fi.spectrum.core.domain.pool.Pool
+import fi.spectrum.core.domain.pool.Pool.AmmPool
 import fi.spectrum.core.domain.pool.PoolOptics._
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{AssetAmount, SErgoTree, TokenId}
 import glass.Label
-import glass.classic.Optional
+import glass.classic.{Optional, Prism}
 
 /** Parse order evaluation result
   */
 final class OrderEvaluationParser {
 
-  def parse(order: Order, outputs: List[Output], pool: Pool): Option[OrderEvaluation] = {
+  def parse(order: Order, outputs: List[Output], pool: Pool, nextPool: Pool): Option[OrderEvaluation] = {
     val redeemer = order.redeemer match {
       case Redeemer.ErgoTreeRedeemer(value)  => value
       case Redeemer.PublicKeyRedeemer(value) => value.ergoTree
@@ -25,7 +26,7 @@ final class OrderEvaluationParser {
     outputs
       .map { output =>
         order match {
-          case _: Deposit => deposit(redeemer, output, pool)
+          case _: Deposit => deposit(redeemer, output, pool, nextPool)
           case _: Redeem  => redeem(redeemer, output, pool)
           case _: Swap    => swap(redeemer, order, output)
           case _: Lock    => none
@@ -64,14 +65,17 @@ final class OrderEvaluationParser {
       case _ => none
     }
 
-  def deposit(redeemer: SErgoTree, output: Output, pool: Pool): Option[DepositEvaluation] =
-    if (output.ergoTree == redeemer)
-      Optional[Pool, TokenId].getOption(pool) match {
-        case Some(poolLP) =>
-          output.assets.find(_.tokenId == poolLP).map(AssetAmount.fromBoxAsset).map(DepositEvaluation.apply)
-        case None => none
-      }
-    else none
+  def deposit(redeemer: SErgoTree, output: Output, pool: Pool, nextPool: Pool): Option[DepositEvaluation] =
+    for {
+      poolLp   <- Optional[Pool, TokenId].getOption(pool) if output.ergoTree == redeemer
+      poolPrev <- Prism[Pool, AmmPool].getOption(pool)
+      poolNext <- Prism[Pool, AmmPool].getOption(nextPool)
+      lp       <- output.assets.find(_.tokenId == poolLp).map(AssetAmount.fromBoxAsset)
+    } yield {
+      val actualX = poolNext.x.amount - poolPrev.x.amount
+      val actualY = poolNext.y.amount - poolPrev.y.amount
+      DepositEvaluation(lp, actualX, actualY)
+    }
 
 }
 

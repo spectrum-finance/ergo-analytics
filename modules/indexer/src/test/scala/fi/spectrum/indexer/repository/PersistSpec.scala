@@ -35,7 +35,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   val poolsParser                      = PoolParser.make
 
   "Amm pool" should "work correct" in {
-    val pool: Pool = redeemPool.get
+    val pool: Pool   = redeemPool.get
     val expectedPool = implicitly[ToDB[Pool, PoolDB]].toDB(pool).copy(height = 751721)
 
     def run = for {
@@ -118,7 +118,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
       expected1 shouldEqual register1Expected
       expected2 shouldEqual register2Expected
       expected3 shouldEqual evalExpected.copy(
-        registeredTx = Some(TxInfo(register.state.txId, register.state.timestamp)),
+        registeredTx = Some(TxInfo(register.state.txId, register.state.timestamp))
       )
 
       expected4 shouldEqual register2Expected.copy(refundedTx = Some(TxInfo(refund.state.txId, refund.state.timestamp)))
@@ -194,8 +194,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
       insertRegister1 <- repo.swaps.insert(register2).trans
       resultRegister  <- sql"select * from swaps where order_id=${register.order.id}".query[SwapDB].unique.trans
       resultRegister2 <- sql"select * from swaps where order_id=${register2.order.id}".query[SwapDB].unique.trans
-      insertExecuted <- repo.swaps.insert(executed).trans
-      resultExecuted <- sql"select * from swaps where order_id=${executed.order.id}".query[SwapDB].unique.trans
+      insertExecuted  <- repo.swaps.insert(executed).trans
+      resultExecuted  <- sql"select * from swaps where order_id=${executed.order.id}".query[SwapDB].unique.trans
       expectedRefunded = resultRegister2.copy(refundedTx = Some(TxInfo(refunded.state.txId, refunded.state.timestamp)))
       insertRefunded <- repo.swaps.insert(refunded).trans
       resultRefunded <- sql"select * from swaps where order_id=${refunded.order.id}".query[SwapDB].unique.trans

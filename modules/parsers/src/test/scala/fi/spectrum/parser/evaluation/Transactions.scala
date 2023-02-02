@@ -2036,7 +2036,7 @@ object Transactions {
     AssetAmount(
       TokenId.unsafeFromString("fa6326a26334f5e933b96470b53b45083374f71912b0d7597f00c2c7ebeb5da6"),
       652417
-    )
+    ), 10, 11
   )
 
   def depositPool = PoolParser.make.parse(

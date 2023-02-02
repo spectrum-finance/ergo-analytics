@@ -28,6 +28,8 @@ final class DepositRepository
     "input_amount_y",
     "output_id_lp",
     "output_amount_lp",
+    "actual_input_amount_x",
+    "actual_input_amount_y",
     "dex_fee",
     "fee_type",
     "redeemer",
@@ -48,7 +50,8 @@ final class DepositRepository
     Update[UpdateEvaluatedTx[DepositEvaluation]](
       s"""
          |update $tableName
-         |set $executed=?, $executedTs=?, pool_state_id=?, output_id_lp=?, output_amount_lp=?
+         |set $executed=?, $executedTs=?, pool_state_id=?, output_id_lp=?, output_amount_lp=?,
+         |actual_input_amount_x=?, actual_input_amount_y=?
          |where order_id=?""".stripMargin
     )
       .toUpdate0(update)
@@ -58,7 +61,8 @@ final class DepositRepository
     Update[OrderId](
       s"""
          |update $tableName
-         |set $executed=null, $executedTs=null, pool_state_id=null,output_id_lp=null,output_amount_lp=null
+         |set $executed=null, $executedTs=null, pool_state_id=null,output_id_lp=null,output_amount_lp=null,
+         |actual_input_amount_x=null, actual_input_amount_y=null
          |where order_id=?""".stripMargin
     )
       .toUpdate0(delete)

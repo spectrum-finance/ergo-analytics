@@ -9,6 +9,7 @@ import tofu.logging.derivation.loggable
 
 @derive(encoder, decoder, loggable)
 sealed trait OrderEvaluation { self =>
+
   def widen[O <: OrderEvaluation](implicit prism: Prism[OrderEvaluation, O]): Option[O] =
     prism.getOption(self)
 }
@@ -19,7 +20,8 @@ object OrderEvaluation {
   final case class SwapEvaluation(output: AssetAmount) extends OrderEvaluation
 
   @derive(encoder, decoder, loggable)
-  final case class DepositEvaluation(outputLP: AssetAmount) extends OrderEvaluation
+  final case class DepositEvaluation(outputLP: AssetAmount, actualX: Long, actualY: Long)
+    extends OrderEvaluation
 
   @derive(encoder, decoder, loggable)
   final case class RedeemEvaluation(outputX: AssetAmount, outputY: AssetAmount) extends OrderEvaluation
