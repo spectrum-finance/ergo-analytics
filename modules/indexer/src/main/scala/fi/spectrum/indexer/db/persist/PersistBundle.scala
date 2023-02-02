@@ -3,7 +3,7 @@ package fi.spectrum.indexer.db.persist
 import cats.FlatMap
 import fi.spectrum.core.domain.analytics.OrderEvaluation._
 import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
-import fi.spectrum.core.domain.analytics.{OffChainFee, Processed}
+import fi.spectrum.core.domain.analytics.{OffChainFee, OrderEvaluation, Processed}
 import fi.spectrum.core.domain.order.OrderOptics._
 import fi.spectrum.core.domain.order.{Order, OrderId}
 import fi.spectrum.core.domain.pool.Pool
@@ -39,7 +39,7 @@ object PersistBundle {
       Persist.makeUpdatable[D, Order.Swap, SwapEvaluation, SwapDB],
       Persist.makeUpdatable[D, Order.Deposit, DepositEvaluation, DepositDB],
       Persist.makeUpdatable[D, Order.Redeem, RedeemEvaluation, RedeemDB],
-      Persist.makeNonUpdatable[D, Processed.Any, Order.Lock, LockDB, OrderId],
+      Persist.makeUpdatable[D, Order.Lock, OrderEvaluation, LockDB],
       Persist.makeNonUpdatable[D, Processed.Any, OffChainFee, OffChainFeeDB, OrderId],
       Persist.makeNonUpdatable[D, Pool, AmmPool, PoolDB, BoxId],
       Persist.makeNonUpdatable[D, Block, Block, BlockDB, BlockId]

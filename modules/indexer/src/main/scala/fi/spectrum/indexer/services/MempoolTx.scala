@@ -6,6 +6,7 @@ import cats.syntax.option._
 import cats.syntax.traverse._
 import derevo.derive
 import fi.spectrum.core.domain.analytics.Processed
+import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.transaction.Transaction
 import fi.spectrum.graphite.Metrics
@@ -62,6 +63,14 @@ object MempoolTx {
     private def processOrder(tx: Transaction, timestamp: Long): F[Option[Processed.Any]] =
       orderParser
         .registered(tx, timestamp)
+        .semiflatMap {
+          case lock @ Processed(order: LockV1, _, _, _, _) =>
+            val ids = tx.inputs.toList
+            mempool.getOrder(ids).orElseF(storage.getOrder(ids)).flatMap { maybeOrder =>
+              orderParser.reLock(tx, lock.widen(order), maybeOrder.flatMap(_.wined[LockV1]))
+            }
+          case order => order.pure
+        }
         .orElseF {
           val ids = tx.inputs.toList
           def getState: F[(Option[Processed.Any], Option[Pool])] = for {
@@ -72,6 +81,8 @@ object MempoolTx {
           getState.flatMap {
             case (Some(order), Some(pool)) =>
               orderParser.evaluated(tx, timestamp, order, pool, 0)
+            case (Some(lock @ Processed(order: LockV1, _, _, _, _)), _) =>
+              orderParser.withdraw(tx, timestamp, lock.widen(order)).someIn
             case (Some(order), _) =>
               orderParser.refunded(tx, timestamp, order).someIn
             case _ =>

@@ -1,17 +1,18 @@
 package fi.spectrum.indexer.db.persist
 
 import cats.FlatMap
-import cats.syntax.applicative._
+import tofu.syntax.monadic._
 import cats.syntax.traverse._
 import cats.tagless.ApplyK.ops.toAllApplyKOps
 import doobie.ConnectionIO
 import doobie.util.Write
 import doobie.util.log.LogHandler
+import fi.spectrum.core.domain.analytics.OrderEvaluation.LockEvaluation
 import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed}
 import fi.spectrum.core.domain.order.{Order, OrderId, OrderStatus}
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
-import fi.spectrum.indexer.db.models.{UpdateEvaluatedTx, UpdateRefundedTx}
+import fi.spectrum.indexer.db.models.{UpdateEvaluatedTx, UpdateLock, UpdateRefundedTx}
 import fi.spectrum.indexer.db.repositories.Repository
 import glass.classic.{Lens, Optional, Prism}
 import tofu.doobie.LiftConnectionIO
@@ -70,7 +71,18 @@ object Persist {
             case OrderStatus.Registered => repository.insertNoConflict.toUpdate0(order.toDB).run
             case OrderStatus.Evaluated  => repository.updateExecuted(UpdateEvaluatedTx.fromProcessed(order))
             case OrderStatus.Refunded   => repository.updateRefunded(UpdateRefundedTx.fromProcessed(order))
-            case _                      => 0.pure[ConnectionIO]
+            case OrderStatus.Withdraw   => repository.updateLock(UpdateLock.withdraw(order))
+            case OrderStatus.ReLock =>
+              for {
+                update <- order.evaluation
+                            .flatMap(_.widen[LockEvaluation])
+                            .traverse { eval =>
+                              repository.updateLock(UpdateLock.reLock(order, eval))
+                            }
+                            .map(_.getOrElse(0))
+                insert <- repository.insertNoConflict.toUpdate0(order.toDB).run
+              } yield update + insert
+            case _ => 0.pure[ConnectionIO]
           }
         }
         .map(_.getOrElse(0))
@@ -82,7 +94,18 @@ object Persist {
             case OrderStatus.Registered => repository.delete.toUpdate0(order.order.id).run
             case OrderStatus.Evaluated  => repository.deleteExecuted(order.order.id)
             case OrderStatus.Refunded   => repository.deleteRefunded(order.order.id)
-            case _                      => 0.pure[ConnectionIO]
+            case OrderStatus.Withdraw   => repository.deleteLockUpdate(order.order.id)
+            case OrderStatus.ReLock =>
+              for {
+                deleteUpdate <- order.evaluation
+                                  .flatMap(_.widen[LockEvaluation])
+                                  .traverse { eval =>
+                                    repository.deleteLockUpdate(eval.orderId)
+                                  }
+                                  .map(_.getOrElse(0))
+                deleteLock <- repository.delete.toUpdate0(order.order.id).run
+              } yield deleteUpdate + deleteLock
+            case _ => 0.pure[ConnectionIO]
           }
         }
         .map(_.getOrElse(0))

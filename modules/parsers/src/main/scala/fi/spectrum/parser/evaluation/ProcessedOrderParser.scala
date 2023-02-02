@@ -4,8 +4,10 @@ import cats.syntax.option._
 import cats.{Applicative, Monad}
 import derevo.derive
 import fi.spectrum.core.domain.TokenId
-import fi.spectrum.core.domain.analytics.Processed
+import fi.spectrum.core.domain.analytics.OrderEvaluation.LockEvaluation
 import fi.spectrum.core.domain.analytics.Processed._
+import fi.spectrum.core.domain.analytics.Processed
+import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.{Order, OrderState, OrderStatus}
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.transaction.Transaction
@@ -32,6 +34,10 @@ sealed trait ProcessedOrderParser[F[_]] {
 
   def refunded(tx: Transaction, timestamp: Long, order: Processed.Any): F[Processed[Order]]
 
+  def reLock(tx: Transaction, order: Processed[LockV1], original: Option[Processed[LockV1]]): F[Processed[Order]]
+
+  def withdraw(tx: Transaction, timestamp: Long, order: Processed[LockV1]): F[Processed[Order]]
+
 }
 
 object ProcessedOrderParser {
@@ -57,6 +63,27 @@ object ProcessedOrderParser {
     poolParser: PoolParser,
     evalParser: OrderEvaluationParser
   ) extends ProcessedOrderParser[F] {
+
+    def reLock(tx: Transaction, order: Processed[LockV1], original: Option[Processed[LockV1]]): F[Processed[Order]] =
+      original
+        .find(_.order.amount.tokenId == order.order.amount.tokenId)
+        .map { in =>
+          order
+            .copy(
+              evaluation = LockEvaluation(in.order.id).some,
+              state      = order.state.copy(status = OrderStatus.ReLock)
+            )
+            .widenOrder
+        }
+        .getOrElse(order)
+        .widenOrder
+        .pure
+
+    def withdraw(tx: Transaction, timestamp: Long, order: Processed[LockV1]): F[Processed[Order]] =
+      order
+        .copy(state = OrderState(tx.id, timestamp, OrderStatus.Withdraw))
+        .widenOrder
+        .pure
 
     def registered(tx: Transaction, timestamp: Long): F[Option[Processed[Order]]] =
       tx.outputs
@@ -88,10 +115,16 @@ object ProcessedOrderParser {
 
     def refunded(tx: Transaction, timestamp: Long, order: Processed.Any): F[Processed[Order]] =
       order.copy(state = OrderState(tx.id, timestamp, OrderStatus.Refunded)).pure
-
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends ProcessedOrderParser[Mid[F, *]] {
+
+    def reLock(tx: Transaction, order: Processed[LockV1], input: Option[Processed[LockV1]]): Mid[F, Processed[Order]] =
+      for {
+        _ <- info"reLock(${tx.id}, ${order.order.id}, ${input.map(_.order.id)})"
+        r <- _
+        _ <- info"reLock(${tx.id}, ${order.order.id}, ${input.map(_.order.id)}) -> (${r.evaluation}, ${r.state})"
+      } yield r
 
     def registered(tx: Transaction, timestamp: Long): Mid[F, Option[Processed[Order]]] =
       for {
@@ -108,16 +141,23 @@ object ProcessedOrderParser {
       height: Int
     ): Mid[F, Option[Processed[Order]]] =
       for {
-        _ <- info"evaluated(${tx.id})"
+        _ <- info"evaluated(${tx.id}, ${order.order.id}, ${pool.box.boxId})"
         r <- _
-        _ <- info"evaluated(${tx.id}) -> ${r.map(_.order.id)}"
+        _ <- info"evaluated(${tx.id}, ${order.order.id}, ${pool.box.boxId}) -> ${r.map(_.order.id)}"
       } yield r
 
     def refunded(tx: Transaction, timestamp: Long, order: Any): Mid[F, Processed[Order]] =
       for {
-        _ <- info"refunded(${tx.id})"
+        _ <- info"refunded(${tx.id}, ${order.order.id})"
         r <- _
-        _ <- info"refunded(${tx.id}) -> ${r.order.id}"
+        _ <- info"refunded(${tx.id}, ${order.order.id}) -> ${r.state}"
+      } yield r
+
+    def withdraw(tx: Transaction, timestamp: Long, order: Processed[LockV1]): Mid[F, Processed[Order]] =
+      for {
+        _ <- info"withdraw(${tx.id}, ${order.order.id})"
+        r <- _
+        _ <- info"withdraw(${tx.id}, ${order.order.id}) -> ${r.evaluation}"
       } yield r
   }
 }

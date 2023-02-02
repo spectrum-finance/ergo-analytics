@@ -23,6 +23,8 @@ final case class Processed[O <: Order](
 
   def wined[O1 <: Order](implicit prism: Prism[O, O1]): Option[Processed[O1]] =
     prism.getOption(order).map(widen)
+
+  def widenOrder: Processed[Order] = this.copy[Order]()
 }
 
 object Processed {

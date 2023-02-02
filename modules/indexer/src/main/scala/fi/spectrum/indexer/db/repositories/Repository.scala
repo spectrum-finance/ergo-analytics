@@ -4,7 +4,7 @@ import doobie.util.Write
 import doobie.util.log.LogHandler
 import doobie.{ConnectionIO, Update}
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.db.models.{UpdateEvaluatedTx, UpdateRefundedTx}
+import fi.spectrum.indexer.db.models.{UpdateEvaluatedTx, UpdateLock, UpdateRefundedTx}
 
 /** Keeps Insert/Delete/Update api
   */
@@ -20,6 +20,10 @@ trait Repository[T, I, E] {
   def updateExecuted(update: UpdateEvaluatedTx[E])(implicit lh: LogHandler): ConnectionIO[Int]
 
   def deleteExecuted(delete: OrderId)(implicit lh: LogHandler): ConnectionIO[Int]
+
+  def updateLock(update: UpdateLock)(implicit lh: LogHandler): ConnectionIO[Int]
+
+  def deleteLockUpdate(orderId: OrderId)(implicit lh: LogHandler): ConnectionIO[Int]
 }
 
 object Repository {

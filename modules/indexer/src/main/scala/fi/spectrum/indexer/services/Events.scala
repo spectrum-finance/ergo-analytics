@@ -7,6 +7,7 @@ import cats.syntax.option._
 import cats.syntax.traverse._
 import derevo.derive
 import fi.spectrum.core.domain.analytics.Processed
+import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.OrderStatus.Registered
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.transaction.Transaction
@@ -84,6 +85,13 @@ object Events {
     private def processOrder(tx: Transaction, timestamp: Long, height: Int): F[Option[Processed.Any]] =
       orderParser
         .registered(tx, timestamp)
+        .semiflatMap {
+          case lock @ Processed(order: LockV1, _, _, _, _) =>
+            storage.getOrder(tx.inputs.toList).flatMap { maybeOrder =>
+              orderParser.reLock(tx, lock.widen(order), maybeOrder.flatMap(_.wined[LockV1]))
+            }
+          case order => order.pure
+        }
         .orElseF {
           def getState: F[(Option[Processed.Any], Option[Pool])] = for {
             order <- storage.getOrder(tx.inputs.toList)
@@ -93,6 +101,8 @@ object Events {
           getState.flatMap {
             case (Some(order), Some(pool)) =>
               orderParser.evaluated(tx, timestamp, order, pool, height)
+            case (Some(lock @ Processed(order: LockV1, _, _, _, _)), _) =>
+              orderParser.withdraw(tx, timestamp, lock.widen(order)).someIn
             case (Some(order), _) =>
               orderParser.refunded(tx, timestamp, order).someIn
             case _ => //todo arbitrage bots
