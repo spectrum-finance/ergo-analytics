@@ -99,6 +99,8 @@ create table if not exists deposits
     input_amount_y                   bigint     not null,
     output_id_lp                     hash32type,
     output_amount_lp                 bigint,
+    actual_input_amount_x            bigint,
+    actual_input_amount_y            bigint,
     dex_fee                          bigint     not null,
     fee_type                         text       not null,
     redeemer                         pubkey     not null,

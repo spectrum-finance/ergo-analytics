@@ -118,6 +118,8 @@ create table if not exists public.deposits
     input_amount_y                   bigint            not null,
     output_id_lp                     public.hash32type,
     output_amount_lp                 bigint,
+    actual_input_amount_x            bigint,
+    actual_input_amount_y            bigint,
     dex_fee                          bigint            not null,
     fee_type                         text              not null,
     redeemer                         public.pubkey     not null,
