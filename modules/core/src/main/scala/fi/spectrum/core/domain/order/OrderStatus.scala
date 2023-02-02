@@ -32,6 +32,14 @@ object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
 
   case object Refunded extends OrderStatus
 
+  case object ReLockWaiting extends OrderStatus
+
+  case object ReLock extends OrderStatus
+
+  case object WithdrawWaiting extends OrderStatus
+
+  case object Withdraw extends OrderStatus
+
   val values = findValues
 
   implicit val show: Show[OrderStatus] = _.entryName
@@ -43,6 +51,8 @@ object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
       case OrderStatus.Registered => OrderStatus.WaitingRegistration
       case OrderStatus.Evaluated  => OrderStatus.WaitingEvaluation
       case OrderStatus.Refunded   => OrderStatus.WaitingRefund
+      case OrderStatus.ReLock     => OrderStatus.ReLockWaiting
+      case OrderStatus.Withdraw   => OrderStatus.WithdrawWaiting
       case s                      => s
     }
 

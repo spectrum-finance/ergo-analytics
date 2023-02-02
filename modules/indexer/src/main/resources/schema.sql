@@ -143,12 +143,16 @@ create index deposits__input_id_y on public.deposits using btree (input_id_y);
 
 create table if not exists public.lq_locks
 (
-    order_id         public.hash32type primary key,
-    deadline         integer           not null,
-    token_id         public.hash32type not null,
-    amount           bigint            not null,
-    redeemer         public.pubkey     not null,
-    contract_version integer           not null
+    order_id                  public.hash32type primary key,
+    transaction_id            public.hash32type not null,
+    timestamp                 bigint            not null,
+    deadline                  integer           not null,
+    token_id                  public.hash32type not null,
+    amount                    bigint            not null,
+    redeemer                  public.pubkey     not null,
+    contract_version          text              not null,
+    evaluation_transaction_id public.hash32type,
+    evaluation_lock_type      text
 );
 
 alter table public.lq_locks
