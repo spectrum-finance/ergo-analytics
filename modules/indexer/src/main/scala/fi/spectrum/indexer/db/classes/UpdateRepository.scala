@@ -2,8 +2,9 @@ package fi.spectrum.indexer.db.classes
 
 import doobie.util.log.LogHandler
 import doobie.{ConnectionIO, Update}
+import cats.syntax.applicative._
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.db.models.UpdateRefundedTx
+import fi.spectrum.indexer.db.models.{UpdateLock, UpdateRefundedTx}
 
 /** Describes the way to update T order status
   */
@@ -22,4 +23,8 @@ trait UpdateRepository[T] extends InsertRepository[T] {
     Update[OrderId](s"update $tableName set $refunded=null, $refundedTs=null where $orderId=?")
       .toUpdate0(delete)
       .run
+
+  def updateLock(update: UpdateLock)(implicit lh: LogHandler): ConnectionIO[Int] = 0.pure[ConnectionIO]
+
+  def deleteLockUpdate(orderId: OrderId)(implicit lh: LogHandler): ConnectionIO[Int] = 0.pure[ConnectionIO]
 }
