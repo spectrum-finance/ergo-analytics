@@ -123,7 +123,7 @@ object ProcessedOrderParser {
       for {
         _ <- info"reLock(${tx.id}, ${order.order.id}, ${input.map(_.order.id)})"
         r <- _
-        _ <- info"reLock(${tx.id}, ${order.order.id}, ${input.map(_.order.id)}) -> ${r.evaluation}"
+        _ <- info"reLock(${tx.id}, ${order.order.id}, ${input.map(_.order.id)}) -> (${r.evaluation}, ${r.state})"
       } yield r
 
     def registered(tx: Transaction, timestamp: Long): Mid[F, Option[Processed[Order]]] =
@@ -150,7 +150,7 @@ object ProcessedOrderParser {
       for {
         _ <- info"refunded(${tx.id}, ${order.order.id})"
         r <- _
-        _ <- info"refunded(${tx.id}, ${order.order.id}) -> ${r.evaluation}"
+        _ <- info"refunded(${tx.id}, ${order.order.id}) -> ${r.state}"
       } yield r
 
     def withdraw(tx: Transaction, timestamp: Long, order: Processed[LockV1]): Mid[F, Processed[Order]] =

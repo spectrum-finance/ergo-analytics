@@ -145,6 +145,7 @@ create table if not exists public.lq_locks
 (
     order_id                  public.hash32type primary key,
     transaction_id            public.hash32type not null,
+    timestamp                 bigint            not null,
     deadline                  integer           not null,
     token_id                  public.hash32type not null,
     amount                    bigint            not null,

@@ -17,6 +17,7 @@ final class LockRepository
   val fields: List[String] = List(
     "order_id",
     "transaction_id",
+    "timestamp",
     "deadline",
     "token_id",
     "amount",

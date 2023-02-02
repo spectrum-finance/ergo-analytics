@@ -10,6 +10,7 @@ import fi.spectrum.indexer.classes.syntax._
 final case class LockDB(
   orderId: OrderId,
   txId: TxId,
+  timestamp: Long,
   deadline: Int,
   amount: AssetAmount,
   redeemer: PubKey,
@@ -31,6 +32,7 @@ object LockDB {
       LockDB(
         processed.order.id,
         processed.state.txId,
+        processed.state.timestamp,
         processed.order.deadline,
         processed.order.amount,
         processed.order.redeemer.value,
