@@ -102,11 +102,11 @@ object ProcessedOrderParser {
       tx.outputs.toList
         .map(poolParser.parse(_, timestamp, height))
         .collectFirst { case Some(v) => v }
-        .map { _ => // we have to have pool in outputs if the order is evaluated
+        .map { next =>
           order
             .copy(
               state       = OrderState(tx.id, timestamp, OrderStatus.Evaluated),
-              evaluation  = evalParser.parse(order.order, tx.outputs.toList, pool),
+              evaluation  = evalParser.parse(order.order, tx.outputs.toList, pool, next),
               offChainFee = feeParser.parse(tx.outputs.toList, order.order, pool.poolId),
               poolBoxId   = pool.box.boxId.some
             )
