@@ -6,8 +6,8 @@ import cats.{Monad, MonadError}
 import derevo.circe.decoder
 import derevo.derive
 import fi.spectrum.api.configs.NetworkConfig
-import fi.spectrum.api.models.{BlockInfo, CmcResponse, Items}
-import fi.spectrum.core.domain.TokenId
+import fi.spectrum.api.models.{BlockInfo, CmcResponse, Items, MempoolData}
+import fi.spectrum.core.domain.{Address, TokenId}
 import fi.spectrum.core.syntax.HttpOps.ResponseOps
 import fi.spectrum.graphite.Metrics
 import retry.RetryPolicies.{constantDelay, limitRetries}
@@ -25,6 +25,7 @@ import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
+import sttp.client3.circe._
 
 @derive(representableK)
 trait Network[F[_]] {
@@ -33,6 +34,8 @@ trait Network[F[_]] {
   def getVerifiedTokenList: F[List[TokenId]]
 
   def getCurrentNetworkHeight: F[Int]
+
+  def getMempoolData(addresses: List[Address]): F[List[MempoolData]]
 }
 
 object Network {
@@ -104,6 +107,14 @@ object Network {
         .send(backend)
         .absorbError
         .map(_.items.headOption.map(_.height).getOrElse(0))
+
+    def getMempoolData(addresses: List[Address]): F[List[MempoolData]] =
+      basicRequest
+        .post(config.mempoolUri.withPathSegment(Segment("v1/mempool", identity)))
+        .body(addresses)
+        .response(asJson[List[MempoolData]])
+        .send(backend)
+        .absorbError
   }
 
   final private class Retry[F[_]: MonadError[*[_], Throwable]: Sleep: Logging](config: NetworkConfig)(implicit
@@ -116,6 +127,9 @@ object Network {
 
     private val explorerPolicy =
       limitRetries[F](config.explorerLimitRetries) |+| constantDelay[F](config.explorerRetryDelay)
+
+    private val mempoolPolicy =
+      limitRetries[F](config.mempoolLimitRetries) |+| constantDelay[F](config.mempoolRetryDelay)
 
     def getErgPriceCMC: Mid[F, Option[BigDecimal]] =
       retryingOnAllErrors(
@@ -138,6 +152,14 @@ object Network {
         (err: Throwable, _: RetryDetails) =>
           info"Failed to get best height. ${err.getMessage}. Retrying..." >>
           metrics.sendCount("explorer.best.height.request.failed", 1.0)
+      )(_)
+
+    def getMempoolData(addresses: List[Address]): Mid[F, List[MempoolData]] =
+      retryingOnAllErrors(
+        mempoolPolicy,
+        (err: Throwable, _: RetryDetails) =>
+          info"Failed to get mempool data. ${err.getMessage}. Retrying..." >>
+          metrics.sendCount("mempool.data.request.failed", 1.0)
       )(_)
   }
 
@@ -162,6 +184,13 @@ object Network {
         _ <- info"getCurrentNetworkHeight()"
         r <- _
         _ <- info"getCurrentNetworkHeight() -> $r"
+      } yield r
+
+    def getMempoolData(addresses: List[Address]): Mid[F, List[MempoolData]] =
+      for {
+        _ <- info"getMempoolData($addresses)"
+        r <- _
+        _ <- info"getMempoolData($addresses) -> ${r.map(a => s"${a.address} -> ${a.orders.length}")}"
       } yield r
   }
 
@@ -189,6 +218,14 @@ object Network {
         r      <- _
         finish <- millis
         _      <- metrics.sendTs("explorer.best.height.request", (finish - start).toDouble)
+      } yield r
+
+    def getMempoolData(addresses: List[Address]): Mid[F, List[MempoolData]] =
+      for {
+        start  <- millis
+        r      <- _
+        finish <- millis
+        _      <- metrics.sendTs("mempool.data.request", (finish - start).toDouble)
       } yield r
   }
 }

@@ -103,8 +103,9 @@ package object domain {
   @newtype final case class TxId(value: String)
 
   object TxId {
-    implicit val get: Get[TxId] = deriving
-    implicit val put: Put[TxId] = deriving
+    implicit val get: Get[TxId]       = deriving
+    implicit val put: Put[TxId]       = deriving
+    implicit val schema: Schema[TxId] = deriving
 
     implicit def codec: scodec.Codec[TxId] =
       scodec.codecs

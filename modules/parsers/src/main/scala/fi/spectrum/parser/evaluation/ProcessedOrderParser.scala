@@ -4,7 +4,7 @@ import cats.syntax.option._
 import cats.{Applicative, Monad}
 import derevo.derive
 import fi.spectrum.core.domain.TokenId
-import fi.spectrum.core.domain.analytics.OrderEvaluation.LockEvaluation
+import fi.spectrum.core.domain.analytics.OrderEvaluation.{LockEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.analytics.Processed._
 import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
@@ -42,11 +42,8 @@ sealed trait ProcessedOrderParser[F[_]] {
 
 object ProcessedOrderParser {
 
-  def make[F[_]: Monad](
-    spf: TokenId
-  )(implicit e: ErgoAddressEncoder, logs: Logging.Make[F]): ProcessedOrderParser[F] =
+  def make[F[_]: Monad](implicit e: ErgoAddressEncoder, logs: Logging.Make[F]): ProcessedOrderParser[F] =
     logs.forService[ProcessedOrderParser[F]].map { implicit __ =>
-      implicit val fee: OffChainFeeParser = OffChainFeeParser.make(spf)
       new Tracing[F] attach new Live[F]
     }
 
@@ -103,11 +100,18 @@ object ProcessedOrderParser {
         .map(poolParser.parse(_, timestamp, height))
         .collectFirst { case Some(v) => v }
         .map { next =>
+          val eval = evalParser.parse(order.order, tx.outputs.toList, pool, next)
+          val fee  = feeParser.parse(tx.outputs.toList, order, eval, pool.poolId)
+          val swapEvalWithFee = fee
+            .flatMap { fee =>
+              eval.flatMap(_.widen[SwapEvaluation]).map(_.copy(fee = fee.fee))
+            }
+            .orElse(eval)
           order
             .copy(
               state       = OrderState(tx.id, timestamp, OrderStatus.Evaluated),
-              evaluation  = evalParser.parse(order.order, tx.outputs.toList, pool, next),
-              offChainFee = feeParser.parse(tx.outputs.toList, order.order, pool.poolId),
+              evaluation  = swapEvalWithFee,
+              offChainFee = fee,
               poolBoxId   = pool.box.boxId.some
             )
         }
@@ -157,7 +161,7 @@ object ProcessedOrderParser {
       for {
         _ <- info"withdraw(${tx.id}, ${order.order.id})"
         r <- _
-        _ <- info"withdraw(${tx.id}, ${order.order.id}) -> ${r.evaluation}"
+        _ <- info"withdraw(${tx.id}, ${order.order.id}) -> ${r.state}"
       } yield r
   }
 }

@@ -11,9 +11,7 @@ final case class ApplicationConfig(
   blocksBatchSize: Int,
   blocksGroupTime: FiniteDuration,
   transactionsBatchSize: Int,
-  transactionsGroupTime: FiniteDuration,
-  mempoolBatchSize: Int,
-  mempoolGroupTime: FiniteDuration,
+  transactionsGroupTime: FiniteDuration
 )
 
 object ApplicationConfig extends WithContext.Companion[ApplicationConfig]
