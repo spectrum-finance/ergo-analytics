@@ -61,7 +61,7 @@ final class OrderEvaluationParser {
         val out =
           if (quote.isNative) AssetAmount.native(output.value).some
           else output.assets.find(_.tokenId == quote.tokenId).map(AssetAmount.fromBoxAsset)
-        out.map(SwapEvaluation.apply)
+        out.map(SwapEvaluation.emptyFee)
       case _ => none
     }
 

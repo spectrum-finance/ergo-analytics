@@ -1,5 +1,6 @@
 package fi.spectrum.parser.evaluation
 
+import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.pool.Pool.AmmPool
 import fi.spectrum.parser.evaluation.Transactions._
 import fi.spectrum.parser.{CatsPlatform, OrderParser, PoolParser}
@@ -18,8 +19,9 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
   property("Parse swap evaluation") {
     val order =
       swapRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
-    val pool = swapEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0, 10)).collectFirst { case Some(v) => v }.get
-    parser.parse(order, swapEvaluateTransaction.outputs.toList, pool, pool).get shouldEqual swapEval
+    val pool =
+      swapEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0, 10)).collectFirst { case Some(v) => v }.get
+    parser.parse(order, swapEvaluateTransaction.outputs.toList, pool, pool).get shouldEqual swapEval.copy(fee = ERG(0))
   }
 
   property("Parse redeem evaluation") {
@@ -39,14 +41,16 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val nextPool = pool.asInstanceOf[AmmPool]
     val newNext = nextPool.copy(
       x = nextPool.x.withAmount(nextPool.x.amount + 10),
-      y = nextPool.y.withAmount(nextPool.y.amount + 11),
+      y = nextPool.y.withAmount(nextPool.y.amount + 11)
     )
-    parser.parse(
-      order,
-      depositEvaluateTransaction.outputs.toList,
-      pool,
-      newNext
-    ).get shouldEqual depositEval
+    parser
+      .parse(
+        order,
+        depositEvaluateTransaction.outputs.toList,
+        pool,
+        newNext
+      )
+      .get shouldEqual depositEval
   }
 
 }

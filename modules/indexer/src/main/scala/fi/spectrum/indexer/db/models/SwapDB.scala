@@ -7,7 +7,7 @@ import fi.spectrum.core.domain.analytics.OrderEvaluation.SwapEvaluation
 import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed, Version}
 import fi.spectrum.core.domain.order.Order.Swap._
 import fi.spectrum.core.domain.order.OrderStatus.{Evaluated, Refunded, Registered}
-import fi.spectrum.core.domain.order.{Order, OrderId, PoolId}
+import fi.spectrum.core.domain.order.{Fee, Order, OrderId, PoolId}
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
 import glass.Subset
@@ -22,6 +22,7 @@ final case class SwapDB(
   quoteAmount: Option[Long],
   dexFeePerTokenNum: Long,
   dexFeePerTokenDenom: Long,
+  fee: Option[Fee],
   redeemer: Option[PubKey],
   protocolVersion: ProtocolVersion,
   contractVersion: Version,
@@ -56,6 +57,7 @@ object SwapDB {
         swapEval.map(_.output.amount),
         processed.order.params.dexFeePerTokenNum,
         processed.order.params.dexFeePerTokenDenom,
+        processed.offChainFee.map(_.fee),
         processed.order.redeemer.value.some,
         ProtocolVersion(1),
         processed.order.version,
@@ -80,6 +82,7 @@ object SwapDB {
         swapEval.map(_.output.amount),
         processed.order.params.dexFeePerTokenNum,
         processed.order.params.dexFeePerTokenDenom,
+        processed.offChainFee.map(_.fee),
         none,
         ProtocolVersion(1),
         processed.order.version,
@@ -105,6 +108,7 @@ object SwapDB {
         swapEval.map(_.output.amount),
         swap.params.dexFeePerTokenNum,
         swap.params.dexFeePerTokenDenom,
+        processed.offChainFee.map(_.fee),
         none,
         ProtocolVersion(1),
         swap.version,
@@ -130,6 +134,7 @@ object SwapDB {
         swapEval.map(_.output.amount),
         swap.params.dexFeePerTokenNum,
         swap.params.dexFeePerTokenDenom,
+        processed.offChainFee.map(_.fee),
         swap.redeemer.value.some,
         ProtocolVersion(1),
         swap.version,

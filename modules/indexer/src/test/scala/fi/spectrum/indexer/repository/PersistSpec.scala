@@ -10,6 +10,7 @@ import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
 import fi.spectrum.core.domain.analytics.{OffChainFee, Processed}
 import fi.spectrum.core.domain.order.Order
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
+import fi.spectrum.core.domain.order.Order.Swap.SwapV1
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.protocol.ErgoTreeSerializer
@@ -31,7 +32,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
 
   val repo: PersistBundle[ConnectionIO] = PersistBundle.make[ConnectionIO]
 
-  val parser: ProcessedOrderParser[IO] = ProcessedOrderParser.make[IO](TokenId.unsafeFromString(""))
+  val parser: ProcessedOrderParser[IO] = ProcessedOrderParser.make[IO]
   val poolsParser                      = PoolParser.make
 
   "Amm pool" should "work correct" in {

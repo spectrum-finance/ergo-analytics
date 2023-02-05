@@ -2,6 +2,8 @@ package fi.spectrum.parser.evaluation
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
+import fi.spectrum.core.domain.analytics.OrderEvaluation.SwapEvaluation
+import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.order.{OrderState, OrderStatus}
 import fi.spectrum.core.domain.{BoxId, TokenId}
 import fi.spectrum.parser.CatsPlatform
@@ -12,7 +14,7 @@ import org.scalatest.propspec.AnyPropSpec
 
 class ProcessedSpec extends AnyPropSpec with Matchers with CatsPlatform {
   implicit def addressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(ErgoAddressEncoder.MainnetNetworkPrefix)
-  val processedParser                             = ProcessedOrderParser.make[IO](TokenId.unsafeFromString(""))
+  val processedParser                             = ProcessedOrderParser.make[IO]
 
   property("Parse executed order") {
     val ts         = System.currentTimeMillis()

@@ -22,7 +22,10 @@ final case class NetworkConfig(
   verifiedTokenRetryDelay: FiniteDuration,
   explorerUri: Uri,
   explorerLimitRetries: Int,
-  explorerRetryDelay: FiniteDuration
+  explorerRetryDelay: FiniteDuration,
+  mempoolUri: Uri,
+  mempoolLimitRetries: Int,
+  mempoolRetryDelay: FiniteDuration
 )
 
 object NetworkConfig extends WithContext.Companion[NetworkConfig]

@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS swaps
     quote_amount                     bigint,
     dex_fee_per_token_num            bigint     NOT NULL,
     dex_fee_per_token_denom          bigint     NOT NULL,
+    dex_fee                          bigint,
+    fee_type                         text,
     redeemer                         pubkey,
     protocol_version                 integer    NOT NULL,
     contract_version                 text       NOT NULL,

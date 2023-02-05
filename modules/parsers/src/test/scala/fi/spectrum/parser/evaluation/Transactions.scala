@@ -3,7 +3,7 @@ package fi.spectrum.parser.evaluation
 import fi.spectrum.core.domain.analytics.OffChainFee
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, RedeemEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.order.Fee.ERG
-import fi.spectrum.core.domain.order.{OrderId, PoolId}
+import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
 import fi.spectrum.core.domain.{Address, AssetAmount, BoxId, TokenId}
 import fi.spectrum.parser._
 import fi.spectrum.parser.models.TransactionTest
@@ -690,7 +690,8 @@ object Transactions {
     AssetAmount(
       TokenId.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000"),
       33946866016L
-    )
+    ),
+    Fee.ERG(4000000)
   )
 
   def redeemRegisterTransaction = decode[TransactionTest](
