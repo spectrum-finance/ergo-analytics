@@ -20,6 +20,7 @@ import sttp.tapir.Schema
 sealed trait ApiOrder {
   val id: OrderId
   val status: OrderStatus
+  val registerTx: TxData
 }
 
 object ApiOrder {
@@ -335,8 +336,7 @@ object ApiOrder {
   final case class Lock(
     id: OrderId,
     status: OrderStatus,
-    txId: TxId,
-    ts: Long,
+    registerTx: TxData,
     deadline: Int,
     asset: AssetAmount,
     address: Option[Address],
@@ -354,8 +354,7 @@ object ApiOrder {
             Lock(
               o.order.id,
               OrderStatus.Mempool,
-              o.state.txId,
-              o.state.timestamp,
+              TxData(o.state.txId, o.state.timestamp),
               lock.deadline,
               lock.amount,
               address.formAddress(o.order.redeemer),

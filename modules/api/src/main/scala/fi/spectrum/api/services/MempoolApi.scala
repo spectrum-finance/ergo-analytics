@@ -66,7 +66,7 @@ object MempoolApi {
                   noneF[D, ApiOrder]
               }
               .sequence
-              .map(_.flatten)
+              .map(_.flatten.sortBy(_.registerTx.ts)(Ordering[Long].reverse))
               .trans
           }
           .map(_.flatten)
