@@ -1,4 +1,4 @@
-package fi.spectrum.api.v1.models.amm
+package fi.spectrum.api.v1.models.history
 
 import cats.Show
 import cats.implicits.toBifunctorOps
@@ -8,6 +8,7 @@ import doobie.util.{Get, Put}
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import sttp.tapir.{Schema, Validator}
 import tofu.logging.Loggable
+
 import scala.collection.immutable
 
 sealed trait OrderStatus extends EnumEntry

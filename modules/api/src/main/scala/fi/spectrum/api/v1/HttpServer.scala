@@ -5,10 +5,9 @@ import cats.effect.kernel.Async
 import cats.syntax.semigroupk._
 import fi.spectrum.api.configs.{HttpConfig, RequestConfig}
 import fi.spectrum.api.models.TraceId
-import fi.spectrum.api.services.MempoolApi
 import fi.spectrum.common.http.syntax.routes.unliftRoutes
 import fi.spectrum.api.v1.routes.{AmmStatsRoutes, DocsRoutes, HistoryRoutes}
-import fi.spectrum.api.v1.services.{AmmStats, LqLocks}
+import fi.spectrum.api.v1.services.{AmmStats, HistoryApi, LqLocks, MempoolApi}
 import fi.spectrum.cache.middleware.CacheMiddleware.CachingMiddleware
 import fi.spectrum.graphite.MetricsMiddleware.MetricsMiddleware
 import org.http4s.blaze.server.BlazeServerBuilder
@@ -26,6 +25,7 @@ object HttpServer {
     stats: AmmStats[F],
     locks: LqLocks[F],
     mempool: MempoolApi[F],
+    history: HistoryApi[F],
     opts: Http4sServerOptions[F],
     cache: CachingMiddleware[F],
     metrics: MetricsMiddleware[F]
