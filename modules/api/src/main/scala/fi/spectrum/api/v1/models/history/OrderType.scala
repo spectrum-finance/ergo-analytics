@@ -1,9 +1,10 @@
-package fi.spectrum.api.v1.models.amm
+package fi.spectrum.api.v1.models.history
 
 import cats.Show
 import enumeratum._
 import sttp.tapir.{Schema, Validator}
 import tofu.logging.Loggable
+
 import scala.collection.immutable
 
 sealed trait OrderType extends EnumEntry
