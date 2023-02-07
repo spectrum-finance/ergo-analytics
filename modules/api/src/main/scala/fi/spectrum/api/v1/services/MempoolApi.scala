@@ -1,14 +1,15 @@
-package fi.spectrum.api.services
+package fi.spectrum.api.v1.services
 
-import cats.{Functor, Monad}
 import cats.syntax.traverse._
+import cats.{Functor, Monad}
 import fi.spectrum.api.classes.ToAPI._
 import fi.spectrum.api.db.repositories.History
-import fi.spectrum.api.v1.models.amm.ApiOrder
-import fi.spectrum.api.v1.models.amm.ApiOrder.Deposit._
-import fi.spectrum.api.v1.models.amm.ApiOrder.Redeem._
-import fi.spectrum.api.v1.models.amm.ApiOrder.Swap._
-import fi.spectrum.api.v1.models.amm.ApiOrder._
+import fi.spectrum.api.services.Network
+import fi.spectrum.api.v1.models.history.ApiOrder.Deposit._
+import fi.spectrum.api.v1.models.history.ApiOrder.Redeem._
+import fi.spectrum.api.v1.models.history.ApiOrder.Swap._
+import fi.spectrum.api.v1.models.history.ApiOrder._
+import fi.spectrum.api.v1.models.history.ApiOrder
 import fi.spectrum.core.domain.Address
 import fi.spectrum.core.domain.order.Order
 import fi.spectrum.core.domain.order.OrderStatus.{Registered, WaitingRegistration}

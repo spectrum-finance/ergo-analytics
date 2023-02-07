@@ -1,4 +1,4 @@
-package fi.spectrum.api.models
+package fi.spectrum.api.db.models
 
 import derevo.derive
 import fi.spectrum.core.domain.TxId

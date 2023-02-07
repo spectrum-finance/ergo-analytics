@@ -71,6 +71,7 @@ create index swaps__pool_state_id on public.swaps using btree (pool_state_id);
 create index swaps__protocol_version on public.swaps using btree (protocol_version);
 create index swaps__base_id on public.swaps using btree (base_id);
 create index swaps__min_quote_id on public.swaps using btree (min_quote_id);
+create index swaps__register_timestamp on public.swaps using btree (registered_transaction_timestamp);
 
 create table if not exists public.redeems
 (
@@ -106,6 +107,7 @@ create index redeems__pool_id on public.redeems using btree (pool_id);
 create index redeems__pool_state_id on public.redeems using btree (pool_state_id);
 create index redeems__protocol_version on public.redeems using btree (protocol_version);
 create index redeems__lp_id on public.redeems using btree (lp_id);
+create index redeems__register_timestamp on public.redeems using btree (registered_transaction_timestamp);
 
 create table if not exists public.deposits
 (
@@ -144,6 +146,7 @@ create index deposits__pool_state_id on public.deposits using btree (pool_state_
 create index deposits__protocol_version on public.deposits using btree (protocol_version);
 create index deposits__input_id_x on public.deposits using btree (input_id_x);
 create index deposits__input_id_y on public.deposits using btree (input_id_y);
+create index deposits__register_timestamp on public.deposits using btree (registered_transaction_timestamp);
 
 create table if not exists public.lq_locks
 (
@@ -163,6 +166,7 @@ alter table public.lq_locks
     owner to ergo_admin;
 
 create index lq_locks__asset_id on public.lq_locks using btree (token_id);
+create index lq_locks__timestamp on public.lq_locks using btree (timestamp);
 
 create table if not exists public.off_chain_fee
 (
