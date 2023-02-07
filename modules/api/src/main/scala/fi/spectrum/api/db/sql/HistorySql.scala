@@ -261,10 +261,10 @@ final class HistorySql(implicit lh: LogHandler) {
          |	redeemer,
          |	registered_transaction_id,
          |	registered_transaction_timestamp,
-         |	executed_transaction_id,
-         |	executed_transaction_timestamp,
          |	refunded_transaction_id,
-         |	refunded_transaction_timestamp
+         |	refunded_transaction_timestamp,
+	     |	executed_transaction_id,
+         |	executed_transaction_timestamp
          |FROM
          |	swaps
          |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "base_id")}
@@ -299,10 +299,10 @@ final class HistorySql(implicit lh: LogHandler) {
          |	redeemer,
          |	registered_transaction_id,
          |	registered_transaction_timestamp,
-         |	executed_transaction_id,
-         |	executed_transaction_timestamp,
          |	refunded_transaction_id,
-         |	refunded_transaction_timestamp
+         |	refunded_transaction_timestamp,
+	     |	executed_transaction_id,
+         |	executed_transaction_timestamp
          |FROM
          |	deposits
          |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "input_id_x")}
@@ -335,10 +335,10 @@ final class HistorySql(implicit lh: LogHandler) {
          |	redeemer,
          |	registered_transaction_id,
          |	registered_transaction_timestamp,
-         |	executed_transaction_id,
-         |	executed_transaction_timestamp,
          |	refunded_transaction_id,
-         |	refunded_transaction_timestamp
+         |	refunded_transaction_timestamp,
+	     |	executed_transaction_id,
+         |	executed_transaction_timestamp
          |FROM
          |	redeems
          |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "output_id_x")}
@@ -362,7 +362,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	deadline,
          |	token_id,
          |	amount,
-	     |  redeemer
+	     |  redeemer,
          |	evaluation_transaction_id,
          |	evaluation_lock_type
          |FROM
@@ -399,7 +399,7 @@ final class HistorySql(implicit lh: LogHandler) {
     txId
       .map { id =>
         Fragment.const(
-          s"registered_transaction_id='$id' or executed_transaction_id='$id' or refunded_transaction_id='$id'"
+          s"and (registered_transaction_id='$id' or executed_transaction_id='$id' or refunded_transaction_id='$id')"
         )
       }
       .getOrElse(Fragment.empty)
@@ -408,7 +408,7 @@ final class HistorySql(implicit lh: LogHandler) {
     txId
       .map { id =>
         Fragment.const(
-          s"and transaction_id='$id' or evaluation_transaction_id='$id'"
+          s"and (transaction_id='$id' or evaluation_transaction_id='$id')"
         )
       }
       .getOrElse(Fragment.empty)
