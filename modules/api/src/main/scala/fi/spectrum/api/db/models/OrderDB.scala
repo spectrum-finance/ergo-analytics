@@ -23,7 +23,7 @@ object OrderDB {
     minQuote: AssetAmount,
     quote: Option[Long],
     fee: Option[Fee],
-    address: Option[Address],
+    address: Option[PubKey],
     registerTx: TxData,
     refundTx: Option[TxData],
     evaluateTx: Option[TxData]
@@ -39,7 +39,7 @@ object OrderDB {
     actualY: Option[Long],
     outputLp: Option[AssetAmount],
     fee: Fee,
-    address: Option[Address],
+    address: Option[PubKey],
     registerTx: TxData,
     refundTx: Option[TxData],
     evaluateTx: Option[TxData]
@@ -53,7 +53,7 @@ object OrderDB {
     outX: Option[AssetAmount],
     outY: Option[AssetAmount],
     fee: Fee,
-    address: Option[Address],
+    address: Option[PubKey],
     registerTx: TxData,
     refundTx: Option[TxData],
     evaluateTx: Option[TxData]
@@ -66,7 +66,7 @@ object OrderDB {
     registerTx: TxData,
     deadline: Int,
     asset: AssetAmount,
-    address: Option[Address],
+    address: Option[PubKey],
     evalTxId: Option[TxId],
     evalType: Option[String]
   ) extends OrderDB

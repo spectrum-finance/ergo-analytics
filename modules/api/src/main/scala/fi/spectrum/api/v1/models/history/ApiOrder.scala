@@ -13,7 +13,8 @@ import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, Red
 import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.OrderOptics._
-import fi.spectrum.core.domain.order.OrderStatus.{WaitingEvaluation, WaitingRefund, WaitingRegistration, mapToMempool}
+import fi.spectrum.core.domain.order.OrderStatus.{mapToMempool, WaitingEvaluation, WaitingRefund, WaitingRegistration}
+import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.order._
 import glass.classic.{Optional, Prism}
 import org.ergoplatform.ErgoAddressEncoder
@@ -171,21 +172,23 @@ object ApiOrder {
     implicit val toApiDepositDB: ToAPI[DepositDB, Deposit, Any] = new ToAPI[DepositDB, Deposit, Any] {
 
       def toAPI(d: DepositDB)(implicit e: ErgoAddressEncoder): Option[Deposit] =
-        Deposit(
-          d.orderId,
-          d.poolId,
-          history.OrderStatus.Ledger,
-          d.inputX,
-          d.inputY,
-          d.actualX,
-          d.actualY,
-          d.outputLp,
-          d.fee,
-          d.address,
-          d.registerTx,
-          d.refundTx,
-          d.evaluateTx
-        ).some
+        d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
+          Deposit(
+            d.orderId,
+            d.poolId,
+            history.OrderStatus.Ledger,
+            d.inputX,
+            d.inputY,
+            d.actualX,
+            d.actualY,
+            d.outputLp,
+            d.fee,
+            a.some,
+            d.registerTx,
+            d.refundTx,
+            d.evaluateTx
+          )
+        }
 
       def toAPI(a: DepositDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Deposit] = none
     }
@@ -315,19 +318,21 @@ object ApiOrder {
     implicit val toApiRedeemDB: ToAPI[RedeemDB, Redeem, Any] = new ToAPI[RedeemDB, Redeem, Any] {
 
       def toAPI(d: RedeemDB)(implicit e: ErgoAddressEncoder): Option[Redeem] =
-        Redeem(
-          d.id,
-          d.poolId,
-          history.OrderStatus.Ledger,
-          d.lp,
-          d.outX,
-          d.outY,
-          d.fee,
-          d.address,
-          d.registerTx,
-          d.refundTx,
-          d.evaluateTx
-        ).some
+        d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
+          Redeem(
+            d.id,
+            d.poolId,
+            history.OrderStatus.Ledger,
+            d.lp,
+            d.outX,
+            d.outY,
+            d.fee,
+            a.some,
+            d.registerTx,
+            d.refundTx,
+            d.evaluateTx
+          )
+        }
 
       def toAPI(a: RedeemDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Redeem] = none
     }
@@ -454,19 +459,21 @@ object ApiOrder {
     implicit val toApiSwapDB: ToAPI[SwapDB, Swap, Any] = new ToAPI[SwapDB, Swap, Any] {
 
       def toAPI(d: SwapDB)(implicit e: ErgoAddressEncoder): Option[Swap] =
-        Swap(
-          d.id,
-          d.poolId,
-          history.OrderStatus.Ledger,
-          d.base,
-          d.minQuote,
-          d.quote,
-          d.fee,
-          d.address,
-          d.registerTx,
-          d.refundTx,
-          d.evaluateTx
-        ).some
+        d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
+          Swap(
+            d.id,
+            d.poolId,
+            history.OrderStatus.Ledger,
+            d.base,
+            d.minQuote,
+            d.quote,
+            d.fee,
+            a.some,
+            d.registerTx,
+            d.refundTx,
+            d.evaluateTx
+          )
+        }
 
       def toAPI(a: SwapDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Swap] = none
     }
@@ -539,16 +546,18 @@ object ApiOrder {
     implicit val toApiLockDB: ToAPI[LockDB, Lock, Any] = new ToAPI[LockDB, Lock, Any] {
 
       def toAPI(d: LockDB)(implicit e: ErgoAddressEncoder): Option[Lock] =
-        Lock(
-          d.id,
-          history.OrderStatus.Ledger,
-          d.registerTx,
-          d.deadline,
-          d.asset,
-          d.address,
-          d.evalTxId,
-          d.evalType
-        ).some
+        d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
+          Lock(
+            d.id,
+            history.OrderStatus.Ledger,
+            d.registerTx,
+            d.deadline,
+            d.asset,
+            a.some,
+            d.evalTxId,
+            d.evalType
+          )
+        }
 
       def toAPI(a: LockDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Lock] = none
     }
