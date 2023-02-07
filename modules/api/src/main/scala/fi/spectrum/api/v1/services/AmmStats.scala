@@ -14,7 +14,7 @@ import fi.spectrum.api.models.{AssetClass, CryptoUnits, FullAsset}
 import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.services.{Snapshots, VerifiedTokens, Volumes24H}
-import fi.spectrum.api.v1.endpoints.models.TimeWindow
+import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.amm.types.{MarketId, RealPrice}
 import fi.spectrum.core.domain.TokenId
@@ -30,7 +30,7 @@ import tofu.syntax.monadic._
 import tofu.syntax.logging._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
-
+import mouse.anyf._
 import scala.concurrent.duration._
 
 @derive(representableK)
@@ -59,6 +59,8 @@ trait AmmStats[F[_]] {
   def getDepositTransactions(window: TimeWindow): F[TransactionsInfo]
 
   def getMarkets(window: TimeWindow): F[List[AmmMarketSummary]]
+
+  def getOrderHistory(paging: Paging, tw: TimeWindow, request: OrdersRequest): F[List[Order]]
 }
 
 object AmmStats {
@@ -405,6 +407,24 @@ object AmmStats {
           }
         }
 
+    def getOrderHistory(paging: Paging, tw: TimeWindow, request: OrdersRequest): F[List[Order]] =
+      for {
+        orders <- resolveOrderType(paging, tw, request) ||> txr.trans
+      } yield orders.sortBy(_.timestamp).reverse
+
+    private def resolveOrderType(
+      paging: Paging,
+      tw: TimeWindow,
+      request: OrdersRequest
+    ): D[List[Order]] = request.orderType match {
+      case Some(OrderType.Swap)    => orders.getSwaps(paging, tw, request).map { xs: List[Order] => xs }
+      case Some(OrderType.Deposit) => orders.getDeposits(paging, tw, request).map { xs: List[Order] => xs }
+      case Some(OrderType.Redeem)  => orders.getRedeems(paging, tw, request).map { xs: List[Order] => xs }
+      case Some(OrderType.Lock)    => orders.getLocks(paging, tw, request).map { xs: List[Order] => xs }
+      case None                    => orders.getAllOrders(paging, tw, request).map { xs: List[Order] => xs }
+      case _                       => List.empty[Order].pure[D]
+    }
+
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends AmmStats[Mid[F, *]] {
@@ -492,6 +512,13 @@ object AmmStats {
         r <- _
         _ <- info"getMarkets($window) - $r"
       } yield r
+
+    def getOrderHistory(paging: Paging, tw: TimeWindow, request: OrdersRequest): Mid[F, List[Order]] =
+      for {
+        _ <- info"getMarkets($paging, $tw, $request)"
+        r <- _
+        _ <- info"getMarkets($paging, $tw, $request) - $r"
+      } yield r
   }
 
   final private class AmmMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F]) extends AmmStats[Mid[F, *]] {
@@ -540,5 +567,8 @@ object AmmStats {
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
       sendMetrics(window, "window.getMarkets", _)
+
+    def getOrderHistory(paging: Paging, tw: TimeWindow, request: OrdersRequest): Mid[F, List[Order]] =
+      sendMetrics(tw, "window.getOrdersHistory", _)
   }
 }

@@ -4,6 +4,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.constants.ErgoAssetId
 import fi.spectrum.core.domain.transaction.BoxAsset
+import sttp.tapir.Schema
 import tofu.logging.derivation.{loggable, show}
 
 @derive(encoder, decoder, loggable, show)
@@ -23,4 +24,6 @@ object AssetAmount {
 
   def fromBoxAsset(boxAsset: BoxAsset): AssetAmount =
     AssetAmount(boxAsset.tokenId, boxAsset.amount)
+
+  implicit val schema: Schema[AssetAmount] = Schema.derived
 }

@@ -112,6 +112,25 @@ services:
       options:
         max-size: "10m"
         max-file: "10"
+  mempool:
+    user: "${UID}:${GID}"
+    build:
+      context: /data/ergoAnalyticsV2/sources/ergo-analytics/modules/mempool/target/docker/stage
+      dockerfile: Dockerfile
+    volumes:
+      - "${PWD}/conf/mempool.conf:/etc/mempool.conf"
+      - "${PWD}/logs/mempool:/opt/docker/logs"
+      - "${PWD}/rocks/mempool:/tmp/rocks"
+    command: /etc/mempool.conf
+    depends_on:
+      - redisV2
+      - kafkaV21
+      - kafkaV22
+      - kafkaV23
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "10"
   redisV2:
     image: redis:latest
     hostname: redisV2

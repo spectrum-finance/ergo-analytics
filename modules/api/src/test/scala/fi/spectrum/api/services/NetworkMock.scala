@@ -1,6 +1,7 @@
 package fi.spectrum.api.services
 
 import cats.Applicative
+import fi.spectrum.api.models.MempoolData
 import fi.spectrum.core.domain
 import fi.spectrum.core.domain.TokenId
 import tofu.syntax.foption._
@@ -13,5 +14,7 @@ object NetworkMock {
     def getVerifiedTokenList: F[List[domain.TokenId]] = List.empty[TokenId].pure
 
     def getCurrentNetworkHeight: F[Int] = 1.pure
+
+    def getMempoolData(addresses: List[domain.Address]): F[List[MempoolData]] = List.empty[MempoolData].pure
   }
 }

@@ -3,11 +3,12 @@ package fi.spectrum.api.v1.routes
 import cats.effect.kernel.Async
 import cats.syntax.semigroupk._
 import fi.spectrum.api.configs.RequestConfig
+import fi.spectrum.api.services.MempoolApi
 import fi.spectrum.api.v1.endpoints.AmmStatsEndpoints
-import fi.spectrum.api.v1.http.AdaptThrowable.AdaptThrowableEitherT
-import fi.spectrum.api.v1.http.HttpError
-import fi.spectrum.api.v1.http.syntax.{toAdaptThrowableOps, toRoutesOps}
+import fi.spectrum.common.http.syntax.{toAdaptThrowableOps, toRoutesOps}
 import fi.spectrum.api.v1.services.{AmmStats, LqLocks}
+import fi.spectrum.common.http.AdaptThrowable.AdaptThrowableEitherT
+import fi.spectrum.common.http.HttpError
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
 
@@ -35,7 +36,8 @@ final class AmmStatsRoutes[
     getDepositTxsR <+>
     getPoolLocksR <+>
     convertToFiatR <+>
-    getAmmMarketsR
+    getAmmMarketsR <+>
+    getUsersOrderHistoryR
 
   def platformStatsVerifiedR: HttpRoutes[F] =
     interpreter
@@ -92,6 +94,13 @@ final class AmmStatsRoutes[
   def getAmmMarketsR: HttpRoutes[F] = interpreter.toRoutes(getAmmMarketsE.serverLogic { tw =>
     stats.getMarkets(tw).adaptThrowable.value
   })
+
+  def getUsersOrderHistoryR: HttpRoutes[F] = interpreter.toRoutes(getUsersOrderHistory.serverLogic {
+    case (paging, tw, req) =>
+      stats.getOrderHistory(paging, tw, req).adaptThrowable.value
+  })
+
+
 }
 
 object AmmStatsRoutes {

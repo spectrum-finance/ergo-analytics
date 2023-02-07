@@ -22,24 +22,13 @@ def compilerDependencies = List(CompilerPlugins.betterMonadicFor, CompilerPlugin
 
 lazy val root = (project in file("."))
   .settings(name := "ergo-analytics")
-  .aggregate(core, streaming, indexer, graphite, cache, api)
+  .aggregate(core, streaming, indexer, graphite, cache, api, mempool, common)
 
 lazy val core = mkModule("core", "core")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(
     libraryDependencies ++= compilerDependencies ++ List(
-      ce3,
-      sigma,
-      newtype,
-      refined,
-      refinedCats,
-      mouse,
-      kafka,
-      pureConfigCE,
-      redis,
-      rocksDB,
-      retry,
-      redis
+      ce3, sigma, newtype, refined, refinedCats, mouse, kafka, pureConfigCE, redis, rocksDB, retry, redis
     ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums ++ doobie ++ sttp ++ scodec ++ tapir
   )
 
@@ -58,7 +47,7 @@ lazy val api = mkModule("api", "api")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(dockerBaseImage := "openjdk:11-jre-slim")
   .settings(libraryDependencies ++= compilerDependencies ++ scodec ++ http4s ++ tapir ++ tests ++ List(zioInterop))
-  .dependsOn(core, graphite, cache)
+  .dependsOn(common, graphite, cache)
   .settings(assembly / mainClass := Some("fi.spectrum.api.Main"))
   .settings(nativePackagerSettings("api"))
   .enablePlugins(JavaAppPackaging, UniversalPlugin, DockerPlugin)
@@ -67,7 +56,7 @@ lazy val indexer = mkModule("indexer", "indexer")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(dockerBaseImage := "openjdk:11-jre-slim")
   .settings(libraryDependencies ++= compilerDependencies ++ tests ++ tofu ++ List(rocksDB))
-  .dependsOn(core, parsers, streaming, graphite, cache)
+  .dependsOn(common, streaming, graphite, cache)
   .settings(assembly / mainClass := Some("fi.spectrum.indexer.Main"))
   .settings(nativePackagerSettings("indexer"))
   .enablePlugins(JavaAppPackaging, UniversalPlugin, DockerPlugin)
@@ -80,6 +69,20 @@ lazy val cache = mkModule("cache", "cache")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(libraryDependencies ++= compilerDependencies ++ derevo ++ List(fs2IO) ++ tofu)
   .dependsOn(core, streaming)
+
+lazy val mempool = mkModule("mempool", "mempool")
+  .settings(scalacOptions ++= commonScalacOption)
+  .settings(dockerBaseImage := "openjdk:11-jre-slim")
+  .settings(libraryDependencies ++= compilerDependencies ++ tests ++ tofu)
+  .dependsOn(core, common, streaming, graphite, cache)
+  .settings(assembly / mainClass := Some("fi.spectrum.mempool.Main"))
+  .settings(nativePackagerSettings("mempool"))
+  .enablePlugins(JavaAppPackaging, UniversalPlugin, DockerPlugin)
+
+lazy val common = mkModule("common", "common")
+  .settings(scalacOptions ++= commonScalacOption)
+  .settings(libraryDependencies ++= compilerDependencies)
+  .dependsOn(parsers)
 
 def nativePackagerSettings(moduleSig: String) = List(
   Universal / name := name.value,

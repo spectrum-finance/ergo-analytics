@@ -8,6 +8,7 @@ import fi.spectrum.core.domain.BoxId
 import fi.spectrum.core.domain.order.{Order, OrderState}
 import glass.classic.Prism
 import glass.macros.ClassyOptics
+import sttp.tapir.Schema
 import tofu.logging.derivation.loggable
 
 @derive(encoder, decoder, loggable)
@@ -33,4 +34,6 @@ object Processed {
   def make(state: OrderState, order: Order): Processed[Order] = Processed(order, state, none, none, none)
 
   implicit val show: Show[Any] = p => s"Processed(${p.order.id}, ${p.order.box.boxId})"
+
+  implicit def schema: Schema[Any] = Schema.string
 }

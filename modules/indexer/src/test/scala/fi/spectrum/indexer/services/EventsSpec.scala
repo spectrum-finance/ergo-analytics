@@ -1,14 +1,12 @@
 package fi.spectrum.indexer.services
 
-import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import fi.spectrum.core.domain.TokenId
+import fi.spectrum.core.storage.OrdersStorage
 import fi.spectrum.indexer.db.Indexer
-import fi.spectrum.indexer.db.local.storage.OrdersStorage
-import fi.spectrum.indexer.mocks.{MempoolMock, MetricsMock, RedisCacheMock}
+import fi.spectrum.indexer.mocks.MetricsMock
 import fi.spectrum.indexer.models.BlockChainEvent
-import fi.spectrum.parser.{CatsPlatform, PoolParser}
+import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.parser.evaluation.Transactions._
 import fi.spectrum.streaming.domain.TransactionEvent._
@@ -19,9 +17,8 @@ import org.scalatest.matchers.should.Matchers
 
 class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAfterEach {
 
-  implicit val parser  = ProcessedOrderParser.make[IO](TokenId.unsafeFromString(""))
+  implicit val parser  = ProcessedOrderParser.make[IO]
   implicit val metrics = MetricsMock.make[IO]
-  implicit val mempool = MempoolMock.make[IO]
 
   "Events service" should "keep valid order state after rollback" in {
     implicit val (rocks, release) = TxRocksDB.make[IO, IO]("rocks").allocated.unsafeRunSync()
@@ -35,40 +32,40 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     val swap3                     = TransactionApply(swapEvaluateTransaction, 0, 10)
 
     def run = for {
-      stageDeploy            <- events.process(NonEmptyList.one(deployPool))
+      stageDeploy            <- events.process(deployPool)
       resultDeploy           <- storage.getPool(List(swapPool.get.box.boxId))
-      stageRegister          <- events.process(NonEmptyList.one(swap1))
+      stageRegister          <- events.process(swap1)
       resultRegister         <- storage.getOrder(List(stageRegister._1.head.event.order.box.boxId))
-      stageRegisterRollback  <- events.process(NonEmptyList.one(swapRollback1))
+      stageRegisterRollback  <- events.process(swapRollback1)
       resultRegisterRollback <- storage.getOrder(List(stageRegisterRollback._1.head.event.order.box.boxId))
-      stageRegister2         <- events.process(NonEmptyList.one(swap1))
+      stageRegister2         <- events.process(swap1)
       resultRegister2        <- storage.getOrder(List(stageRegister2._1.head.event.order.box.boxId))
-      stageEvaluate          <- events.process(NonEmptyList.one(swap2))
+      stageEvaluate          <- events.process(swap2)
       resultEvaluate         <- storage.getOrder(List(stageEvaluate._1.head.event.order.box.boxId))
-      stageEvaluateRollback  <- events.process(NonEmptyList.one(swapRollback2))
+      stageEvaluateRollback  <- events.process(swapRollback2)
       resultEvaluateRollback <- storage.getOrder(List(stageEvaluateRollback._1.head.event.order.box.boxId))
-      stageEvaluate2         <- events.process(NonEmptyList.one(swap3))
+      stageEvaluate2         <- events.process(swap3)
       resultEvaluate2        <- storage.getOrder(List(stageEvaluate2._1.head.event.order.box.boxId))
     } yield {
       stageDeploy._2.head.event shouldEqual swapPool.get
       resultDeploy.get shouldEqual swapPool.get
 
-      stageRegister._1.length shouldEqual 1
+      stageRegister._1.nonEmpty shouldEqual true
       resultRegister.get shouldEqual stageRegister._1.head.event
 
-      stageRegisterRollback._1.length shouldEqual 1
+      stageRegisterRollback._1.nonEmpty shouldEqual true
       resultRegisterRollback shouldEqual None
 
-      stageRegister2._1.length shouldEqual 1
+      stageRegister2._1.nonEmpty shouldEqual true
       resultRegister2.get shouldEqual stageRegister2._1.head.event
 
-      stageEvaluate._1.length shouldEqual 1
+      stageEvaluate._1.nonEmpty shouldEqual true
       resultEvaluate.get shouldEqual stageRegister._1.head.event
 
-      stageEvaluateRollback._1.length shouldEqual 1
+      stageEvaluateRollback._1.nonEmpty shouldEqual true
       resultEvaluateRollback.get shouldEqual stageRegister._1.head.event
 
-      stageEvaluate2._1.length shouldEqual 1
+      stageEvaluate2._1.nonEmpty shouldEqual true
       resultEvaluate2.get shouldEqual stageRegister._1.head.event
     }
 
@@ -86,17 +83,17 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     val swapRollback2             = TransactionUnapply(swapEvaluateTransaction, 0, 10)
 
     def run = for {
-      _             <- events.process(NonEmptyList.one(deployPool))
-      _             <- events.process(NonEmptyList.one(swap1))
-      r1            <- events.process(NonEmptyList.one(swap2))
+      _             <- events.process(deployPool)
+      _             <- events.process(swap1)
+      r1            <- events.process(swap2)
       pool1         <- storage.getPool(List(swapPool.get.box.boxId))
-      pool2         <- storage.getPool(r1._2.map(_.event.box.boxId))
-      _             <- events.process(NonEmptyList.one(swapRollback2))
+      pool2         <- storage.getPool(List(r1._2.map(_.event.box.boxId).get))
+      _             <- events.process(swapRollback2)
       pool1Rollback <- storage.getPool(List(swapPool.get.box.boxId))
-      pool2Rollback <- storage.getPool(r1._2.map(_.event.box.boxId))
-      _             <- events.process(NonEmptyList.one(swap2))
+      pool2Rollback <- storage.getPool(List(r1._2.map(_.event.box.boxId).get))
+      _             <- events.process(swap2)
       pool1Apply    <- storage.getPool(List(swapPool.get.box.boxId))
-      pool2Apply    <- storage.getPool(r1._2.map(_.event.box.boxId))
+      pool2Apply    <- storage.getPool(List(r1._2.map(_.event.box.boxId).get))
     } yield {
       pool1.get shouldEqual swapPool.get
       pool2.get shouldEqual r1._2.head.event
@@ -123,78 +120,80 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     val swapRollback2             = TransactionUnapply(swapEvaluateTransaction, 0, 10)
 
     def run = for {
-      result     <- events.process(NonEmptyList.of(deployPool, swap1, swapRollback1, swap1, swap2, swapRollback2, swap2))
+      result     <- events.process(deployPool)
+      o1         <- events.process(swap1)
+      o2         <- events.process(swapRollback1)
+      o3         <- events.process(swap1)
+      o4         <- events.process(swap2)
+      o5         <- events.process(swapRollback2)
+      o6         <- events.process(swap2)
       startPool  <- storage.getPool(List(swapPool.get.box.boxId))
-      finishPool <- storage.getPool(List(result._2.last.event.box.boxId))
-      order      <- storage.getOrder(List(result._1.head.event.order.box.boxId))
+      finishPool <- storage.getPool(List(o6._2.last.event.box.boxId))
+      order      <- storage.getOrder(List(o1._1.get.event.order.box.boxId))
     } yield {
-      val expectedOrders = List(
-        BlockChainEvent.Apply(parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get),
-        BlockChainEvent.Unapply(parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get),
-        BlockChainEvent.Apply(parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get),
-        BlockChainEvent.Apply(
-          parser
-            .evaluated(
-              swap2.transaction,
-              swap2.timestamp,
-              parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
-              swapPool.get,
-              10
-            )
-            .unsafeRunSync()
-            .get
-        ),
-        BlockChainEvent.Unapply(
-          parser
-            .evaluated(
-              swap2.transaction,
-              swap2.timestamp,
-              parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
-              swapPool.get,
-              10
-            )
-            .unsafeRunSync()
-            .get
-        ),
-        BlockChainEvent.Apply(
-          parser
-            .evaluated(
-              swap2.transaction,
-              swap2.timestamp,
-              parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
-              swapPool.get,
-              10
-            )
-            .unsafeRunSync()
-            .get
-        )
+      o1._1.get shouldEqual BlockChainEvent.Apply(
+        parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
       )
-      result._1.zip(expectedOrders).foreach { case (actual, expected) =>
-        actual shouldEqual expected
-      }
+      o2._1.get shouldEqual BlockChainEvent.Unapply(
+        parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
+      )
+      o3._1.get shouldEqual BlockChainEvent.Apply(
+        parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
+      )
+      o4._1.get shouldEqual BlockChainEvent.Apply(
+        parser
+          .evaluated(
+            swap2.transaction,
+            swap2.timestamp,
+            parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
+            swapPool.get,
+            10
+          )
+          .unsafeRunSync()
+          .get
+      )
+      o5._1.get shouldEqual BlockChainEvent.Unapply(
+        parser
+          .evaluated(
+            swap2.transaction,
+            swap2.timestamp,
+            parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
+            swapPool.get,
+            10
+          )
+          .unsafeRunSync()
+          .get
+      )
+      o6._1.get shouldEqual BlockChainEvent.Apply(
+        parser
+          .evaluated(
+            swap2.transaction,
+            swap2.timestamp,
+            parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
+            swapPool.get,
+            10
+          )
+          .unsafeRunSync()
+          .get
+      )
 
-      val expectedPools = List(
-        BlockChainEvent.Apply(swapPool.get),
-        BlockChainEvent.Apply(
-          swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10)).head
-        ),
-        BlockChainEvent.Unapply(
-          swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10)).head
-        ),
-        BlockChainEvent.Apply(
-          swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10)).head
-        )
+      result._2.get shouldEqual BlockChainEvent.Apply(swapPool.get)
+      o4._2.get shouldEqual BlockChainEvent.Apply(
+        swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10)).head
       )
-      result._2.zip(expectedPools).foreach { case (actual, expected) =>
-        actual shouldEqual expected
-      }
+      o5._2.get shouldEqual BlockChainEvent.Unapply(
+        swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10)).head
+      )
+      o6._2.get shouldEqual BlockChainEvent.Apply(
+        swap2.transaction.outputs.toList.flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10)).head
+      )
 
       startPool.get shouldEqual swapPool.get
       finishPool.get shouldEqual swap2.transaction.outputs.toList
         .flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10))
         .head
 
-      order.get shouldEqual result._1.head.event
+      order.get shouldEqual o1._1.get.event
     }
 
     run.unsafeRunSync()
@@ -212,8 +211,10 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     val swap2                     = TransactionApply(swapEvaluateTransaction, 0, 10)
 
     def run = for {
-      _ <- events.process(NonEmptyList.of(deployPool, swap1, swapRollback1))
-      r <- events.process(NonEmptyList.of(swap2))
+      _ <- events.process(deployPool)
+      _ <- events.process(swap1)
+      _ <- events.process(swapRollback1)
+      r <- events.process(swap2)
     } yield {
       r._1.isEmpty shouldBe true
       r._2.head.event shouldBe swap2.transaction.outputs.toList
@@ -226,14 +227,14 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
   }
 
   override def afterEach(): Unit = {
-    import scala.reflect.io.Directory
     import java.io.File
+    import scala.reflect.io.Directory
     new Directory(new File("rocks")).deleteRecursively()
   }
 
   override def beforeEach(): Unit = {
-    import scala.reflect.io.Directory
     import java.io.File
+    import scala.reflect.io.Directory
     new Directory(new File("rocks")).deleteRecursively()
     Directory(new File("rocks")).createDirectory()
   }

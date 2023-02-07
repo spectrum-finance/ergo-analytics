@@ -5,7 +5,8 @@ import fi.spectrum.core.domain.analytics.OrderEvaluation._
 import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
 import fi.spectrum.core.domain.analytics.{OffChainFee, OrderEvaluation, Processed}
 import fi.spectrum.core.domain.order.OrderOptics._
-import fi.spectrum.core.domain.order.{Order, OrderId}
+import fi.spectrum.core.domain.order.{Fee, Order, OrderId}
+import fi.spectrum.core.domain.order.Fee._
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.pool.Pool.AmmPool
 import fi.spectrum.core.domain.pool.PoolOptics._
