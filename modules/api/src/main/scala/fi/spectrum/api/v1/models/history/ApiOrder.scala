@@ -1,4 +1,4 @@
-package fi.spectrum.api.v1.models.amm
+package fi.spectrum.api.v1.models.history
 
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, RedeemEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.analytics.Processed
@@ -12,14 +12,27 @@ import cats.syntax.option._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.api.classes.ToAPI
-import fi.spectrum.api.models.{RegisterDeposit, RegisterRedeem, RegisterSwap}
+import fi.spectrum.api.db.models.OrderDB._
+import fi.spectrum.api.db.models.{RegisterDeposit, RegisterRedeem, RegisterSwap}
+import fi.spectrum.api.v1.models.history
+import fi.spectrum.core.domain._
+import fi.spectrum.core.domain.address._
+import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, RedeemEvaluation, SwapEvaluation}
+import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
+import fi.spectrum.core.domain.order.OrderOptics._
+import fi.spectrum.core.domain.order.OrderStatus.{mapToMempool, WaitingEvaluation, WaitingRefund, WaitingRegistration}
+import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
+import fi.spectrum.core.domain.order._
+import glass.classic.{Optional, Prism}
+import org.ergoplatform.ErgoAddressEncoder
 import sttp.tapir.Schema
+import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder)
+@derive(encoder, decoder, loggable)
 sealed trait ApiOrder {
   val id: OrderId
-  val status: OrderStatus
+  val status: history.OrderStatus
   val registerTx: TxData
 }
 
@@ -75,11 +88,23 @@ object ApiOrder {
           .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap2.toAPI(_, c)))
     }
 
-  @derive(encoder, decoder)
+  implicit val toApiAnyOrder: ToAPI[AnyOrderDB, ApiOrder, Any] = new ToAPI[AnyOrderDB, ApiOrder, Any] {
+
+    def toAPI(a: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+      Deposit.toApiDepositDBAny
+        .toAPI(a)
+        .orElse(Redeem.toApiRedeemDBAny.toAPI(a))
+        .orElse(Swap.toApSwapDBAny.toAPI(a))
+        .orElse(Lock.toApiLockDBAny.toAPI(a))
+
+    def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
+  }
+
+  @derive(encoder, decoder, loggable)
   final case class Deposit(
     id: OrderId,
     poolId: PoolId,
-    status: OrderStatus,
+    status: history.OrderStatus,
     inputX: AssetAmount,
     inputY: AssetAmount,
     actualX: Option[Long],
@@ -92,7 +117,7 @@ object ApiOrder {
     evaluateTx: Option[TxData]
   ) extends ApiOrder
 
-  object Deposit {
+  object Deposit extends DepositInstances {
 
     implicit val toApiDeposit: ToAPI[Processed[order.Order.Deposit], ApiOrder, RegisterDeposit] =
       new ToAPI[Processed[order.Order.Deposit], ApiOrder, RegisterDeposit] {
@@ -102,7 +127,7 @@ object ApiOrder {
             Deposit(
               o.order.id,
               o.order.poolId,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               params.inX,
               params.inY,
               none,
@@ -123,7 +148,7 @@ object ApiOrder {
             Deposit(
               o.order.id,
               o.order.poolId,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               c.inX,
               c.inY,
               eval.actualX.some,
@@ -158,7 +183,7 @@ object ApiOrder {
             Deposit(
               x.order.id,
               x.order.poolId,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               params.inX,
               params.inY,
               eval.map(_.actualX),
@@ -174,11 +199,66 @@ object ApiOrder {
       }
   }
 
-  @derive(encoder, decoder)
+  trait DepositInstances {
+
+    implicit val toApiDepositDB: ToAPI[DepositDB, Deposit, Any] = new ToAPI[DepositDB, Deposit, Any] {
+
+      def toAPI(d: DepositDB)(implicit e: ErgoAddressEncoder): Option[Deposit] =
+        d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
+          Deposit(
+            d.orderId,
+            d.poolId,
+            history.OrderStatus.Ledger,
+            d.inputX,
+            d.inputY,
+            d.actualX,
+            d.actualY,
+            d.outputLp,
+            d.fee,
+            a.some,
+            d.registerTx,
+            d.refundTx,
+            d.evaluateTx
+          )
+        }
+
+      def toAPI(a: DepositDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Deposit] = none
+    }
+
+    implicit val toApiDepositDBAny: ToAPI[AnyOrderDB, Deposit, Any] = new ToAPI[AnyOrderDB, Deposit, Any] {
+
+      def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[Deposit] =
+        for {
+          poolId <- d.poolId
+          inX    <- d.depositX
+          inY    <- d.depositY
+          fee    <- d.fee
+          address = d.redeemer.flatMap(r => formAddress(Redeemer.PublicKeyRedeemer(r)))
+        } yield Deposit(
+          d.orderId,
+          poolId,
+          history.OrderStatus.Ledger,
+          inX,
+          inY,
+          d.depositActualX,
+          d.depositActualY,
+          d.depositLp,
+          fee,
+          address,
+          d.registerTx,
+          d.refundedTx,
+          d.executedTx
+        )
+
+      def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Deposit] = none
+    }
+  }
+
+  @derive(encoder, decoder, loggable)
   final case class Redeem(
     id: OrderId,
     poolId: PoolId,
-    status: OrderStatus,
+    status: history.OrderStatus,
     lp: AssetAmount,
     outX: Option[AssetAmount],
     outY: Option[AssetAmount],
@@ -189,7 +269,7 @@ object ApiOrder {
     evaluateTx: Option[TxData]
   ) extends ApiOrder
 
-  object Redeem {
+  object Redeem extends RedeemInstances {
 
     implicit val toApiRedeem: ToAPI[Processed[order.Order.Redeem], ApiOrder, RegisterRedeem] =
       new ToAPI[Processed[order.Order.Redeem], ApiOrder, RegisterRedeem] {
@@ -199,7 +279,7 @@ object ApiOrder {
             Redeem(
               o.order.id,
               o.order.poolId,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               params.lp,
               none,
               none,
@@ -218,7 +298,7 @@ object ApiOrder {
             Redeem(
               o.order.id,
               o.order.poolId,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               c.lp,
               eval.outputX.some,
               eval.outputY.some,
@@ -251,7 +331,7 @@ object ApiOrder {
             Redeem(
               x.order.id,
               x.order.poolId,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               params.lp,
               eval.map(_.outputX),
               eval.map(_.outputY),
@@ -265,14 +345,64 @@ object ApiOrder {
       }
   }
 
-  @derive(encoder, decoder)
+  trait RedeemInstances {
+
+    implicit val toApiRedeemDB: ToAPI[RedeemDB, Redeem, Any] = new ToAPI[RedeemDB, Redeem, Any] {
+
+      def toAPI(d: RedeemDB)(implicit e: ErgoAddressEncoder): Option[Redeem] =
+        d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
+          Redeem(
+            d.id,
+            d.poolId,
+            history.OrderStatus.Ledger,
+            d.lp,
+            d.outX,
+            d.outY,
+            d.fee,
+            a.some,
+            d.registerTx,
+            d.refundTx,
+            d.evaluateTx
+          )
+        }
+
+      def toAPI(a: RedeemDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Redeem] = none
+    }
+
+    implicit val toApiRedeemDBAny: ToAPI[AnyOrderDB, Redeem, Any] = new ToAPI[AnyOrderDB, Redeem, Any] {
+
+      def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[Redeem] =
+        for {
+          poolId <- d.poolId
+          lp     <- d.redeemLp
+          fee    <- d.fee
+          address = d.redeemer.flatMap(r => formAddress(Redeemer.PublicKeyRedeemer(r)))
+        } yield Redeem(
+          d.orderId,
+          poolId,
+          history.OrderStatus.Ledger,
+          lp,
+          d.redeemX,
+          d.redeemY,
+          fee,
+          address,
+          d.registerTx,
+          d.refundedTx,
+          d.executedTx
+        )
+
+      def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Redeem] = none
+    }
+  }
+
+  @derive(encoder, decoder, loggable)
   final case class Swap(
     id: OrderId,
     poolId: PoolId,
-    status: OrderStatus,
+    status: history.OrderStatus,
     base: AssetAmount,
     minQuote: AssetAmount,
-    quote: Option[AssetAmount],
+    quote: Option[Long],
     fee: Option[Fee],
     address: Option[Address],
     registerTx: TxData,
@@ -280,7 +410,7 @@ object ApiOrder {
     evaluateTx: Option[TxData]
   ) extends ApiOrder
 
-  object Swap {
+  object Swap extends SwapInstances {
 
     implicit val toApiSwap: ToAPI[Processed[order.Order.Swap], ApiOrder, RegisterSwap] =
       new ToAPI[Processed[order.Order.Swap], ApiOrder, RegisterSwap] {
@@ -290,7 +420,7 @@ object ApiOrder {
             Swap(
               o.order.id,
               o.order.poolId,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               params.base,
               params.minQuote,
               none,
@@ -309,10 +439,10 @@ object ApiOrder {
             Swap(
               o.order.id,
               o.order.poolId,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               c.base,
               c.minQuote,
-              eval.output.some,
+              eval.output.amount.some,
               eval.fee.some,
               address.formAddress(o.order.redeemer),
               TxData(c.info.id, c.info.timestamp),
@@ -342,10 +472,10 @@ object ApiOrder {
             Swap(
               x.order.id,
               x.order.poolId,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               params.base,
               params.minQuote,
-              eval.map(_.output),
+              eval.map(_.output.amount),
               eval.map(_.fee),
               address.formAddress(x.order.redeemer),
               mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
@@ -356,10 +486,60 @@ object ApiOrder {
       }
   }
 
-  @derive(encoder, decoder)
+  trait SwapInstances {
+
+    implicit val toApiSwapDB: ToAPI[SwapDB, Swap, Any] = new ToAPI[SwapDB, Swap, Any] {
+
+      def toAPI(d: SwapDB)(implicit e: ErgoAddressEncoder): Option[Swap] =
+        d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
+          Swap(
+            d.id,
+            d.poolId,
+            history.OrderStatus.Ledger,
+            d.base,
+            d.minQuote,
+            d.quote,
+            d.fee,
+            a.some,
+            d.registerTx,
+            d.refundTx,
+            d.evaluateTx
+          )
+        }
+
+      def toAPI(a: SwapDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Swap] = none
+    }
+
+    implicit val toApSwapDBAny: ToAPI[AnyOrderDB, Swap, Any] = new ToAPI[AnyOrderDB, Swap, Any] {
+
+      def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[Swap] =
+        for {
+          poolId   <- d.poolId
+          base     <- d.swapBase
+          minQuote <- d.swapMinQuote
+          address = d.redeemer.flatMap(r => formAddress(Redeemer.PublicKeyRedeemer(r)))
+        } yield Swap(
+          d.orderId,
+          poolId,
+          history.OrderStatus.Ledger,
+          base,
+          minQuote,
+          d.swapQuote,
+          d.fee,
+          address,
+          d.registerTx,
+          d.refundedTx,
+          d.executedTx
+        )
+
+      def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Swap] = none
+    }
+  }
+
+  @derive(encoder, decoder, loggable)
   final case class Lock(
     id: OrderId,
-    status: OrderStatus,
+    status: history.OrderStatus,
     registerTx: TxData,
     deadline: Int,
     asset: AssetAmount,
@@ -368,7 +548,7 @@ object ApiOrder {
     evalType: Option[String]
   ) extends ApiOrder
 
-  object Lock {
+  object Lock extends LockInstances {
 
     implicit val toApiLock: ToAPI[Processed[order.Order.Lock], ApiOrder, Any] =
       new ToAPI[Processed[order.Order.Lock], ApiOrder, Any] {
@@ -377,7 +557,7 @@ object ApiOrder {
           Prism[order.Order.Lock, LockV1].getOption(o.order).map { lock =>
             Lock(
               o.order.id,
-              OrderStatus.Mempool,
+              history.OrderStatus.Mempool,
               TxData(o.state.txId, o.state.timestamp),
               lock.deadline,
               lock.amount,
@@ -391,6 +571,49 @@ object ApiOrder {
           e: ErgoAddressEncoder
         ): Option[ApiOrder] = none
       }
+  }
+
+  trait LockInstances {
+
+    implicit val toApiLockDB: ToAPI[LockDB, Lock, Any] = new ToAPI[LockDB, Lock, Any] {
+
+      def toAPI(d: LockDB)(implicit e: ErgoAddressEncoder): Option[Lock] =
+        d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
+          Lock(
+            d.id,
+            history.OrderStatus.Ledger,
+            d.registerTx,
+            d.deadline,
+            d.asset,
+            a.some,
+            d.evalTxId,
+            d.evalType
+          )
+        }
+
+      def toAPI(a: LockDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Lock] = none
+    }
+
+    implicit val toApiLockDBAny: ToAPI[AnyOrderDB, Lock, Any] = new ToAPI[AnyOrderDB, Lock, Any] {
+
+      def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[Lock] =
+        for {
+          deadline <- d.lockDeadline
+          asset    <- d.lockAsset
+          address = d.redeemer.flatMap(r => formAddress(Redeemer.PublicKeyRedeemer(r)))
+        } yield Lock(
+          d.orderId,
+          history.OrderStatus.Ledger,
+          d.registerTx,
+          deadline,
+          asset,
+          address,
+          d.lockEvalTxId,
+          d.lockEvalType
+        )
+
+      def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Lock] = none
+    }
   }
 
   private def mkTxData(state: OrderState, status: order.OrderStatus): Option[TxData] =

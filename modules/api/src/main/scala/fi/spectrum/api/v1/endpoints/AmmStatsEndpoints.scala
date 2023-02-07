@@ -1,14 +1,14 @@
 package fi.spectrum.api.v1.endpoints
 
 import fi.spectrum.api.configs.RequestConfig
-import fi.spectrum.core.domain.order.PoolId
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
-import fi.spectrum.api.v1.endpoints.models.Paging
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.locks.LiquidityLockInfo
 import fi.spectrum.common.http.{HttpError, baseEndpoint}
 import sttp.tapir.json.circe.jsonBody
+import fi.spectrum.core.domain.order.PoolId
 import sttp.tapir._
+import sttp.tapir.json.circe.jsonBody
 
 final class AmmStatsEndpoints(conf: RequestConfig) {
 
