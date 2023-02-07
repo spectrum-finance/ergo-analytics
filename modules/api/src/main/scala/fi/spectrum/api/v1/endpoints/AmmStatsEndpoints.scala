@@ -7,7 +7,6 @@ import fi.spectrum.api.v1.endpoints.models.Paging
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.locks.LiquidityLockInfo
 import fi.spectrum.common.http.{HttpError, baseEndpoint}
-import fi.spectrum.core.domain.Address
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir._
 
