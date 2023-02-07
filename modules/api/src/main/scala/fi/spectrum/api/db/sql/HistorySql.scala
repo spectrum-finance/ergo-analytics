@@ -378,7 +378,7 @@ final class HistorySql(implicit lh: LogHandler) {
     status: Option[OrderStatusApi]
   ): doobie.Fragment =
     Fragments.whereAndOpt(
-      addresses.toNel.map(Fragments.in(fr"s.redeemer", _)),
+      addresses.toNel.map(Fragments.in(fr"redeemer", _)),
       tw.from.map(f => Fragment.const(s"registered_transaction_timestamp > $f")),
       tw.to.map(t => Fragment.const(s"registered_transaction_timestamp <= $t")),
       orderStatus(status)
