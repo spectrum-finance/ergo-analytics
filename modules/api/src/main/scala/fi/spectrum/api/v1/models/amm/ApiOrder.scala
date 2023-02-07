@@ -3,7 +3,7 @@ package fi.spectrum.api.v1.models.amm
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, RedeemEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.core.domain.order.OrderStatus.{mapToMempool, WaitingEvaluation, WaitingRefund, WaitingRegistration}
-import fi.spectrum.core.domain.{address, order, Address, AssetAmount, TxId}
+import fi.spectrum.core.domain.{address, order, Address, AssetAmount, HexString, TokenId, TxId}
 import fi.spectrum.core.domain.order.{DepositParams, Fee, OrderId, OrderState, PoolId, RedeemParams, SwapParams}
 import glass.classic.{Optional, Prism}
 import org.ergoplatform.ErgoAddressEncoder
@@ -25,7 +25,31 @@ sealed trait ApiOrder {
 
 object ApiOrder {
 
-  implicit val schema: Schema[ApiOrder] = Schema.derived
+  implicit val schema: Schema[ApiOrder] =
+    Schema
+      .derived[ApiOrder]
+      .modify(_.status)(_.description("Status of order (e.g mempool, ledger)"))
+      .modify(_.registerTx)(_.description("Info of transaction registered the order"))
+      .encodedExample(
+        Redeem(
+          OrderId("82720e7581cadb1f2bd13d41ffd7d443247dd5d88082b9405c6b361e4a528621"),
+          PoolId(
+            TokenId(HexString.unsafeFromString("9916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec"))
+          ),
+          OrderStatus.Mempool,
+          AssetAmount(
+            TokenId(HexString.unsafeFromString("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04")),
+            378294
+          ),
+          None,
+          None,
+          Fee.ERG(9876282394L),
+          Some(Address.fromStringUnsafe("9gEwsJePmqhCXwdtCWVhvoRUgNsnpgWkFQ2kFhLwYhRwW7tMc61")),
+          TxData(TxId("00000111ba9e273590f73830aaeb9ccbb7e75fb57d9d2d3fb1b6482013b2c38f"), 1675258629000L),
+          None,
+          Some(TxData(TxId("0000001eba7d278324f83097oopa9hsor7e32ur57d9d2d3fb1b962013b6f87i"), 1675126828000L))
+        )
+      )
 
   implicit val toApiAny: ToAPI[Processed.Any, ApiOrder, Any] = new ToAPI[Processed.Any, ApiOrder, Any] {
 

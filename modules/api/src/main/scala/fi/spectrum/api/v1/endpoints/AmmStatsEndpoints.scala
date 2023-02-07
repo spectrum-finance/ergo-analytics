@@ -172,5 +172,5 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[List[Order]])
       .tag(Group)
       .name("Users orders")
-      .description("Get users order history")
+      .description("Provides users orders history for given addresses")
 }

@@ -1,20 +1,15 @@
 package fi.spectrum.api.v1.endpoints
 
-import fi.spectrum.api.configs.RequestConfig
-import fi.spectrum.core.domain.order.PoolId
-import fi.spectrum.api.v1.endpoints.models.TimeWindow
-import fi.spectrum.api.v1.endpoints.models.Paging
 import fi.spectrum.api.v1.models.amm._
-import fi.spectrum.api.v1.models.locks.LiquidityLockInfo
-import fi.spectrum.common.http.{HttpError, baseEndpoint}
+import fi.spectrum.common.http.{baseEndpoint, HttpError}
 import fi.spectrum.core.domain.Address
-import sttp.tapir.json.circe.jsonBody
 import sttp.tapir._
+import sttp.tapir.json.circe.jsonBody
 
 final class HistoryEndpoints {
 
   val PathPrefix = "history"
-  val Group = "History"
+  val Group      = "History"
 
   def endpoints: List[Endpoint[_, _, _, _, _]] = List(mempoolHistoryE)
 
@@ -25,5 +20,5 @@ final class HistoryEndpoints {
       .out(jsonBody[List[ApiOrder]])
       .tag(Group)
       .name("Mempool orders by addresses")
-      .description("Mempool orders by addresses")
+      .description("Provides mempool orders history by given addresses")
 }
