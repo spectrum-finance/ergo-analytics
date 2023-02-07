@@ -290,10 +290,10 @@ final class HistorySql(implicit lh: LogHandler) {
          |	input_amount_x,
          |	input_id_y,
          |	input_amount_y,
+	     |	actual_input_amount_x,
+         |	actual_input_amount_y,
          |	output_id_lp,
          |	output_amount_lp,
-         |	actual_input_amount_x,
-         |	actual_input_amount_y,
          |	dex_fee,
          |	fee_type,
          |	redeemer,
@@ -357,14 +357,14 @@ final class HistorySql(implicit lh: LogHandler) {
     sql"""
          |SELECT
          |	order_id,
+	     |	transaction_id,
+         |	timestamp
          |	deadline,
          |	token_id,
          |	amount,
+	     |  redeemer
          |	evaluation_transaction_id,
-         |	evaluation_lock_type,
-         |	redeemer,
-         |	transaction_id,
-         |	timestamp
+         |	evaluation_lock_type
          |FROM
          |	lq_locks
          |${orderCondition(addresses, tw, None)} ${txIdLock(txId)}

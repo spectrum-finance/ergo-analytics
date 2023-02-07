@@ -62,7 +62,6 @@ object OrderDB {
   @derive(show, encoder, decoder, loggable)
   final case class LockDB(
     id: OrderId,
-    status: history.OrderStatus,
     registerTx: TxData,
     deadline: Int,
     asset: AssetAmount,
