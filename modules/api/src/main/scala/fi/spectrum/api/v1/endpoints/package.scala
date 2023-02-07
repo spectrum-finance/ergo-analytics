@@ -15,9 +15,8 @@ package object endpoints {
 
   def paging: EndpointInput[Paging] =
     (query[Option[Int]]("offset").validateOption(Validator.min(0)) and
-      query[Option[Int]]("limit")
-        .validateOption(Validator.min(1))
-        .validateOption(Validator.max(Int.MaxValue)))
+      query[Option[Int]]("limit").validateOption(Validator.min(1))
+        .validateOption(Validator.max(50)))
       .map { input =>
         Paging(input._1.getOrElse(0), input._2.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }

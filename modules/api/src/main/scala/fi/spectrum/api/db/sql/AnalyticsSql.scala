@@ -2,17 +2,10 @@ package fi.spectrum.api.db.sql
 
 import doobie.implicits._
 import doobie.util.query.Query0
-import doobie.Fragments
 import doobie.{Fragment, LogHandler}
 import fi.spectrum.api.db.models.amm._
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
-import fi.spectrum.api.v1.models.amm.Order._
-import fi.spectrum.api.v1.models.amm.OrderStatus
-import fi.spectrum.core.domain.{Address, TokenId, TxId}
 import fi.spectrum.core.domain.order.PoolId
-import cats.syntax.list._
-import cats.syntax.traverse._
-import cats.instances.option._
 
 final class AnalyticsSql(implicit lg: LogHandler) {
 
@@ -201,123 +194,5 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |where output_amount_lp is not null and $fragment2
          """.stripMargin.query[DepositInfo]
   }
-
-  def getAllOrders(
-    addresses: List[Address],
-    offset: Int,
-    limit: Int,
-    tw: TimeWindow,
-    status: Option[OrderStatus],
-    assetId: Option[TokenId],
-    txId: Option[TxId]
-  ): Query0[AnyOrder] =
-    sql"""
-         |select s.input_id, s.input_value, s.min_output_id, s.output_amount, null, null, null, null, null, s.timestamp,
-         |s.register_transaction_id, s.pool_id, s.output_amount * (dex_fee_per_token_num / dex_fee_per_token_denom),
-         |s.executed_transaction_id, s.status from swaps s
-         |${orderCond(addresses, status, txId, assetId.map(tokenId => fr"s.input_id = $tokenId"), optTimeWindowCond(tw, "s"))}
-         |union
-         |select s.input_id_x, s.input_amount_x, s.input_id_y, s.input_amount_y, output_id_lp, output_amount_lp, null, null, null, s.timestamp, s.register_transaction_id,
-         |s.pool_id, dex_fee, s.executed_transaction_id, s.status from deposits s
-         |${orderCond(addresses, status, txId, assetId.map(tokenId => fr"s.input_id_x = $tokenId OR s.input_id_y = $tokenId"), optTimeWindowCond(tw, "s"))}
-         |union
-         |select s.output_id_x, s.output_amount_x, s.output_id_y, s.output_amount_y, s.lp_id, s.lp_amount, null, null, null, s.timestamp, s.register_transaction_id, s.pool_id,
-         |dex_fee, s.executed_transaction_id, s.status from redeems s
-         |${orderCond(addresses, status, txId, assetId.map(tokenId => fr"s.lp_id = $tokenId"), optTimeWindowCond(tw, "s"))}
-         |union
-         |select null, null, null, null, null, null, s.token_id, s.amount::text, s.deadline::text, s.timestamp, s.register_transaction_id,
-         |null, null s.status from lq_locks s
-         |${orderCond(addresses, status, txId, assetId.map(tokenId => fr"s.token_id = $tokenId"), optTimeWindowCond(tw, "s"))}
-         |offset $offset limit $limit
-          """.stripMargin.query[AnyOrder]
-
-  def getSwaps(
-    addresses: List[Address],
-    offset: Int,
-    limit: Int,
-    tw: TimeWindow,
-    status: Option[OrderStatus],
-    assetId: Option[TokenId],
-    txId: Option[TxId]
-  ): Query0[Swap] =
-    sql"""
-         |select s.input_id, s.input_value, s.timestamp, s.register_transaction_id, s.pool_id,
-         |s.output_amount * (dex_fee_per_token_num / dex_fee_per_token_denom),
-         |s.min_output_id, s.output_amount, s.executed_transaction_id, s.status from swaps s
-         |${orderCond(addresses, status, txId, assetId.map(tokenId => fr"s.input_id = $tokenId"), optTimeWindowCond(tw, "s"))}
-         |offset $offset limit $limit
-          """.stripMargin.query[Swap]
-
-  def getDeposits(
-    addresses: List[Address],
-    offset: Int,
-    limit: Int,
-    tw: TimeWindow,
-    status: Option[OrderStatus],
-    assetId: Option[TokenId],
-    txId: Option[TxId]
-  ): Query0[Deposit] =
-    sql"""
-         |select s.input_id_x, s.input_amount_x, s.input_id_y, s.input_amount_y, s.timestamp, s.register_transaction_id,
-         |s.pool_id, dex_fee, output_id_lp, output_amount_lp, s.executed_transaction_id, s.status from deposits s
-         |${orderCond(addresses, status, txId, assetId.map(tokenId => fr"s.input_id_x = $tokenId OR s.input_id_y = $tokenId"), optTimeWindowCond(tw, "s"))}
-         |offset $offset limit $limit
-        """.stripMargin.query[Deposit]
-
-  def getRedeems(
-    addresses: List[Address],
-    offset: Int,
-    limit: Int,
-    tw: TimeWindow,
-    status: Option[OrderStatus],
-    assetId: Option[TokenId],
-    txId: Option[TxId]
-  ): Query0[Redeem] =
-    sql"""
-         |select s.lp_id, s.lp_amount, s.timestamp, s.register_transaction_id, s.pool_id,
-         |dex_fee, s.output_id_x, s.output_amount_x, s.output_id_y, s.output_amount_y, s.executed_transaction_id, s.status from redeems s
-         |${orderCond(addresses, status, txId, assetId.map(tokenId => fr"s.lp_id = $tokenId"), optTimeWindowCond(tw, "s"))}
-         |offset $offset limit $limit
-        """.stripMargin.query[Redeem]
-
-  def getLocks(
-    addresses: List[Address],
-    offset: Int,
-    limit: Int,
-    tw: TimeWindow,
-    status: Option[OrderStatus],
-    assetId: Option[TokenId],
-    txId: Option[TxId]
-  ): Query0[Lock] =
-    sql"""
-         |select s.token_id, s.amount, s.timestamp, s.register_transaction_id, s.deadline, null, s.status from lq_locks s
-         |${orderCond(addresses, status, txId, assetId.map(tokenId => fr"s.token_id = $tokenId"), optTimeWindowCond(tw, "s"))}
-         |offset $offset limit $limit
-        """.stripMargin.query[Lock]
-
-  private def orderCond(
-    addresses: List[Address],
-    status: Option[OrderStatus],
-    txId: Option[TxId],
-    assetId: Option[Fragment],
-    tw: Option[Fragment]
-  ) =
-    Fragments.whereAndOpt(
-      addresses.toNel.map(Fragments.in(fr"s.redeemer", _)),
-      status.map(st => fr"s.status = $st"),
-      txId.map(id => fr"s.register_transaction_id = $id"),
-      assetId,
-      tw
-    )
-
-  private def optTimeWindowCond(tw: TimeWindow, alias: String): Option[Fragment] =
-    if (tw.from.nonEmpty || tw.to.nonEmpty)
-      Some(
-        Fragment.const(
-          s"${tw.from.map(ts => s"$alias.timestamp >= $ts").getOrElse("")} ${if (tw.from.isDefined && tw.to.isDefined) "and"
-          else ""} ${tw.to.map(ts => s"$alias.timestamp <= $ts").getOrElse("")}"
-        )
-      )
-    else None
 
 }
