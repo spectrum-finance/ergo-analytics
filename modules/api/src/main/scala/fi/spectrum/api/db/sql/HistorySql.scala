@@ -108,10 +108,9 @@ final class HistorySql(implicit lh: LogHandler) {
          |		executed_transaction_timestamp,
          |		refunded_transaction_id,
          |		refunded_transaction_timestamp
-         |	FROM
-         |		swaps
-         |	${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "base_id")}
-         |        ${tokensIn(tokens, "min_quote_id")}
+         |	FROM swaps
+         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "base_id")}
+	     |      ${tokensIn(tokens, "min_quote_id")}
          |	UNION
          |	SELECT
          |		order_id,
@@ -150,10 +149,9 @@ final class HistorySql(implicit lh: LogHandler) {
          |		executed_transaction_timestamp,
          |		refunded_transaction_id,
          |		refunded_transaction_timestamp
-         |	FROM
-         |		deposits
-         |	${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "input_id_x")}
-         |        ${tokensIn(tokens, "input_id_y")}
+         |	FROM deposits
+         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "input_id_x")}
+         |      ${tokensIn(tokens, "input_id_y")}
          |	UNION
          |	SELECT
          |		order_id,
@@ -192,10 +190,9 @@ final class HistorySql(implicit lh: LogHandler) {
          |		executed_transaction_timestamp,
          |		refunded_transaction_id,
          |		refunded_transaction_timestamp
-         |	FROM
-         |		redeems
-         |	${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "output_id_x")}
-         |        ${tokensIn(tokens, "output_id_y")}
+         |	FROM redeems
+         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "output_id_x")}
+         |      ${tokensIn(tokens, "output_id_y")}
          |	UNION
          |	SELECT
          |		order_id,
@@ -234,9 +231,8 @@ final class HistorySql(implicit lh: LogHandler) {
          |		NULL,
          |		NULL,
          |		NULL
-         |	FROM
-         |		lq_locks
-         |${orderCondition(addresses, tw, None)} ${txIdLock(txId)}
+         |	FROM lq_locks
+         |    ${orderCondition(addresses, tw, None)} ${txIdLock(txId)}
 	     |) AS x
          |ORDER BY x.registered_transaction_timestamp DESC 
          |OFFSET $offset LIMIT $limit;

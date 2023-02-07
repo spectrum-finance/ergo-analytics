@@ -34,9 +34,9 @@ object HistoryApi {
 
     def orderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[OrderHistoryResponse] = {
       for {
-        count <- history.totalAddressOrders(request.addresses)
+        count  <- history.totalAddressOrders(request.addresses)
         orders <- resolveOrderType(paging, tw, request)
-      } yield OrderHistoryResponse(orders.sortBy(_.registerTx.ts)(Ordering[Long].reverse), count)
+      } yield OrderHistoryResponse(orders, count)
     }.trans
 
     private def resolveOrderType(
@@ -44,10 +44,7 @@ object HistoryApi {
       tw: TimeWindow,
       request: HistoryApiQuery
     ): D[List[ApiOrder]] = request.orderType match {
-      case Some(OrderType.Swap) =>
-        history
-          .getSwaps(paging, tw, request)
-          .map(_.flatMap(_.toApi[Swap]))
+      case Some(OrderType.Swap)    => history.getSwaps(paging, tw, request).map(_.flatMap(_.toApi[Swap]))
       case Some(OrderType.Deposit) => history.getDeposits(paging, tw, request).map(_.flatMap(_.toApi[Deposit]))
       case Some(OrderType.Redeem)  => history.getRedeems(paging, tw, request).map(_.flatMap(_.toApi[Redeem]))
       case Some(OrderType.Lock)    => history.getLocks(paging, tw, request).map(_.flatMap(_.toApi[Lock]))
