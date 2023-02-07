@@ -39,7 +39,7 @@ object Dependencies {
     val scalaTestPlusVersion          = "3.2.2.0"
     val flywayVersion                 = "9.8.3"
 
-    val sigma = "7.7.7"
+    val sigma = "5.0.5"
 
     val betterMonadicFor = "0.3.1"
     val kindProjector    = "0.13.2"
