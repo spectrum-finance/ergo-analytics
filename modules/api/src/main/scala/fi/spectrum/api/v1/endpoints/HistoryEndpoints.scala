@@ -1,9 +1,7 @@
 package fi.spectrum.api.v1.endpoints
 
 import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
-import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.history.{ApiOrder, HistoryApiQuery, OrderHistoryResponse}
-import fi.spectrum.common.http.{HttpError, baseEndpoint}
 import fi.spectrum.common.http.{baseEndpoint, HttpError}
 import fi.spectrum.core.domain.Address
 import sttp.tapir._
@@ -33,7 +31,6 @@ final class HistoryEndpoints {
       .in(jsonBody[HistoryApiQuery])
       .out(jsonBody[OrderHistoryResponse])
       .tag(Group)
-      .name("history api")
-      .description("Orders with different filters")
-
+      .name("Orders history")
+      .description("Provides orders history with different filters by given addresses")
 }

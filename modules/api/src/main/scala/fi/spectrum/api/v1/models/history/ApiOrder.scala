@@ -49,7 +49,7 @@ object ApiOrder {
           PoolId(
             TokenId(HexString.unsafeFromString("9916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec"))
           ),
-          OrderStatus.Mempool,
+          history.OrderStatus.Mempool,
           AssetAmount(
             TokenId(HexString.unsafeFromString("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04")),
             378294
