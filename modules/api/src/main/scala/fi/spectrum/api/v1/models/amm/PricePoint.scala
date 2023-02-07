@@ -13,5 +13,10 @@ case class PricePoint(
 )
 
 object PricePoint {
-  implicit val schema: Schema[PricePoint] = Schema.derived
+
+  implicit val schema: Schema[PricePoint] = Schema
+    .derived[PricePoint]
+    .modify(_.timestamp)(_.description("Timestamp of a point"))
+    .modify(_.price)(_.description("Price at given timestamp"))
+    .encodedExample(PricePoint(1675586229000L, RealPrice(BigDecimal(150))))
 }

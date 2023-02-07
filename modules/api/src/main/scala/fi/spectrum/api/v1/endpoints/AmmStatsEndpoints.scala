@@ -55,7 +55,7 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[PoolStats])
       .tag(Group)
       .name("Pool statistics")
-      .description("Provides pool's statistic e.g. TVL, volume, fees, x, y, etc.")
+      .description("Provides pool's statistic e.g. TVL, volume, fees, x, y, etc. in requested time window")
 
   def getPoolsStatsE: Endpoint[Unit, TimeWindow, HttpError, List[PoolStats], Any] =
     baseEndpoint.get
@@ -64,7 +64,7 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[List[PoolStats]])
       .tag(Group)
       .name("Pools statistics")
-      .description("Provides pool's statistic of every known pool")
+      .description("Provides pool's statistic of every known pool in requested time window")
 
   def getPoolsSummaryVerifiedE: Endpoint[Unit, Unit, HttpError, List[PoolSummary], Any] =
     baseEndpoint.get
@@ -72,7 +72,9 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[List[PoolSummary]])
       .tag(Group)
       .name("Pools summary")
-      .description("Provides pools base info only about pools with x and y from verified token list")
+      .description(
+        "Provides pools base info (e.g. base/quote volume, last price, etc.) only about pools with x and y from verified token list"
+      )
 
   def getPoolsSummaryE: Endpoint[Unit, Unit, HttpError, List[PoolSummary], Any] =
     baseEndpoint.get
@@ -80,26 +82,37 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[List[PoolSummary]])
       .tag(Group)
       .name("Pools summary")
-      .description("Provides pools base info about every known pool")
+      .description("Provides pools base info (e.g. base/quote volume, last price, etc.) about every known pool")
 
   def getAvgPoolSlippageE: Endpoint[Unit, (PoolId, Int), HttpError, PoolSlippage, Any] =
     baseEndpoint.get
       .in(PathPrefix / "pool" / path[PoolId].description("Asset reference") / "slippage")
-      .in(query[Int]("blockDepth").default(20).validate(Validator.min(1)).validate(Validator.max(128)))
+      .in(
+        query[Int]("blockDepth")
+          .default(20)
+          .validate(Validator.min(1))
+          .validate(Validator.max(128))
+          .description("Lower block bound (depth) within which slippage is evaluated")
+      )
       .out(jsonBody[PoolSlippage])
       .tag(Group)
       .name("Pool slippage")
-      .description("Provides average slippage by pool")
+      .description("Provides average slippage percent (pool price change percentage) by pool")
 
   def getPoolPriceChartE: Endpoint[Unit, (PoolId, TimeWindow, Int), HttpError, List[PricePoint], Any] =
     baseEndpoint.get
       .in(PathPrefix / "pool" / path[PoolId].description("Asset reference") / "chart")
       .in(timeWindow)
-      .in(query[Int]("resolution").default(1).validate(Validator.min(1)))
+      .in(
+        query[Int]("resolution")
+          .default(1)
+          .validate(Validator.min(1))
+          .description("Block resolution. Defines price points frequency")
+      )
       .out(jsonBody[List[PricePoint]])
       .tag(Group)
       .name("Pool chart")
-      .description("Provides price chart by pool")
+      .description("Provides price chart by pool in requested time window and resolution")
 
   def getAmmMarketsE: Endpoint[Unit, TimeWindow, HttpError, List[AmmMarketSummary], Any] =
     baseEndpoint.get
@@ -108,7 +121,7 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[List[AmmMarketSummary]])
       .tag(Group)
       .name("All pools stats")
-      .description("Get statistics on all pools")
+      .description("Provides statistic of every market in requested time window")
 
   def getSwapTxsE: Endpoint[Unit, TimeWindow, HttpError, TransactionsInfo, Any] =
     baseEndpoint.get
@@ -117,7 +130,7 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[TransactionsInfo])
       .tag(Group)
       .name("Swap txs")
-      .description("Get swap txs info")
+      .description("Provides swap transactions info (e.g txs quantity, avg value, etc.) in requested time window")
 
   def getDepositTxsE: Endpoint[Unit, TimeWindow, HttpError, TransactionsInfo, Any] =
     baseEndpoint.get
@@ -126,7 +139,7 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[TransactionsInfo])
       .tag(Group)
       .name("Deposit txs")
-      .description("Get deposit txs info")
+      .description("Provides deposit transactions info (e.g txs quantity, avg value, etc.) in requested time window")
 
   def getPoolLocksE: Endpoint[Unit, (PoolId, Int), HttpError, List[LiquidityLockInfo], Any] =
     baseEndpoint.get
@@ -135,7 +148,9 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[List[LiquidityLockInfo]])
       .tag(Group)
       .name("Pool locks")
-      .description("Get liquidity locks for the pool with the given ID")
+      .description(
+        "Provides all liquidity locks info (e.g deadline, amount, redeemer, etc.) for the pool with the given ID"
+      )
 
   def convertToFiatE: Endpoint[Unit, ConvertionRequest, HttpError, FiatEquiv, Any] =
     baseEndpoint.post
@@ -144,5 +159,5 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .out(jsonBody[FiatEquiv])
       .tag(Group)
       .name("Crypto/Fiat conversion")
-      .description("Convert crypto units to fiat")
+      .description("Performs crypto units to fiat units conversion")
 }

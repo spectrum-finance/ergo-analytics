@@ -15,7 +15,10 @@ final case class PlatformStats(tvl: TotalValueLocked, volume: Volume)
 object PlatformStats {
 
   implicit val schemaFees: Schema[PlatformStats] =
-    Schema.derived
+    Schema
+      .derived[PlatformStats]
+      .modify(_.tvl)(_.description("Total platform value locked"))
+      .modify(_.volume)(_.description("Platform volume within given time window"))
       .encodedExample(
         PlatformStats(
           TotalValueLocked(BigDecimal(10.0), FiatUnits(Currency(CurrencyId("id"), 3))),

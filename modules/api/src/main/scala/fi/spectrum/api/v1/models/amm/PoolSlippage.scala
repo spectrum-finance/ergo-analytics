@@ -15,7 +15,12 @@ case class PoolSlippage(
 }
 
 object PoolSlippage {
-  implicit val schema: Schema[PoolSlippage] = Schema.derived
+
+  implicit val schema: Schema[PoolSlippage] =
+    Schema
+      .derived[PoolSlippage]
+      .modify(_.slippagePercent)(_.description("Price change percentage"))
+      .encodedExample(PoolSlippage(BigDecimal(10.5)))
 
   val defaultScale = 3
 
