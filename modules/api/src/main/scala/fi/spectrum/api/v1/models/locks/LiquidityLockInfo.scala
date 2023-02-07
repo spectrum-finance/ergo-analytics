@@ -3,9 +3,9 @@ package fi.spectrum.api.v1.models.locks
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.api.db.models.locks.LiquidityLockStats
-import fi.spectrum.core.domain.{Address, HexString, TokenId}
+import fi.spectrum.core.domain.{HexString, TokenId}
 import fi.spectrum.core.domain.order.{PoolId, Redeemer}
-import fi.spectrum.core.protocol.ErgoTreeSerializer
+import fi.spectrum.core.domain.{address, Address}
 import org.ergoplatform.ErgoAddressEncoder
 import sttp.tapir.Schema
 
