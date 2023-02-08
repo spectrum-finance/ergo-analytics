@@ -1,7 +1,7 @@
 package fi.spectrum.parser
 
 import fi.spectrum.core.domain.ErgoTreeTemplate
-import fi.spectrum.parser.templates.{Lock, N2T, T2T}
+import fi.spectrum.parser.templates.{LM, Lock, N2T, T2T}
 
 object api {
 
@@ -39,6 +39,9 @@ object api {
       Lock.lockV1,
       T2T.pool,
       N2T.pool,
+      LM.poolV1SelfHosted,
+      LM.depositV1,
+      LM.bundleV1,
       ergoBaseOutput
     )
 

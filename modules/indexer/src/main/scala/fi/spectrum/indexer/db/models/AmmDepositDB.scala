@@ -3,16 +3,17 @@ package fi.spectrum.indexer.db.models
 import cats.syntax.option._
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.analytics.AnalyticsOptics._
-import fi.spectrum.core.domain.analytics.OrderEvaluation.DepositEvaluation
+import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmDepositEvaluation
 import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed, Version}
-import fi.spectrum.core.domain.order.Order.Deposit._
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.OrderStatus.{Evaluated, Refunded, Registered}
-import fi.spectrum.core.domain.order.{Fee, Order, OrderId, PoolId}
-import fi.spectrum.indexer.classes.syntax._
+import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
 import fi.spectrum.indexer.classes.ToDB
+import fi.spectrum.indexer.classes.syntax._
 import glass.Subset
 
-final case class DepositDB(
+final case class AmmDepositDB(
   orderId: OrderId,
   poolId: PoolId,
   poolStateId: Option[BoxId],
@@ -32,23 +33,23 @@ final case class DepositDB(
   refundedTx: Option[TxInfo]
 )
 
-object DepositDB {
+object AmmDepositDB {
 
-  implicit val toDB: ToDB[Processed[Order.Deposit], DepositDB] = processed => {
+  implicit val toDB: ToDB[Processed[AmmDeposit], AmmDepositDB] = processed => {
     processed.order match {
-      case deposit: DepositV3       => processed.widen(deposit).toDB
-      case deposit: DepositV1       => processed.widen(deposit).toDB
-      case deposit: DepositLegacyV2 => processed.widen(deposit).toDB
-      case deposit: DepositLegacyV1 => processed.widen(deposit).toDB
+      case deposit: AmmDepositV3       => processed.widen(deposit).toDB
+      case deposit: AmmDepositV1       => processed.widen(deposit).toDB
+      case deposit: AmmDepositLegacyV2 => processed.widen(deposit).toDB
+      case deposit: AmmDepositLegacyV1 => processed.widen(deposit).toDB
     }
   }
 
-  implicit val ___V1: ToDB[Processed[DepositV1], DepositDB] =
+  implicit val ___V1: ToDB[Processed[AmmDepositV1], AmmDepositDB] =
     processed => {
       val deposit     = processed.order
-      val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
+      val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmDepositEvaluation].getOption)
       val txInfo      = TxInfo(processed.state.txId, processed.state.timestamp)
-      DepositDB(
+      AmmDepositDB(
         deposit.id,
         deposit.poolId,
         processed.poolBoxId,
@@ -69,12 +70,12 @@ object DepositDB {
       )
     }
 
-  implicit val ___V3: ToDB[Processed[DepositV3], DepositDB] =
+  implicit val ___V3: ToDB[Processed[AmmDepositV3], AmmDepositDB] =
     processed => {
       val deposit     = processed.order
-      val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
+      val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmDepositEvaluation].getOption)
       val txInfo      = TxInfo(processed.state.txId, processed.state.timestamp)
-      DepositDB(
+      AmmDepositDB(
         deposit.id,
         deposit.poolId,
         processed.poolBoxId,
@@ -95,12 +96,12 @@ object DepositDB {
       )
     }
 
-  implicit val ___LegacyV1: ToDB[Processed[DepositLegacyV1], DepositDB] =
+  implicit val ___LegacyV1: ToDB[Processed[AmmDepositLegacyV1], AmmDepositDB] =
     processed => {
       val deposit     = processed.order
-      val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
+      val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmDepositEvaluation].getOption)
       val txInfo      = TxInfo(processed.state.txId, processed.state.timestamp)
-      DepositDB(
+      AmmDepositDB(
         deposit.id,
         deposit.poolId,
         processed.poolBoxId,
@@ -121,12 +122,12 @@ object DepositDB {
       )
     }
 
-  implicit val ___LegacyV2: ToDB[Processed[DepositLegacyV2], DepositDB] =
+  implicit val ___LegacyV2: ToDB[Processed[AmmDepositLegacyV2], AmmDepositDB] =
     processed => {
       val deposit     = processed.order
-      val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, DepositEvaluation].getOption)
+      val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmDepositEvaluation].getOption)
       val txInfo      = TxInfo(processed.state.txId, processed.state.timestamp)
-      DepositDB(
+      AmmDepositDB(
         deposit.id,
         deposit.poolId,
         processed.poolBoxId,

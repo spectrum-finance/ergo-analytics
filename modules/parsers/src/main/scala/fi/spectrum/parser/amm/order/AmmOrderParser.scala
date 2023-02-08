@@ -4,6 +4,7 @@ import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.analytics.Version._
 import fi.spectrum.core.domain.order.Order
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.parser.domain.AmmType
 import fi.spectrum.parser.domain.AmmType._
@@ -25,7 +26,7 @@ trait AmmOrderParser[+V <: Version, +T <: AmmType] { self =>
 
   /** Parse exactly deposit order
     */
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit]
+  def deposit(box: Output, tree: Values.ErgoTree): Option[AmmDeposit]
 
   /** Parse exactly redeem order
     */
@@ -42,7 +43,7 @@ trait AmmOrderParser[+V <: Version, +T <: AmmType] { self =>
       def swap(box: Output, tree: Values.ErgoTree): Option[Swap] =
         self.swap(box, tree) orElse that.swap(box, tree)
 
-      def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] =
+      def deposit(box: Output, tree: Values.ErgoTree): Option[AmmDeposit] =
         self.deposit(box, tree) orElse that.deposit(box, tree)
 
       def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] =

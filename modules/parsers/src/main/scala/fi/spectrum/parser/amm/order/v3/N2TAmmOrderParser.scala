@@ -4,13 +4,13 @@ import cats.syntax.option._
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.SPF
-import fi.spectrum.core.domain.order.Order.Deposit.DepositV3
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV3
 import fi.spectrum.core.domain.order.Order.Swap.SwapV3
 import fi.spectrum.core.domain.order.Order._
-
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
 import fi.spectrum.core.domain.analytics.Version.V3
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.parser.amm.order.AmmOrderParser
@@ -76,7 +76,7 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       Version.V3
     )
 
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] =
+  def deposit(box: Output, tree: Values.ErgoTree): Option[AmmDeposit] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositV3,
@@ -88,8 +88,8 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
           inY         <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- tree.constants.parseLong(11)
           redeemer    <- tree.constants.parseBytea(15).map(SErgoTree.fromBytes)
-          params = DepositParams(inX, if (dexFeeFromY) inY - dexFee else inY)
-        } yield DepositV3(
+          params = AmmDepositParams(inX, if (dexFeeFromY) inY - dexFee else inY)
+        } yield AmmDepositV3(
           box,
           SPF(dexFee),
           poolId,

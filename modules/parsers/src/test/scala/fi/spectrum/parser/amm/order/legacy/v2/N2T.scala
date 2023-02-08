@@ -2,9 +2,9 @@ package fi.spectrum.parser.amm.order.legacy.v2
 
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.ERG
-import fi.spectrum.core.domain.order.Order.Deposit.DepositLegacyV2
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
-import fi.spectrum.core.domain.order.{DepositParams, PoolId}
+import fi.spectrum.core.domain.order.{AmmDepositParams, PoolId}
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{AssetAmount, PubKey, TokenId}
 import io.circe.parser.decode
@@ -43,12 +43,12 @@ object N2T {
         |""".stripMargin
     ).toOption.get
 
-    val deposit: DepositLegacyV2 = DepositLegacyV2(
+    val deposit: AmmDepositLegacyV2 = AmmDepositLegacyV2(
       output,
       ERG(7000000),
       PoolId.unsafeFromString("9916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec"),
       PublicKeyRedeemer(PubKey.unsafeFromString("03ac924c5ce32ee142e2506df85b06075ceb43fc235c665c4f4b354bfb997f9182")),
-      DepositParams(
+      AmmDepositParams(
         AssetAmount.native(4384192651L),
         AssetAmount(
           TokenId.unsafeFromString("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04"),

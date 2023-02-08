@@ -1,7 +1,7 @@
 package fi.spectrum.parser.evaluation
 
 import fi.spectrum.core.domain.analytics.OffChainFee
-import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, RedeemEvaluation, SwapEvaluation}
+import fi.spectrum.core.domain.analytics.OrderEvaluation.{AmmDepositEvaluation, RedeemEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
 import fi.spectrum.core.domain.{Address, AssetAmount, BoxId, TokenId}
@@ -2033,7 +2033,7 @@ object Transactions {
       |""".stripMargin
   ).toOption.get.toTransaction
 
-  def depositEval = DepositEvaluation(
+  def depositEval = AmmDepositEvaluation(
     AssetAmount(
       TokenId.unsafeFromString("fa6326a26334f5e933b96470b53b45083374f71912b0d7597f00c2c7ebeb5da6"),
       652417

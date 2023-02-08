@@ -2,7 +2,7 @@ package fi.spectrum.parser.amm.order.v3
 
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.SPF
-import fi.spectrum.core.domain.order.Order.Deposit.DepositV3
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV3
 import fi.spectrum.core.domain.order.Order.Swap.SwapV3
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
@@ -262,14 +262,14 @@ object N2T {
          |""".stripMargin
     ).toOption.get
 
-    val depositSpfY: DepositV3 = DepositV3(
+    val depositSpfY: AmmDepositV3 = AmmDepositV3(
       outputSpfY,
       SPF(123),
       PoolId.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000"),
       ErgoTreeRedeemer(
         SErgoTree.unsafeFromString("0303030303030303030303030303030303030303030303030303030303030303")
       ),
-      DepositParams(
+      AmmDepositParams(
         AssetAmount.native(12345),
         AssetAmount(
           TokenId.unsafeFromString("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04"),
@@ -310,14 +310,14 @@ object N2T {
          |""".stripMargin
     ).toOption.get
 
-    val depositSpfNotY: DepositV3 = DepositV3(
+    val depositSpfNotY: AmmDepositV3 = AmmDepositV3(
       outputSpfNotY,
       SPF(123),
       PoolId.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000"),
       ErgoTreeRedeemer(
         SErgoTree.unsafeFromString("0303030303030303030303030303030303030303030303030303030303030303")
       ),
-      DepositParams(
+      AmmDepositParams(
         AssetAmount.native(12345),
         AssetAmount(
           TokenId.unsafeFromString("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04"),
