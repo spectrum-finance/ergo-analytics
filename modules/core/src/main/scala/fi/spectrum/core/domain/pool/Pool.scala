@@ -41,4 +41,49 @@ object Pool {
   object AmmPool {
     implicit val lens: Lens[AmmPool, BoxId] = GenContains[AmmPool](_.box.boxId)
   }
+
+  @derive(encoder, decoder, show, loggable)
+  final case class LmPoolSelfHosted(
+    poolId: PoolId,
+    reward: AssetAmount,
+    lq: AssetAmount,
+    vLq: AssetAmount,
+    tmp: AssetAmount,
+    epochLength: Int,
+    epochsNum: Int,
+    programStart: Int,
+    redeemBlocksDelta: Int,
+    programBudget: Long,
+    maxRoundingError: Long,
+    epochIndex: Option[Int],
+    timestamp: Long,
+    box: Output,
+    version: V1,
+    height: Int
+  ) extends Pool
+
+  object LmPoolSelfHosted
+
+  @derive(encoder, decoder, show, loggable)
+  final case class LmPool(
+    poolId: PoolId,
+    reward: AssetAmount,
+    lq: AssetAmount,
+    vLq: AssetAmount,
+    tmp: AssetAmount,
+    epochLength: Int,
+    epochsNum: Int,
+    programStart: Int,
+    redeemBlocksDelta: Int,
+    programBudget: Long,
+    maxRoundingError: Long,
+    executionBudget: Long,
+    epochIndex: Option[Int],
+    timestamp: Long,
+    box: Output,
+    version: V1,
+    height: Int
+  ) extends Pool
+
+  object LmPool
 }

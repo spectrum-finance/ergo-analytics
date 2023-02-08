@@ -1,7 +1,8 @@
 package fi.spectrum.core.domain.order
 
 import fi.spectrum.core.domain.AssetAmount
-import fi.spectrum.core.domain.analytics.OrderEvaluation.DepositEvaluation
+import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmDepositEvaluation
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.Order.Deposit._
 import fi.spectrum.core.domain.order.Order.Lock._
@@ -13,10 +14,12 @@ import glass.macros.{GenContains, GenSubset}
 
 object OrderOptics {
 
-  val depositPrism = GenSubset[Order, Deposit]
-  val swapPrism    = GenSubset[Order, Swap]
-  val redeemPrism  = GenSubset[Order, Redeem]
-  val lockPrism    = GenSubset[Order, Lock]
+  val depositPrism  = GenSubset[Order, Deposit]
+  val lmPrism       = GenSubset[Order, LmDeposit]
+  val compoundPrism = GenSubset[Order, Compound]
+  val swapPrism     = GenSubset[Order, Swap]
+  val redeemPrism   = GenSubset[Order, Redeem]
+  val lockPrism     = GenSubset[Order, Lock]
 
   val swapV1       = swapPrism >> GenSubset[Swap, SwapV1]
   val swapV2       = swapPrism >> GenSubset[Swap, SwapV2]
@@ -36,11 +39,11 @@ object OrderOptics {
     (swapLegacyV1 >> GenContains[SwapLegacyV1](_.params.minQuote))
   }
 
-  implicit val optionalDepositParams: Optional[Order, DepositParams] = {
-    (depositPrism >> GenSubset[Deposit, DepositV1] >> GenContains[DepositV1](_.params)) orElse
-    (depositPrism >> GenSubset[Deposit, DepositV3] >> GenContains[DepositV3](_.params)) orElse
-    (depositPrism >> GenSubset[Deposit, DepositLegacyV1] >> GenContains[DepositLegacyV1](_.params)) orElse
-    (depositPrism >> GenSubset[Deposit, DepositLegacyV2] >> GenContains[DepositLegacyV2](_.params))
+  implicit val optionalDepositParams: Optional[Order, AmmDepositParams] = {
+    (depositPrism >> GenSubset[Deposit, AmmDepositV1] >> GenContains[AmmDepositV1](_.params)) orElse
+    (depositPrism >> GenSubset[Deposit, AmmDepositV3] >> GenContains[AmmDepositV3](_.params)) orElse
+    (depositPrism >> GenSubset[Deposit, AmmDepositLegacyV1] >> GenContains[AmmDepositLegacyV1](_.params)) orElse
+    (depositPrism >> GenSubset[Deposit, AmmDepositLegacyV2] >> GenContains[AmmDepositLegacyV2](_.params))
   }
 
   implicit val optionalRedeemParams: Optional[Order, RedeemParams] = {

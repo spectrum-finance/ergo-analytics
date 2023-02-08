@@ -2,15 +2,15 @@ package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
-import fi.spectrum.indexer.db.models.{DepositDB, UpdateEvaluatedTx}
+import fi.spectrum.indexer.db.models.{AmmDepositDB, UpdateEvaluatedTx}
 import doobie.{ConnectionIO, Update}
 import doobie.util.log.LogHandler
-import fi.spectrum.core.domain.analytics.OrderEvaluation.DepositEvaluation
+import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmDepositEvaluation
 
 final class DepositRepository
-  extends Repository[DepositDB, OrderId, DepositEvaluation]
-  with DeleteRepository[DepositDB, OrderId]
-  with UpdateRepository[DepositDB] {
+  extends Repository[AmmDepositDB, OrderId, AmmDepositEvaluation]
+  with DeleteRepository[AmmDepositDB, OrderId]
+  with UpdateRepository[AmmDepositDB] {
 
   val tableName: String = "deposits"
 
@@ -46,8 +46,8 @@ final class DepositRepository
 
   val field: String = "order_id"
 
-  def updateExecuted(update: UpdateEvaluatedTx[DepositEvaluation])(implicit lh: LogHandler): ConnectionIO[Int] =
-    Update[UpdateEvaluatedTx[DepositEvaluation]](
+  def updateExecuted(update: UpdateEvaluatedTx[AmmDepositEvaluation])(implicit lh: LogHandler): ConnectionIO[Int] =
+    Update[UpdateEvaluatedTx[AmmDepositEvaluation]](
       s"""
          |update $tableName
          |set $executed=?, $executedTs=?, pool_state_id=?, output_id_lp=?, output_amount_lp=?,

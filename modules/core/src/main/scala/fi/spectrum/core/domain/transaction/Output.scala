@@ -2,14 +2,13 @@ package fi.spectrum.core.domain.transaction
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import fi.spectrum.core.domain.{sigma, BoxId, SErgoTree, TxId}
+import fi.spectrum.core.domain.{BoxId, SErgoTree, TxId, sigma}
 import fi.spectrum.core.protocol.ErgoTreeSerializer.default._
+import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import scorex.util.ModifierId
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
-import sigmastate.eval.Colls
 import tofu.logging.derivation.{loggable, show}
 
 @derive(encoder, decoder, loggable, show)
@@ -38,7 +37,7 @@ object Output {
       parseRegisters(box.additionalRegisters)
     )
 
-  def parseRegisters(
+  private def parseRegisters(
     additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]]
   ): Map[RegisterId, SConstant] =
     additionalRegisters.flatMap { case (k, v) =>

@@ -4,9 +4,9 @@ import cats.syntax.option._
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.analytics.Version.V2
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.order.Order.Swap.SwapV2
 import fi.spectrum.core.domain.order.Order._
-
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
@@ -50,7 +50,7 @@ final class T2TAmmOrderParser extends AmmOrderParser[V2, T2T] {
       )
       .merge
 
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] = none
+  def deposit(box: Output, tree: Values.ErgoTree): Option[AmmDeposit] = none
 
   def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] = none
 }

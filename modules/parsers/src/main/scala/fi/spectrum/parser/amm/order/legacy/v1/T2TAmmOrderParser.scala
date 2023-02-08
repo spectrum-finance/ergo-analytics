@@ -3,13 +3,13 @@ package fi.spectrum.parser.amm.order.legacy.v1
 import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.ERG
-import fi.spectrum.core.domain.order.Order.Deposit.DepositLegacyV1
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemLegacyV1
 import fi.spectrum.core.domain.order.Order.Swap.SwapLegacyV1
 import fi.spectrum.core.domain.order.Order._
-
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.analytics.Version.LegacyV1
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, PubKey, TokenId}
@@ -46,7 +46,7 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
       )
       .merge
 
-  def deposit(box: Output, tree: Values.ErgoTree): Option[Deposit] =
+  def deposit(box: Output, tree: Values.ErgoTree): Option[AmmDeposit] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositLegacyV1,
@@ -56,8 +56,8 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV1, T2T] {
           inY      <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
           dexFee   <- tree.constants.parseLong(11)
           redeemer <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
-          params = DepositParams(inX, inY)
-        } yield DepositLegacyV1(
+          params = AmmDepositParams(inX, inY)
+        } yield AmmDepositLegacyV1(
           box,
           ERG(dexFee),
           poolId,

@@ -3,7 +3,7 @@ package fi.spectrum.parser
 import sigmastate.Values.{ByteArrayConstant, Constant, SigmaPropConstant}
 import sigmastate.basics.DLogProtocol
 import sigmastate.basics.DLogProtocol.ProveDlogProp
-import sigmastate.{SBoolean, SLong, SType, Values}
+import sigmastate.{SBoolean, SLong, SType, Values, SInt}
 
 package object syntax {
 
@@ -12,6 +12,11 @@ package object syntax {
     def parseLong(idx: Int): Option[Long] =
       constants.lift(idx).collect { case Values.ConstantNode(value, SLong) =>
         value.asInstanceOf[Long]
+      }
+
+    def parseInt(idx: Int): Option[Int] =
+      constants.lift(idx).collect { case Values.ConstantNode(value, SInt) =>
+        value.asInstanceOf[Int]
       }
 
     def parseBoolean(idx: Int): Option[Boolean] =

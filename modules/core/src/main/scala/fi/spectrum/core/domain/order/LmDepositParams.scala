@@ -6,4 +6,4 @@ import fi.spectrum.core.domain.AssetAmount
 import tofu.logging.derivation.loggable
 
 @derive(encoder, decoder, loggable)
-final case class DepositParams(inX: AssetAmount, inY: AssetAmount)
+final case class LmDepositParams(expectedNumEpochs: Int, tokens: AssetAmount)
