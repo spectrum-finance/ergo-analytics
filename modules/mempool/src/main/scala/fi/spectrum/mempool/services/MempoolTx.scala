@@ -19,6 +19,7 @@ import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
+import cats.syntax.traverse._
 
 @derive(representableK)
 trait MempoolTx[F[_]] {
@@ -73,10 +74,10 @@ object MempoolTx {
     def process(event: ChainSyncEvent): F[Unit] =
       event match {
         case ApplyChainSync(order, pool) =>
-          storage.insertPoolAndOrder(pool, order) >>
-            mempool.del(pool, order)
+          storage.insertPoolAndOrder(pool, List(order).flatten) >>
+            mempool.del(pool, List(order).flatten)
         case UnapplyChainSync(order, pool) =>
-          storage.deletePoolAndOrder(pool, order)
+          storage.deletePoolAndOrder(pool, List(order).flatten)
       }
 
   }

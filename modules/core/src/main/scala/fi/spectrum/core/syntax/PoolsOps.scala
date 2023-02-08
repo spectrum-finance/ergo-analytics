@@ -10,7 +10,7 @@ object PoolsOps {
       value match {
         case _: Pool.AmmPool          => "amm"
         case _: Pool.LmPoolSelfHosted => "lm.self.hosted"
-        case _: Pool.LmPool           => "lm"
+        case _: Pool.LmPoolDefault           => "lm"
       }
   }
 

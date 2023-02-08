@@ -8,7 +8,7 @@ import fi.spectrum.core.domain.order.PoolId
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.domain.{AssetAmount, BoxId}
 import glass.classic.Lens
-import glass.macros.GenContains
+import glass.macros.{GenContains, GenSubset}
 import tofu.logging.derivation.{loggable, show}
 
 /** This abstraction represents any pool in our domain, e.g. Amm pool, LM pool
@@ -43,6 +43,15 @@ object Pool {
   }
 
   @derive(encoder, decoder, show, loggable)
+  sealed trait LmPool extends Pool
+
+  object LmPool {
+    implicit val lens: Lens[LmPool, BoxId] =
+      (GenSubset[LmPool, LmPoolSelfHosted] >> GenContains[LmPoolSelfHosted](_.box.boxId) orElse
+        GenSubset[LmPool, LmPoolDefault] >> GenContains[LmPoolDefault](_.box.boxId)).unsafeTotal
+  }
+
+  @derive(encoder, decoder, show, loggable)
   final case class LmPoolSelfHosted(
     poolId: PoolId,
     reward: AssetAmount,
@@ -60,12 +69,12 @@ object Pool {
     box: Output,
     version: V1,
     height: Int
-  ) extends Pool
+  ) extends LmPool
 
   object LmPoolSelfHosted
 
   @derive(encoder, decoder, show, loggable)
-  final case class LmPool(
+  final case class LmPoolDefault(
     poolId: PoolId,
     reward: AssetAmount,
     lq: AssetAmount,
@@ -83,7 +92,7 @@ object Pool {
     box: Output,
     version: V1,
     height: Int
-  ) extends Pool
+  ) extends LmPool
 
-  object LmPool
+  object LmPoolDefault
 }

@@ -30,9 +30,9 @@ trait OrdersStorage[F[_]] {
 
   def deletePool(id: BoxId): F[Unit]
 
-  def insertPoolAndOrder(pool: Option[Pool], order: Option[Processed.Any]): F[Unit]
+  def insertPoolAndOrder(pool: Option[Pool], orders: List[Processed.Any]): F[Unit]
 
-  def deletePoolAndOrder(pool: Option[Pool], order: Option[Processed.Any]): F[Unit]
+  def deletePoolAndOrder(pool: Option[Pool], orders: List[Processed.Any]): F[Unit]
 }
 
 object OrdersStorage {
@@ -53,14 +53,14 @@ object OrdersStorage {
 
     implicit val scodec: Codec[String] = variableSizeBits(int32, utf8)
 
-    def deletePoolAndOrder(pool: Option[Pool], order: Option[Processed.Any]): F[Unit] =
+    def deletePoolAndOrder(pool: Option[Pool], orders: List[Processed.Any]): F[Unit] =
       rocks.beginTransaction.use { tx =>
-        pool.traverse(p => deletePool(p.box.boxId)) >> order.traverse(o => deleteOrder(o.order.id)) >> tx.commit
+        pool.traverse(p => deletePool(p.box.boxId)) >> orders.traverse(o => deleteOrder(o.order.id)) >> tx.commit
       }
 
-    def insertPoolAndOrder(pool: Option[Pool], order: Option[Processed.Any]): F[Unit] =
+    def insertPoolAndOrder(pool: Option[Pool], orders: List[Processed.Any]): F[Unit] =
       rocks.beginTransaction.use { tx =>
-        pool.traverse(insertPool) >> order.traverse(insertOrder) >> tx.commit
+        pool.traverse(insertPool) >> orders.traverse(insertOrder) >> tx.commit
       }
 
     def insertOrder(order: Processed.Any): F[Unit] =
@@ -137,18 +137,18 @@ object OrdersStorage {
         _ <- info"deletePool($id) -> finish"
       } yield ()
 
-    def insertPoolAndOrder(pool: Option[Pool], order: Option[Processed.Any]): Mid[F, Unit] =
+    def insertPoolAndOrder(pool: Option[Pool], orders: List[Processed.Any]): Mid[F, Unit] =
       for {
-        _ <- info"insertPoolAndOrder(${pool.map(_.box.boxId)}, ${order.map(_.order.id)})"
+        _ <- info"insertPoolAndOrder(${pool.map(_.box.boxId)}, ${orders.map(_.order.id)})"
         _ <- _
-        _ <- info"insertPoolAndOrder(${pool.map(_.box.boxId)}, ${order.map(_.order.id)}) -> finish"
+        _ <- info"insertPoolAndOrder(${pool.map(_.box.boxId)}, ${orders.map(_.order.id)}) -> finish"
       } yield ()
 
-    def deletePoolAndOrder(pool: Option[Pool], order: Option[Processed.Any]): Mid[F, Unit] =
+    def deletePoolAndOrder(pool: Option[Pool], orders: List[Processed.Any]): Mid[F, Unit] =
       for {
-        _ <- info"deletePoolAndOrder(${pool.map(_.box.boxId)}, ${order.map(_.order.id)})"
+        _ <- info"deletePoolAndOrder(${pool.map(_.box.boxId)}, ${orders.map(_.order.id)})"
         _ <- _
-        _ <- info"deletePoolAndOrder(${pool.map(_.box.boxId)}, ${order.map(_.order.id)}) -> finish"
+        _ <- info"deletePoolAndOrder(${pool.map(_.box.boxId)}, ${orders.map(_.order.id)}) -> finish"
       } yield ()
   }
 }

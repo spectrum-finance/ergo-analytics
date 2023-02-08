@@ -7,7 +7,7 @@ import doobie.{ConnectionIO, Update}
 import doobie.util.log.LogHandler
 import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmDepositEvaluation
 
-final class DepositRepository
+final class AmmDepositRepository
   extends Repository[AmmDepositDB, OrderId, AmmDepositEvaluation]
   with DeleteRepository[AmmDepositDB, OrderId]
   with UpdateRepository[AmmDepositDB] {
