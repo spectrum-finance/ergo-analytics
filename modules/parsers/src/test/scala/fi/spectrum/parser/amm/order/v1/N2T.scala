@@ -3,13 +3,13 @@ package fi.spectrum.parser.amm.order.v1
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.analytics.Version.V1
 import fi.spectrum.core.domain.order.Fee.ERG
-import fi.spectrum.core.domain.order.Order.Deposit.DepositV1
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV1
 import fi.spectrum.core.domain.order.Order.Swap
 import fi.spectrum.core.domain.{AssetAmount, PubKey, TokenId}
 import fi.spectrum.core.domain.order.Order.Swap.SwapV1
 
-import fi.spectrum.core.domain.order.{DepositParams, PoolId, RedeemParams, SwapParams}
+import fi.spectrum.core.domain.order.{AmmDepositParams, PoolId, RedeemParams, SwapParams}
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.transaction.Output
 import io.circe.parser.decode
@@ -134,12 +134,12 @@ object N2T {
         |""".stripMargin
     ).toOption.get
 
-    val expectedN2TDepositV1: DepositV1 = DepositV1(
+    val expectedN2TDepositV1: AmmDepositV1 = AmmDepositV1(
       depositN2T,
       ERG(6000000),
       PoolId.unsafeFromString("1d5afc59838920bb5ef2a8f9d63825a55b1d48e269d7cecee335d637c3ff5f3f"),
       PublicKeyRedeemer(PubKey.unsafeFromString("0295d0031c6b506aaeb1d146b21e1e19059a7a4392aceba9aaf045a85aebe9a21b")),
-      DepositParams(
+      AmmDepositParams(
         AssetAmount.native(739058814),
         AssetAmount(
           TokenId.unsafeFromString("003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0"),

@@ -1,12 +1,15 @@
 package fi.spectrum.parser.evaluation
 
+import fi.spectrum.core.domain.{AssetAmount, TokenId}
+import fi.spectrum.core.domain.analytics.OrderEvaluation.LmDepositCompoundEvaluation
 import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.pool.Pool.AmmPool
 import fi.spectrum.parser.evaluation.Transactions._
-import fi.spectrum.parser.{CatsPlatform, OrderParser, PoolParser}
+import fi.spectrum.parser.{e, CatsPlatform, OrderParser, PoolParser}
 import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
+import fi.spectrum.parser.lm.compound.v1.CompoundParserV1._
 
 class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
@@ -53,4 +56,16 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
       .get shouldEqual depositEval
   }
 
+  property("Parse lm deposit evaluation") {
+    import fi.spectrum.parser.lm.order.v1.LM._
+    import fi.spectrum.parser.lm.pool.v1.SelfHosted._
+    import fi.spectrum.parser.lm.compound.v1.Bundle._
+    val order = orderParser.parse(depositOrder).get
+    val eval  = parser.parse(order, tx.outputs.toList, pool, pool).get.asInstanceOf[LmDepositCompoundEvaluation]
+    eval.bundle shouldEqual bundle
+    eval.tokens shouldEqual AssetAmount(
+      TokenId.unsafeFromString("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109"),
+      9223372036854775806L
+    )
+  }
 }

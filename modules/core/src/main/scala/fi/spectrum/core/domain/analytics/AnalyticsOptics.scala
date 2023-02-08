@@ -12,7 +12,7 @@ object AnalyticsOptics {
   implicit val swapEvalPrism: Subset[OrderEvaluation, SwapEvaluation] =
     GenSubset[OrderEvaluation, SwapEvaluation]
 
-  implicit val depositEvalPrism: Subset[OrderEvaluation, DepositEvaluation] =
-    GenSubset[OrderEvaluation, DepositEvaluation]
+  implicit val depositEvalPrism: Subset[OrderEvaluation, AmmDepositEvaluation] =
+    GenSubset[OrderEvaluation, AmmDepositEvaluation]
 
 }

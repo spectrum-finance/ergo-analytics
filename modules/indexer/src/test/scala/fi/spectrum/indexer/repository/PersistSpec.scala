@@ -9,13 +9,15 @@ import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
 import fi.spectrum.core.domain.analytics.{OffChainFee, Processed}
 import fi.spectrum.core.domain.order.Order
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.Order.Swap.SwapV1
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.pool.Pool
+import fi.spectrum.core.domain.pool.Pool.AmmPool
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.indexer.classes.ToDB
-import fi.spectrum.indexer.db.models.{DepositDB, LockDB, OffChainFeeDB, PoolDB, RedeemDB, SwapDB, TxInfo}
+import fi.spectrum.indexer.db.models.{AmmDepositDB, LockDB, OffChainFeeDB, PoolDB, RedeemDB, SwapDB, TxInfo}
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.{Indexer, PGContainer}
 import fi.spectrum.parser.{CatsPlatform, PoolParser}
@@ -36,8 +38,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   val poolsParser                      = PoolParser.make
 
   "Amm pool" should "work correct" in {
-    val pool: Pool   = redeemPool.get
-    val expectedPool = implicitly[ToDB[Pool, PoolDB]].toDB(pool).copy(height = 751721)
+    val pool: AmmPool = redeemPool.get.asInstanceOf[AmmPool]
+    val expectedPool  = implicitly[ToDB[AmmPool, PoolDB]].toDB(pool).copy(height = 751721)
 
     def run = for {
       insertResult  <- repo.pools.insert(pool).trans
@@ -136,24 +138,24 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     val executed  = parser.evaluated(depositEvaluateTransaction, 0, register, depositPool.get, 10).unsafeRunSync().get
 
     val register1Expected =
-      implicitly[ToDB[Processed[Deposit], DepositDB]].toDB(register.asInstanceOf[Processed[Deposit]])
+      implicitly[ToDB[Processed[AmmDeposit], AmmDepositDB]].toDB(register.asInstanceOf[Processed[AmmDeposit]])
     val register2Expected =
-      implicitly[ToDB[Processed[Deposit], DepositDB]].toDB(register2.asInstanceOf[Processed[Deposit]])
+      implicitly[ToDB[Processed[AmmDeposit], AmmDepositDB]].toDB(register2.asInstanceOf[Processed[AmmDeposit]])
     val executedExpected =
-      implicitly[ToDB[Processed[Deposit], DepositDB]].toDB(executed.asInstanceOf[Processed[Deposit]])
+      implicitly[ToDB[Processed[AmmDeposit], AmmDepositDB]].toDB(executed.asInstanceOf[Processed[AmmDeposit]])
 
     def run = for {
-      insertResult   <- repo.deposits.insert(register).trans
-      insertResult1  <- repo.deposits.insert(register2).trans
-      expected1      <- sql"select * from deposits where order_id=${register.order.id}".query[DepositDB].unique.trans
-      expected2      <- sql"select * from deposits where order_id=${register2.order.id}".query[DepositDB].unique.trans
-      resolveResult  <- repo.deposits.insert(refund).trans
-      resolveResult1 <- repo.deposits.insert(executed).trans
-      expected3      <- sql"select * from deposits where order_id=${register.order.id}".query[DepositDB].unique.trans
-      expected4      <- sql"select * from deposits where order_id=${register2.order.id}".query[DepositDB].unique.trans
-      deleteResult   <- repo.deposits.resolve(register).trans
-      deleteResult1  <- repo.deposits.resolve(register2).trans
-      expected5      <- sql"select * from deposits".query[DepositDB].to[List].trans
+      insertResult   <- repo.ammDeposits.insert(register).trans
+      insertResult1  <- repo.ammDeposits.insert(register2).trans
+      expected1      <- sql"select * from deposits where order_id=${register.order.id}".query[AmmDepositDB].unique.trans
+      expected2      <- sql"select * from deposits where order_id=${register2.order.id}".query[AmmDepositDB].unique.trans
+      resolveResult  <- repo.ammDeposits.insert(refund).trans
+      resolveResult1 <- repo.ammDeposits.insert(executed).trans
+      expected3      <- sql"select * from deposits where order_id=${register.order.id}".query[AmmDepositDB].unique.trans
+      expected4      <- sql"select * from deposits where order_id=${register2.order.id}".query[AmmDepositDB].unique.trans
+      deleteResult   <- repo.ammDeposits.resolve(register).trans
+      deleteResult1  <- repo.ammDeposits.resolve(register2).trans
+      expected5      <- sql"select * from deposits".query[AmmDepositDB].to[List].trans
     } yield {
       insertResult shouldEqual 1
       insertResult1 shouldEqual 1

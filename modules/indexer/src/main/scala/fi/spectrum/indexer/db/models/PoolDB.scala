@@ -20,19 +20,19 @@ final case class PoolDB(
 
 object PoolDB {
 
-  implicit def pool: ToDB[Pool, PoolDB] = { case pool: AmmPool =>
-    PoolDB(
-      pool.box.boxId,
-      pool.poolId,
-      pool.lp,
-      pool.x,
-      pool.y,
-      pool.feeNum,
-      pool.timestamp,
-      pool.height,
-      ProtocolVersion.init
-    )
-  }
+//  implicit def pool: ToDB[Pool, PoolDB] = { case pool: AmmPool =>
+//    PoolDB(
+//      pool.box.boxId,
+//      pool.poolId,
+//      pool.lp,
+//      pool.x,
+//      pool.y,
+//      pool.feeNum,
+//      pool.timestamp,
+//      pool.height,
+//      ProtocolVersion.init
+//    )
+//  }
 
   implicit def amm: ToDB[AmmPool, PoolDB] = pool =>
     PoolDB(
