@@ -15,6 +15,7 @@ import tofu.logging.Logging
 import tofu.syntax.doobie.txr._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
+import cats.syntax.traverse._
 
 @derive(representableK)
 trait Pools[F[_]] {
@@ -44,12 +45,12 @@ object Pools {
         .traverse {
           case Apply(pool) =>
             metrics.sendCount(s"pool.apply.${pool.metric}", 1) >>
-              bundle.pools.insert(pool)
+              bundle.insertAnyPool.traverse(_(pool))
           case Unapply(pool) =>
             metrics.sendCount(s"pool.unapply.${pool.metric}", 1) >>
-              bundle.pools.resolve(pool)
+              bundle.resolveAnyPool.traverse(_(pool))
         }
-        .map(_.toList.sum)
+        .map(_.toList.map(_.sum).sum)
 
       def tokens: F[Unit] = NonEmptyList.fromList(
         events

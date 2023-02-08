@@ -2,7 +2,7 @@ package fi.spectrum.core.domain.order
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import fi.spectrum.core.domain.AssetAmount
+import fi.spectrum.core.domain.{AssetAmount, TokenId}
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.analytics.Version._
 import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
@@ -232,14 +232,14 @@ object Order {
   @derive(loggable, encoder, decoder)
   sealed trait Compound extends Order
 
-  object LmBundle {
+  object Compound {
 
     @derive(loggable, encoder, decoder)
     final case class CompoundV1(
       box: Output,
       vLq: AssetAmount,
       tmp: AssetAmount,
-      bundleKeyId: AssetAmount,
+      bundleKeyId: TokenId,
       poolId: PoolId,
       redeemer: PublicKeyRedeemer,
       version: V1

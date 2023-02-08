@@ -43,6 +43,8 @@ object LM {
     a.toOption.get
   }
 
+
+
   val deposit = LmDepositV1(
     depositOrder,
     PoolId.unsafeFromString("48e744055c9e49b26d1c70eca3c848afc8f50eddf8962a33f3d4b5df3d771ac2"),
@@ -409,5 +411,133 @@ object LM {
        |}
        |""".stripMargin
   ).toOption.get.toTransaction
+
+  val deployDepositOrderTx =
+    decode[TransactionTest](
+      s"""
+         |{
+         |    "id": "2f839ac334649bb8d0ba9717181948228c70e6a8082bfa920420a6fbaf7cec20",
+         |    "blockId": "1409e7bf1c1551e4e5c0a04af8c1819accf99e4aae3fb7a09c03a854a7873a0b",
+         |    "inclusionHeight": 935202,
+         |    "timestamp": 1675778340274,
+         |    "index": 7,
+         |    "globalIndex": 4725286,
+         |    "numConfirmations": 883,
+         |    "inputs": [
+         |        {
+         |            "boxId": "71971c431a1b75f0bdb08dc05f575659376814a83fec08368e26db57fee8b40e",
+         |            "value": 2930000000,
+         |            "index": 0,
+         |            "spendingProof": "1d48527eec3a0e840d2153d3b98a9d3f2b24341daefed27a7f61d02bb7d4da1ad6af85da202701b6d9581454f3f04bce9175897479a4b551",
+         |            "outputBlockId": "65bdd9aeda98186a9f439287b4695861b5c62b394e845d0b3ee8b3dacf6660cb",
+         |            "outputTransactionId": "e92b4d14453a675f2e8a70cf1d5e818c243a2cea74c6611bfc323b3ea059ffed",
+         |            "outputIndex": 1,
+         |            "outputGlobalIndex": 26335760,
+         |            "outputCreatedAt": 935193,
+         |            "outputSettledAt": 935199,
+         |            "ergoTree": "0008cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491",
+         |            "address": "9iAYDwPWP7c9cKXB7P2bLivt75CBaXrbYoZrxpna1peB8cYFoHw",
+         |            "assets": [
+         |                {
+         |                    "tokenId": "00bd762484086cf560d3127eb53f0769d76244d9737636b2699d55c56cd470bf",
+         |                    "index": 0,
+         |                    "amount": 24000000,
+         |                    "name": "EPOS",
+         |                    "decimals": 4,
+         |                    "type": "EIP-004"
+         |                },
+         |                {
+         |                    "tokenId": "e7021bda9872a7eb2aa69dd704e6a997dae9d1b40d1ff7a50e426ef78c6f6f87",
+         |                    "index": 1,
+         |                    "amount": 49964992,
+         |                    "name": "Ergo_ErgoPOS_LP",
+         |                    "decimals": 0,
+         |                    "type": "EIP-004"
+         |                }
+         |            ],
+         |            "additionalRegisters": {}
+         |        }
+         |    ],
+         |    "dataInputs": [],
+         |    "outputs": [
+         |        {
+         |            "boxId": "0a1c38904a276908885e5b1e50956c7b667ca2e398166e6d6d7bdf4569e8af89",
+         |            "transactionId": "2f839ac334649bb8d0ba9717181948228c70e6a8082bfa920420a6fbaf7cec20",
+         |            "blockId": "1409e7bf1c1551e4e5c0a04af8c1819accf99e4aae3fb7a09c03a854a7873a0b",
+         |            "value": 1250000,
+         |            "index": 0,
+         |            "globalIndex": 26335814,
+         |            "creationHeight": 935193,
+         |            "settlementHeight": 935202,
+         |            "ergoTree": "198e041604000e2048e744055c9e49b26d1c70eca3c848afc8f50eddf8962a33f3d4b5df3d771ac204020e240008cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac4910404040008cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491040005fcffffffffffffffff0104000e20fc3cdbfd1abc83f4a38ca3fb3dfe417a158b67d63e3c52137fdda4e66ad3956c040604000408040a0402050204040e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304050005000580f882ad16d808d601b2a4730000d602db63087201d6037301d604b2a5730200d6057303d606c57201d607b2a5730400d6088cb2db6308a773050002eb027306d1ededed938cb27202730700017203ed93c27204720593860272067308b2db63087204730900ededededed93cbc27207730a93d0e4c672070408720593e4c67207050e72039386028cb27202730b00017208b2db63087207730c009386028cb27202730d00019c72087e730e05b2db63087207730f0093860272067310b2db6308720773110090b0ada5d90109639593c272097312c1720973137314d90109599a8c7209018c7209027315",
+         |            "address": "32nV8Jp4LFefRfzGwDRGcRVqLtQrravuoftrJmeydHY5HioZkX7xPsSFtjkQXCAcZo7A368EcNPseA9dn6KNfbaZ6PpYAdgzUn1csW81VDa6rXda1sszSpxMe2bNwKP98nzHVEMMBNdMVR8y2avNKPG9Zi9wrmMg3iCN1ZMuCGGLenhTqk2AXsxnsoT3UYX7ijtVY1D7aZHBt1R3ZXAznKn4jUad17oNEM4mNp4UqzzzCa7h1cBgTqJdLLHatnp1ahnAgrY6rZFD9oCDRYYBQ67A5dhkbggLQhAGnTvwtS4Mf6jZxafh8i82RynVLgVahQiMFC2yvb9jbqyjkqXoR9xLRWHeaJuqX6VEySoKXqpMQzQTn5agkhfrJHyNAsQPVrTNfMPoe2P5uYs4z9yT2tyMBQSnHr4GSUcaUkrNpXT5JpgzeoABSne7H1wrEgDRomHc2UWJC3299z5ajkyaoWcGLP8xg5SCnQktq4herUyeWnYxz73whLsihsZLp6LCE94iPUSKV7PPnqTCYgejXCXsuUwe6jsBAbQCknLPdni4GrtJUZyuHYCe2Yd9Mjh4Qr3orHrViMog2YsZqHwnibrpLGtJrDoQTbaf35rpcuPBryFC8HGo4KqC3LwmKim8wg4YJ4m2Py5qew2zjoaNqxCnyHRsgfyCxFJFMtrPWHZ391P7JFDjWd27pps4E1hCmjf8Bt5vtKbW7Lutx2ACjFvFb",
+         |            "assets": [
+         |                {
+         |                    "tokenId": "e7021bda9872a7eb2aa69dd704e6a997dae9d1b40d1ff7a50e426ef78c6f6f87",
+         |                    "index": 0,
+         |                    "amount": 10000,
+         |                    "name": "Ergo_ErgoPOS_LP",
+         |                    "decimals": 0,
+         |                    "type": "EIP-004"
+         |                }
+         |            ],
+         |            "additionalRegisters": {},
+         |            "spentTransactionId": "6c2106bee6af77659b85006cf4cf365b4c3b944928d8fe3ba695cdce14d2bb3e",
+         |            "mainChain": true
+         |        },
+         |        {
+         |            "boxId": "4324490fd85a948746bf4ae8d66672093953c96ba780e6245acb0c3347fc6f6f",
+         |            "transactionId": "2f839ac334649bb8d0ba9717181948228c70e6a8082bfa920420a6fbaf7cec20",
+         |            "blockId": "1409e7bf1c1551e4e5c0a04af8c1819accf99e4aae3fb7a09c03a854a7873a0b",
+         |            "value": 2927500000,
+         |            "index": 1,
+         |            "globalIndex": 26335815,
+         |            "creationHeight": 935193,
+         |            "settlementHeight": 935202,
+         |            "ergoTree": "0008cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491",
+         |            "address": "9iAYDwPWP7c9cKXB7P2bLivt75CBaXrbYoZrxpna1peB8cYFoHw",
+         |            "assets": [
+         |                {
+         |                    "tokenId": "00bd762484086cf560d3127eb53f0769d76244d9737636b2699d55c56cd470bf",
+         |                    "index": 0,
+         |                    "amount": 24000000,
+         |                    "name": "EPOS",
+         |                    "decimals": 4,
+         |                    "type": "EIP-004"
+         |                },
+         |                {
+         |                    "tokenId": "e7021bda9872a7eb2aa69dd704e6a997dae9d1b40d1ff7a50e426ef78c6f6f87",
+         |                    "index": 1,
+         |                    "amount": 49954992,
+         |                    "name": "Ergo_ErgoPOS_LP",
+         |                    "decimals": 0,
+         |                    "type": "EIP-004"
+         |                }
+         |            ],
+         |            "additionalRegisters": {},
+         |            "spentTransactionId": "6c2106bee6af77659b85006cf4cf365b4c3b944928d8fe3ba695cdce14d2bb3e",
+         |            "mainChain": true
+         |        },
+         |        {
+         |            "boxId": "9b566cfca454e2e7889df6298584713c3c36da4c1957971a6514672b89c7f8ff",
+         |            "transactionId": "2f839ac334649bb8d0ba9717181948228c70e6a8082bfa920420a6fbaf7cec20",
+         |            "blockId": "1409e7bf1c1551e4e5c0a04af8c1819accf99e4aae3fb7a09c03a854a7873a0b",
+         |            "value": 1250000,
+         |            "index": 2,
+         |            "globalIndex": 26335816,
+         |            "creationHeight": 935193,
+         |            "settlementHeight": 935202,
+         |            "ergoTree": "1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304",
+         |            "address": "2iHkR7CWvD1R4j1yZg5bkeDRQavjAaVPeTDFGGLZduHyfWMuYpmhHocX8GJoaieTx78FntzJbCBVL6rf96ocJoZdmWBL2fci7NqWgAirppPQmZ7fN9V6z13Ay6brPriBKYqLp1bT2Fk4FkFLCfdPpe",
+         |            "assets": [],
+         |            "additionalRegisters": {},
+         |            "spentTransactionId": "350af42647367cb1c8827b66890f8a599ab3db6377a717215a8c8f6dd852b1d5",
+         |            "mainChain": true
+         |        }
+         |    ],
+         |    "size": 867
+         |}
+         |""".stripMargin
+    ).toOption.get.toTransaction
 
 }
