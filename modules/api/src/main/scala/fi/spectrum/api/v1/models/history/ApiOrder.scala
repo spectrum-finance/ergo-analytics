@@ -9,8 +9,9 @@ import fi.spectrum.api.db.models.{RegisterDeposit, RegisterRedeem, RegisterSwap}
 import fi.spectrum.api.v1.models.history
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.address._
-import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, RedeemEvaluation, SwapEvaluation}
+import fi.spectrum.core.domain.analytics.OrderEvaluation.{AmmDepositEvaluation, RedeemEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.analytics.Processed
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.OrderOptics._
 import fi.spectrum.core.domain.order.OrderStatus.{mapToMempool, WaitingEvaluation, WaitingRefund, WaitingRegistration}
@@ -35,7 +36,7 @@ object ApiOrder {
   implicit val toApiAny: ToAPI[Processed.Any, ApiOrder, Any] = new ToAPI[Processed.Any, ApiOrder, Any] {
 
     def toAPI(a: Processed.Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-      a.wined[order.Order.Deposit]
+      a.wined[AmmDeposit]
         .flatMap(Deposit.toApiDeposit.toAPI(_))
         .orElse(a.wined[order.Order.Redeem].flatMap(Redeem.toApiRedeem.toAPI(_)))
         .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap.toAPI(_)))
@@ -50,7 +51,7 @@ object ApiOrder {
       def toAPI(a: Processed.Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
 
       def toAPI(a: Processed.Any, c: Processed.Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-        a.wined[order.Order.Deposit]
+        a.wined[AmmDeposit]
           .flatMap(Deposit.toApiDeposit2.toAPI(_, c))
           .orElse(a.wined[order.Order.Redeem].flatMap(Redeem.toApiRedeem2.toAPI(_, c)))
           .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap2.toAPI(_, c)))
@@ -87,11 +88,11 @@ object ApiOrder {
 
   object Deposit extends DepositInstances {
 
-    implicit val toApiDeposit: ToAPI[Processed[order.Order.Deposit], ApiOrder, RegisterDeposit] =
-      new ToAPI[Processed[order.Order.Deposit], ApiOrder, RegisterDeposit] {
+    implicit val toApiDeposit: ToAPI[Processed[AmmDeposit], ApiOrder, RegisterDeposit] =
+      new ToAPI[Processed[AmmDeposit], ApiOrder, RegisterDeposit] {
 
-        def toAPI(o: Processed[order.Order.Deposit])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-          Optional[order.Order, DepositParams].getOption(o.order).map { params =>
+        def toAPI(o: Processed[AmmDeposit])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+          Optional[order.Order, AmmDepositParams].getOption(o.order).map { params =>
             Deposit(
               o.order.id,
               o.order.poolId,
@@ -109,10 +110,10 @@ object ApiOrder {
             )
           }
 
-        def toAPI(o: Processed[order.Order.Deposit], c: RegisterDeposit)(implicit
+        def toAPI(o: Processed[AmmDeposit], c: RegisterDeposit)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
-          o.evaluation.flatMap(_.widen[DepositEvaluation]).map { eval =>
+          o.evaluation.flatMap(_.widen[AmmDepositEvaluation]).map { eval =>
             Deposit(
               o.order.id,
               o.order.poolId,
@@ -131,23 +132,23 @@ object ApiOrder {
           }
       }
 
-    implicit val toApiDeposit2: ToAPI[Processed[order.Order.Deposit], ApiOrder, Processed.Any] =
-      new ToAPI[Processed[order.Order.Deposit], ApiOrder, Processed.Any] {
+    implicit val toApiDeposit2: ToAPI[Processed[AmmDeposit], ApiOrder, Processed.Any] =
+      new ToAPI[Processed[AmmDeposit], ApiOrder, Processed.Any] {
 
-        def toAPI(a: Processed[order.Order.Deposit])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(a: Processed[AmmDeposit])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           toApiDeposit.toAPI(a)
 
-        def toAPI(x: Processed[order.Order.Deposit], c: Processed.Any)(implicit
+        def toAPI(x: Processed[AmmDeposit], c: Processed.Any)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           for {
-            y      <- c.wined[order.Order.Deposit]
-            params <- Optional[order.Order, DepositParams].getOption(x.order)
+            y      <- c.wined[AmmDeposit]
+            params <- Optional[order.Order, AmmDepositParams].getOption(x.order)
           } yield {
-            val eval: Option[DepositEvaluation] =
+            val eval: Option[AmmDepositEvaluation] =
               x.evaluation
-                .flatMap(_.widen[DepositEvaluation])
-                .orElse(y.evaluation.flatMap(_.widen[DepositEvaluation]))
+                .flatMap(_.widen[AmmDepositEvaluation])
+                .orElse(y.evaluation.flatMap(_.widen[AmmDepositEvaluation]))
             Deposit(
               x.order.id,
               x.order.poolId,

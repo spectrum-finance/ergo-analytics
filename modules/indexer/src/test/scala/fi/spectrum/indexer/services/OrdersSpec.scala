@@ -8,7 +8,7 @@ import doobie.implicits._
 import doobie.util.update.Update0
 import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.Processed
-import fi.spectrum.indexer.db.models.{DepositDB, SwapDB, TxInfo}
+import fi.spectrum.indexer.db.models.{AmmDepositDB, SwapDB, TxInfo}
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.{Indexer, PGContainer}
 import fi.spectrum.indexer.mocks.MetricsMock
@@ -70,18 +70,18 @@ class OrdersSpec extends AnyFlatSpec with Matchers with PGContainer with Indexer
     val (r1, r2, r3, r4D, r4S) =
       (for {
         _  <- service.process(NonEmptyList.fromListUnsafe(eventsCase1))
-        r1 <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[DepositDB].unique.trans
+        r1 <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[AmmDepositDB].unique.trans
         _  <- Update0(s"delete from deposits", None).run.trans
         _  <- service.process(NonEmptyList.fromListUnsafe(eventsCase2))
-        r2 <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[DepositDB].unique.trans
+        r2 <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[AmmDepositDB].unique.trans
         _  <- Update0(s"delete from deposits", None).run.trans
 
         _  <- service.process(NonEmptyList.fromListUnsafe(eventsCase3))
-        r3 <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[DepositDB].option.trans
+        r3 <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[AmmDepositDB].option.trans
         _  <- Update0(s"delete from deposits", None).run.trans
 
         _   <- service.process(NonEmptyList.fromListUnsafe(eventsCase4))
-        r4D <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[DepositDB].unique.trans
+        r4D <- sql"select * from deposits where order_id = ${depositRegister.order.id}".query[AmmDepositDB].unique.trans
         r4S <- sql"select * from swaps where order_id = ${swapRegister.order.id}".query[SwapDB].unique.trans
       } yield (r1, r2, r3, r4D, r4S)).unsafeRunSync()
 

@@ -7,6 +7,7 @@ import fi.spectrum.core.domain.analytics.{OffChainFee, OrderEvaluation, Processe
 import fi.spectrum.core.domain.order.OrderOptics._
 import fi.spectrum.core.domain.order.{Fee, Order, OrderId}
 import fi.spectrum.core.domain.order.Fee._
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.pool.Pool.AmmPool
 import fi.spectrum.core.domain.pool.PoolOptics._
@@ -18,7 +19,7 @@ import tofu.doobie.log.EmbeddableLogHandler
 
 final case class PersistBundle[D[_]](
   swaps: Persist[Processed.Any, D],
-  deposits: Persist[Processed.Any, D],
+  ammDeposits: Persist[Processed.Any, D],
   redeems: Persist[Processed.Any, D],
   locks: Persist[Processed.Any, D],
   offChainFees: Persist[Processed.Any, D],
@@ -27,10 +28,10 @@ final case class PersistBundle[D[_]](
 ) {
 
   def insertAnyOrder: List[Processed.Any => D[Int]] =
-    List(swaps.insert, deposits.insert, redeems.insert, locks.insert, offChainFees.insert)
+    List(swaps.insert, ammDeposits.insert, redeems.insert, locks.insert, offChainFees.insert)
 
   def resolveAnyOrder: List[Processed.Any => D[Int]] =
-    List(swaps.resolve, deposits.resolve, redeems.resolve, locks.resolve, offChainFees.resolve)
+    List(swaps.resolve, ammDeposits.resolve, redeems.resolve, locks.resolve, offChainFees.resolve)
 }
 
 object PersistBundle {
@@ -38,7 +39,7 @@ object PersistBundle {
   def make[D[_]: LiftConnectionIO: FlatMap](implicit elh: EmbeddableLogHandler[D]): PersistBundle[D] =
     PersistBundle(
       Persist.makeUpdatable[D, Order.Swap, SwapEvaluation, SwapDB],
-      Persist.makeUpdatable[D, Order.Deposit, DepositEvaluation, DepositDB],
+      Persist.makeUpdatable[D, AmmDeposit, AmmDepositEvaluation, AmmDepositDB],
       Persist.makeUpdatable[D, Order.Redeem, RedeemEvaluation, RedeemDB],
       Persist.makeUpdatable[D, Order.Lock, OrderEvaluation, LockDB],
       Persist.makeNonUpdatable[D, Processed.Any, OffChainFee, OffChainFeeDB, OrderId],

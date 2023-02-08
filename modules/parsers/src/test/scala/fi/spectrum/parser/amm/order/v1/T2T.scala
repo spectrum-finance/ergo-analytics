@@ -2,7 +2,7 @@ package fi.spectrum.parser.amm.order.v1
 
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.ERG
-import fi.spectrum.core.domain.order.Order.Deposit.DepositV1
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.Order.Redeem.RedeemV1
 import fi.spectrum.core.domain.order.Order.Swap.SwapV1
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
@@ -106,12 +106,12 @@ object T2T {
         |""".stripMargin
     ).toOption.get
 
-    val expectedT2TDepositV1: DepositV1 = DepositV1(
+    val expectedT2TDepositV1: AmmDepositV1 = AmmDepositV1(
       depositT2T,
       ERG(7000000),
       PoolId.unsafeFromString("f1fb942ebd039dc782fd9109acdb60aabea4dc7e75e9c813b6528c62692fc781"),
       PublicKeyRedeemer(PubKey.unsafeFromString("03c900eda9e1c2a199ec844c0515279fae0c764ba9dd174b4d9e43ec74c6bfff2e")),
-      DepositParams(
+      AmmDepositParams(
         AssetAmount(
           TokenId.unsafeFromString("ef802b475c06189fdbf844153cdc1d449a5ba87cce13d11bb47b5a539f27f12b"),
           200000000000L

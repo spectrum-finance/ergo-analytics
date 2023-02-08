@@ -11,13 +11,13 @@ import fi.spectrum.core.domain.transaction.Output
 import glass.macros.ClassyOptics
 import tofu.logging.derivation.loggable
 
-/** This abstraction represents any order that appears in ergo network.
+/** Represents any order in ergo network.
   * Orders are:
   *   1. AMM orders - Deposit, Redeem, Swap.
-  *   2. LM orders  - Deposit, Redeem, Reward
-  *   3. Lock order.
+  *   2. LM orders  - Deposit, Redeem, Compound.
+  *   3. Lock order - Lock.
   *
-  * Keeps knowledge about the order version (directly depends on contract version)
+  * Keeps knowledge about order version (contract version), order id, type, etc.
   */
 
 @derive(encoder, decoder, loggable)
@@ -34,63 +34,86 @@ sealed trait Order { self =>
 
 object Order {
 
-  /** It's any deposit order that exists in our domain.
+  /** Any deposit order that exists in our domain.
     */
   @derive(encoder, decoder, loggable)
   sealed abstract class Deposit extends Order {
     val poolId: PoolId
-    val fee: Fee
   }
 
   object Deposit {
 
     @derive(encoder, decoder, loggable)
-    final case class DepositV3(
-      box: Output,
-      fee: SPF,
-      poolId: PoolId,
-      redeemer: ErgoTreeRedeemer,
-      params: DepositParams,
-      maxMinerFee: Long,
-      version: V3
-    ) extends Deposit
+    sealed abstract class AmmDeposit extends Deposit {
+      val fee: Fee
+    }
 
-    object DepositV3
+    object AmmDeposit {
+
+      @derive(encoder, decoder, loggable)
+      final case class AmmDepositV3(
+        box: Output,
+        fee: SPF,
+        poolId: PoolId,
+        redeemer: ErgoTreeRedeemer,
+        params: AmmDepositParams,
+        maxMinerFee: Long,
+        version: V3
+      ) extends AmmDeposit
+
+      object AmmDepositV3
+
+      @derive(encoder, decoder, loggable)
+      final case class AmmDepositV1(
+        box: Output,
+        fee: ERG,
+        poolId: PoolId,
+        redeemer: PublicKeyRedeemer,
+        params: AmmDepositParams,
+        maxMinerFee: Long,
+        version: V1
+      ) extends AmmDeposit
+
+      object AmmDepositV1
+
+      @derive(encoder, decoder, loggable)
+      final case class AmmDepositLegacyV2(
+        box: Output,
+        fee: ERG,
+        poolId: PoolId,
+        redeemer: PublicKeyRedeemer,
+        params: AmmDepositParams,
+        version: LegacyV2
+      ) extends AmmDeposit
+
+      object AmmDepositLegacyV2
+
+      @derive(encoder, decoder, loggable)
+      final case class AmmDepositLegacyV1(
+        box: Output,
+        fee: ERG,
+        poolId: PoolId,
+        redeemer: PublicKeyRedeemer,
+        params: AmmDepositParams,
+        version: LegacyV1
+      ) extends AmmDeposit
+    }
 
     @derive(encoder, decoder, loggable)
-    final case class DepositV1(
-      box: Output,
-      fee: ERG,
-      poolId: PoolId,
-      redeemer: PublicKeyRedeemer,
-      params: DepositParams,
-      maxMinerFee: Long,
-      version: V1
-    ) extends Deposit
+    sealed abstract class LmDeposit extends Deposit
 
-    object DepositV1
+    object LmDeposit {
 
-    @derive(encoder, decoder, loggable)
-    final case class DepositLegacyV2(
-      box: Output,
-      fee: ERG,
-      poolId: PoolId,
-      redeemer: PublicKeyRedeemer,
-      params: DepositParams,
-      version: LegacyV2
-    ) extends Deposit
-
-    object DepositLegacyV2
-
-    @derive(encoder, decoder, loggable)
-    final case class DepositLegacyV1(
-      box: Output,
-      fee: ERG,
-      poolId: PoolId,
-      redeemer: PublicKeyRedeemer,
-      params: DepositParams,
-      version: LegacyV1
-    ) extends Deposit
+      @derive(encoder, decoder, loggable)
+      final case class LmDepositV1(
+        box: Output,
+        poolId: PoolId,
+        redeemer: ErgoTreeRedeemer,
+        params: LmDepositParams,
+        maxMinerFee: Long,
+        version: V1
+      ) extends LmDeposit
+    }
   }
 
   /** It's any redeem order that exists in our domain.
@@ -204,6 +227,24 @@ object Order {
     ) extends Lock
 
     object LockV1
+  }
+
+  @derive(loggable, encoder, decoder)
+  sealed trait Compound extends Order
+
+  object LmBundle {
+
+    @derive(loggable, encoder, decoder)
+    final case class CompoundV1(
+      box: Output,
+      vLq: AssetAmount,
+      tmp: AssetAmount,
+      bundleKeyId: AssetAmount,
+      poolId: PoolId,
+      redeemer: PublicKeyRedeemer,
+      version: V1
+    ) extends Compound
+
   }
 
 }
