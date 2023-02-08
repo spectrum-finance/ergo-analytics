@@ -12,6 +12,7 @@ import fi.spectrum.api.v1.models.history.ApiOrder._
 import fi.spectrum.api.v1.models.history.ApiOrder
 import fi.spectrum.core.domain.Address
 import fi.spectrum.core.domain.order.Order
+import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.order.OrderStatus.{Registered, WaitingRegistration}
 import org.ergoplatform.ErgoAddressEncoder
 import tofu.doobie.transactor.Txr
@@ -54,7 +55,7 @@ object MempoolApi {
                 case x :: Nil if x.state.status.in(WaitingRegistration, Registered) => // process register
                   x.toApi.pure[D]
                 case x :: Nil => // query db for register order
-                  x.wined[Order.Deposit]
+                  x.wined[AmmDeposit]
                     .traverse(d => history.depositRegister(d.order.id).flatMapIn(d.toApi(_)))
                     .orElseF(
                       x.wined[Order.Redeem].traverse(r => history.redeemRegister(r.order.id).flatMapIn(r.toApi(_)))

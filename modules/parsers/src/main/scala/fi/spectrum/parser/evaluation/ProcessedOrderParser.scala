@@ -3,14 +3,15 @@ package fi.spectrum.parser.evaluation
 import cats.syntax.option._
 import cats.{Applicative, Monad}
 import derevo.derive
-import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{LockEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.analytics.Processed._
-import fi.spectrum.core.domain.analytics.Processed
+import fi.spectrum.core.domain.analytics.{Processed, Version}
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.{Order, OrderState, OrderStatus}
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.transaction.Transaction
+import fi.spectrum.parser.lm.compound.CompoundParser
+import fi.spectrum.parser.lm.compound.v1.CompoundParserV1._
 import fi.spectrum.parser.{OrderParser, PoolParser}
 import org.ergoplatform.ErgoAddressEncoder
 import tofu.higherKind.Mid
@@ -44,6 +45,7 @@ object ProcessedOrderParser {
 
   def make[F[_]: Monad](implicit e: ErgoAddressEncoder, logs: Logging.Make[F]): ProcessedOrderParser[F] =
     logs.forService[ProcessedOrderParser[F]].map { implicit __ =>
+      implicit val parser: CompoundParser[Version] = implicitly[CompoundParser[Version]]
       new Tracing[F] attach new Live[F]
     }
 

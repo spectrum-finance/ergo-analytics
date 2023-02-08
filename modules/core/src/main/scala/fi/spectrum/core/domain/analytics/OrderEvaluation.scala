@@ -3,8 +3,9 @@ package fi.spectrum.core.domain.analytics
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.order.Fee.ERG
+import fi.spectrum.core.domain.order.Order.Compound
 import fi.spectrum.core.domain.order.{Fee, OrderId}
-import fi.spectrum.core.domain.{AssetAmount, TxId}
+import fi.spectrum.core.domain.{AssetAmount, BoxId}
 import glass.classic.Prism
 import tofu.logging.derivation.loggable
 
@@ -25,12 +26,16 @@ object OrderEvaluation {
   }
 
   @derive(encoder, decoder, loggable)
-  final case class DepositEvaluation(outputLP: AssetAmount, actualX: Long, actualY: Long)
-    extends OrderEvaluation
+  final case class AmmDepositEvaluation(outputLP: AssetAmount, actualX: Long, actualY: Long) extends OrderEvaluation
 
   @derive(encoder, decoder, loggable)
   final case class RedeemEvaluation(outputX: AssetAmount, outputY: AssetAmount) extends OrderEvaluation
 
   @derive(encoder, decoder, loggable)
   final case class LockEvaluation(orderId: OrderId) extends OrderEvaluation
+
+  @derive(encoder, decoder, loggable)
+  final case class LmDepositCompoundEvaluation(tokens: AssetAmount, boxId: BoxId, bundle: Compound)
+    extends OrderEvaluation
+
 }

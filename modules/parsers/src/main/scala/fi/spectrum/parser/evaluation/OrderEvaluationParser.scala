@@ -1,8 +1,9 @@
 package fi.spectrum.parser.evaluation
 
 import cats.syntax.option._
-import fi.spectrum.core.domain.analytics.OrderEvaluation
-import fi.spectrum.core.domain.analytics.OrderEvaluation.{DepositEvaluation, RedeemEvaluation, SwapEvaluation}
+import fi.spectrum.core.domain.analytics.OrderEvaluation._
+import fi.spectrum.core.domain.analytics.{OrderEvaluation, Version}
+import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderOptics._
 import fi.spectrum.core.domain.order.{Order, Redeemer}
@@ -10,13 +11,16 @@ import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.pool.Pool.AmmPool
 import fi.spectrum.core.domain.pool.PoolOptics._
 import fi.spectrum.core.domain.transaction.Output
-import fi.spectrum.core.domain.{AssetAmount, SErgoTree, TokenId}
+import fi.spectrum.core.domain.{AssetAmount, PubKey, SErgoTree, TokenId}
+import fi.spectrum.core.protocol.ErgoTreeSerializer
+import fi.spectrum.parser.lm.compound.CompoundParser
 import glass.Label
 import glass.classic.{Optional, Prism}
+import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 
 /** Parse order evaluation result
   */
-final class OrderEvaluationParser {
+final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implicit e: ErgoAddressEncoder) {
 
   def parse(order: Order, outputs: List[Output], pool: Pool, nextPool: Pool): Option[OrderEvaluation] = {
     val redeemer = order.redeemer match {
@@ -26,12 +30,12 @@ final class OrderEvaluationParser {
     outputs
       .map { output =>
         order match {
-          case _: Deposit => deposit(redeemer, output, pool, nextPool)
-          case _: Redeem  => redeem(redeemer, output, pool)
-          case _: Swap    => swap(redeemer, order, output)
-          case _: Lock    => none
+          case _: AmmDeposit              => ammDeposit(redeemer, output, pool, nextPool)
+          case _: LmDeposit | _: Compound => lmDepositCompound(outputs)
+          case _: Redeem                  => redeem(redeemer, output, pool)
+          case _: Swap                    => swap(redeemer, order, output)
+          case _: Lock                    => none
         }
-
       }
       .collectFirst { case Some(v) => v }
   }
@@ -65,7 +69,7 @@ final class OrderEvaluationParser {
       case _ => none
     }
 
-  def deposit(redeemer: SErgoTree, output: Output, pool: Pool, nextPool: Pool): Option[DepositEvaluation] =
+  def ammDeposit(redeemer: SErgoTree, output: Output, pool: Pool, nextPool: Pool): Option[AmmDepositEvaluation] =
     for {
       poolLp   <- Optional[Pool, TokenId].getOption(pool) if output.ergoTree == redeemer
       poolPrev <- Prism[Pool, AmmPool].getOption(pool)
@@ -74,11 +78,34 @@ final class OrderEvaluationParser {
     } yield {
       val actualX = poolNext.x.amount - poolPrev.x.amount
       val actualY = poolNext.y.amount - poolPrev.y.amount
-      DepositEvaluation(lp, actualX, actualY)
+      AmmDepositEvaluation(lp, actualX, actualY)
     }
 
+  def lmDepositCompound(outputs: List[Output]): Option[LmDepositCompoundEvaluation] =
+    outputs
+      .flatMap(out => bundleParser.compound(out, ErgoTreeSerializer.default.deserialize(out.ergoTree)))
+      .headOption
+      .flatMap { bundle =>
+        outputs
+          .find { out =>
+            e.fromProposition(ErgoTreeSerializer.default.deserialize(out.ergoTree))
+              .toOption
+              .collect { case address: P2PKAddress => PubKey.fromBytes(address.pubkeyBytes) }
+              .exists(_.value == bundle.redeemer.hexString)
+          }
+          .flatMap { out =>
+            out.assets.headOption
+              .map { asset =>
+                LmDepositCompoundEvaluation(AssetAmount.fromBoxAsset(asset), out.boxId, bundle)
+              }
+          }
+      }
 }
 
 object OrderEvaluationParser {
-  implicit def make: OrderEvaluationParser = new OrderEvaluationParser
+
+  implicit def make(implicit bundleParser: CompoundParser[Version], e: ErgoAddressEncoder): OrderEvaluationParser =
+    new OrderEvaluationParser(
+      bundleParser
+    )
 }
