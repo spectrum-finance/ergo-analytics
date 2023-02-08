@@ -12,7 +12,8 @@ final case class HistoryApiQuery(
   orderType: Option[OrderType],
   orderStatus: Option[OrderStatusApi],
   txId: Option[TxId],
-  tokenIds: Option[List[TokenId]]
+  tokenIds: Option[List[TokenId]],
+  tokenPair: Option[TokenPair]
 )
 
 object HistoryApiQuery {
