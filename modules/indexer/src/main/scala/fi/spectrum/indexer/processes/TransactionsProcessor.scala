@@ -9,8 +9,10 @@ import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.indexer.config.ApplicationConfig
 import fi.spectrum.indexer.models.BlockChainEvent
+import fi.spectrum.indexer.models.BlockChainEvent.Apply
 import fi.spectrum.indexer.services.{Events, Orders, Pools}
 import fi.spectrum.streaming.domain.ChainSyncEvent
+import fi.spectrum.streaming.domain.ChainSyncEvent.{ApplyChainSync, UnapplyChainSync}
 import fi.spectrum.streaming.kafka.{CSProducer, Record, TxConsumer}
 import mouse.all._
 import tofu.logging.Logging
@@ -68,12 +70,18 @@ object TransactionsProcessor {
             _ <- NonEmptyList.fromList(orderEvents).fold(unit[F])(orders.process)
             _ <- NonEmptyList.fromList(poolEvents).fold(unit[F])(pools.process)
             events = processed.flatMap[ChainSyncEvent] {
-                       case (Some(r: BlockChainEvent.Apply[Processed.Any]), pool) =>
-                         ChainSyncEvent.ApplyChainSync(r.event.some, pool.map(_.event)).some
-                       case (order, Some(r: BlockChainEvent.Apply[Pool])) =>
-                         ChainSyncEvent.ApplyChainSync(order.map(_.event), r.event.some).some
+                       case (BlockChainEvent.Apply(order) :: xs, pool) =>
+                         List(
+                           ApplyChainSync(order.some, pool.map(_.event)).some,
+                           xs.headOption.map(order => ApplyChainSync(order.event.some, none))
+                         ).flatten
+                       case (events, Some(BlockChainEvent.Apply(pool))) =>
+                         List(ApplyChainSync(events.headOption.map(_.event), pool.some))
                        case (o, p) if o.nonEmpty || p.nonEmpty =>
-                         ChainSyncEvent.UnapplyChainSync(o.map(_.event), p.map(_.event)).some
+                         List(
+                           o.headOption.map(event => UnapplyChainSync(event.event.some, p.map(_.event))),
+                           o.lastOption.map(event => UnapplyChainSync(event.event.some, none))
+                         ).flatten
                        case _ => none
                      }
           } yield events

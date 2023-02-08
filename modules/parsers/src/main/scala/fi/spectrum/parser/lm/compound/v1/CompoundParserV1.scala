@@ -4,7 +4,7 @@ import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.Version.V1
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order.Compound
-import fi.spectrum.core.domain.order.Order.LmBundle.CompoundV1
+import fi.spectrum.core.domain.order.Order.Compound.CompoundV1
 import fi.spectrum.core.domain.order.PoolId
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.transaction.SConstant.{ByteaConstant, SigmaPropConstant}
@@ -33,7 +33,7 @@ final class CompoundParserV1 extends CompoundParser[V1] {
           box,
           vLq,
           tmp,
-          bundleKey,
+          bundleKey.tokenId,
           poolId,
           PublicKeyRedeemer(redeemer),
           Version.V1

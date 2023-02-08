@@ -7,7 +7,7 @@ import fi.spectrum.parser.lm.pool.v1.SelfHosted
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 
-class AnyLmPoolSpec extends AnyPropSpec with Matchers with CatsPlatform {
+class AnyLmPoolDefaultSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   val parser = LmPoolParser.make
 
