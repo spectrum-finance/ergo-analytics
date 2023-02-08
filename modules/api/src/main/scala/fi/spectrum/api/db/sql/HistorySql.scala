@@ -7,7 +7,7 @@ import doobie.util.log.LogHandler
 import fi.spectrum.api.db.models.OrderDB.{AnyOrderDB, DepositDB, LockDB, RedeemDB, SwapDB}
 import fi.spectrum.api.db.models.{RegisterDeposit, RegisterRedeem, RegisterSwap}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
-import fi.spectrum.api.v1.models.history.OrderStatusApi
+import fi.spectrum.api.v1.models.history.{OrderStatusApi, TokenPair}
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.core.domain.{PubKey, TokenId, TxId}
 
@@ -65,7 +65,8 @@ final class HistorySql(implicit lh: LogHandler) {
     tw: TimeWindow,
     status: Option[OrderStatusApi],
     txId: Option[TxId],
-    tokens: Option[List[TokenId]]
+    tokens: Option[List[TokenId]],
+    pair: Option[TokenPair]
   ): Query0[AnyOrderDB] =
     sql"""
          |SELECT
@@ -109,8 +110,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |		refunded_transaction_id,
          |		refunded_transaction_timestamp
          |	FROM swaps
-         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "base_id")}
-	     |      ${tokensIn(tokens, "min_quote_id")}
+         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "base_id", "min_quote_id")}
          |	UNION
          |	SELECT
          |		order_id,
@@ -150,8 +150,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |		refunded_transaction_id,
          |		refunded_transaction_timestamp
          |	FROM deposits
-         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "input_id_x")}
-         |      ${tokensIn(tokens, "input_id_y")}
+         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "input_id_x", "input_id_y")}
          |	UNION
          |	SELECT
          |		order_id,
@@ -191,8 +190,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |		refunded_transaction_id,
          |		refunded_transaction_timestamp
          |	FROM redeems
-         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "output_id_x")}
-         |      ${tokensIn(tokens, "output_id_y")}
+         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "output_id_x", "output_id_y")}
          |	UNION
          |	SELECT
          |		order_id,
@@ -232,7 +230,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |		NULL,
          |		NULL
          |	FROM lq_locks
-         |    ${orderCondition(addresses, tw, None)} ${txIdLock(txId)}
+         |    ${orderCondition(addresses, tw, None)} ${txIdLock(txId)} ${lockTokens(pair, tokens)}
 	     |) AS x
          |ORDER BY x.registered_transaction_timestamp DESC 
          |OFFSET $offset LIMIT $limit;
@@ -245,7 +243,8 @@ final class HistorySql(implicit lh: LogHandler) {
     tw: TimeWindow,
     status: Option[OrderStatusApi],
     txId: Option[TxId],
-    tokens: Option[List[TokenId]]
+    tokens: Option[List[TokenId]],
+    pair: Option[TokenPair]
   ): Query0[SwapDB] =
     sql"""
          |SELECT
@@ -267,9 +266,8 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	swaps
-         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "base_id")}
-         |      ${tokensIn(tokens, "min_quote_id")}
-         |ORDER BY registered_transaction_timestamp DESC 
+         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "base_id", "min_quote_id")}
+         |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
           """.stripMargin.query[SwapDB]
 
@@ -280,7 +278,8 @@ final class HistorySql(implicit lh: LogHandler) {
     tw: TimeWindow,
     status: Option[OrderStatusApi],
     txId: Option[TxId],
-    tokens: Option[List[TokenId]]
+    tokens: Option[List[TokenId]],
+    pair: Option[TokenPair]
   ): Query0[DepositDB] =
     sql"""
          |SELECT
@@ -305,8 +304,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	deposits
-         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "input_id_x")}
-         |      ${tokensIn(tokens, "input_id_y")}
+         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "input_id_x", "input_id_y")}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
         """.stripMargin.query[DepositDB]
@@ -318,7 +316,8 @@ final class HistorySql(implicit lh: LogHandler) {
     tw: TimeWindow,
     status: Option[OrderStatusApi],
     txId: Option[TxId],
-    tokens: Option[List[TokenId]]
+    tokens: Option[List[TokenId]],
+    pair: Option[TokenPair]
   ): Query0[RedeemDB] =
     sql"""
          |SELECT
@@ -341,11 +340,19 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	redeems
-         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, "output_id_x")}
-         |      ${tokensIn(tokens, "output_id_y")}
+         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "output_id_x", "output_id_y")}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
         """.stripMargin.query[RedeemDB]
+
+  def tokensIn(list: Option[List[TokenId]], pair: Option[TokenPair], x: String, y: String): Fragment =
+    list.flatMap(_.toNel).map { list =>
+      fr"and (" ++ Fragments.in(Fragment.const(x), list) ++ fr"or" ++ Fragments.in(Fragment.const(y), list) ++ fr")"
+    }.orElse {
+      pair.map { pair =>
+        Fragment.const(s"and (($x = '${pair.x}' and $y = '${pair.y}') or ($x = '${pair.y}' and $y = '${pair.x}'))")
+      }
+    }.getOrElse(Fragment.empty)
 
   def getLocks(
     addresses: List[PubKey],
@@ -415,9 +422,7 @@ final class HistorySql(implicit lh: LogHandler) {
 
   def in = (in: List[PubKey]) => in.toNel.map(Fragments.in(fr"redeemer", _)).getOrElse(Fragment.empty)
 
-  def tokensIn(list: Option[List[TokenId]], name: String): Fragment =
-    list.flatMap(_.toNel).map { list =>
-      fr"and " ++ Fragments.in(Fragment.const(name), list)
-    }.getOrElse(Fragment.empty)
+  def lockTokens(pair: Option[TokenPair], tokens: Option[List[TokenId]]): Fragment =
+    if (pair.isEmpty && tokens.isEmpty) Fragment.const("and true") else Fragment.const("and false")
 
 }

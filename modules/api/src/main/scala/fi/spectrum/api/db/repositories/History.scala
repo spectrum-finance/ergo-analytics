@@ -78,7 +78,8 @@ object History {
           tw,
           request.orderStatus,
           request.txId,
-          request.tokenIds
+          request.tokenIds,
+          request.tokenPair
         )
         .to[List]
     }
@@ -93,7 +94,8 @@ object History {
           tw,
           request.orderStatus,
           request.txId,
-          request.tokenIds
+          request.tokenIds,
+          request.tokenPair
         )
         .to[List]
     }
@@ -108,7 +110,8 @@ object History {
           tw,
           request.orderStatus,
           request.txId,
-          request.tokenIds
+          request.tokenIds,
+          request.tokenPair
         )
         .to[List]
     }
@@ -123,7 +126,8 @@ object History {
           tw,
           request.orderStatus,
           request.txId,
-          request.tokenIds
+          request.tokenIds,
+          request.tokenPair
         )
         .to[List]
     }
@@ -199,35 +203,35 @@ object History {
       for {
         _ <- info"getAnyOrders(paging=$paging, tw=$tw, request=$request)"
         r <- _
-        _ <- info"getAnyOrders(paging=$paging, tw=$tw, request=$request) -> $r"
+        _ <- info"getAnyOrders(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.orderId)}"
       } yield r
 
     def getSwaps(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[SwapDB]] =
       for {
         _ <- info"getSwaps(paging=$paging, tw=$tw, request=$request)"
         r <- _
-        _ <- info"getSwaps(paging=$paging, tw=$tw, request=$request) -> $r"
+        _ <- info"getSwaps(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.id)}"
       } yield r
 
     def getDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[DepositDB]] =
       for {
         _ <- info"getDeposits(paging=$paging, tw=$tw, request=$request)"
         r <- _
-        _ <- info"getDeposits(paging=$paging, tw=$tw, request=$request) -> $r"
+        _ <- info"getDeposits(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.orderId)}"
       } yield r
 
     def getRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[RedeemDB]] =
       for {
         _ <- info"getRedeems(paging=$paging, tw=$tw, request=$request)"
         r <- _
-        _ <- info"getRedeems(paging=$paging, tw=$tw, request=$request) -> $r"
+        _ <- info"getRedeems(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.id)}"
       } yield r
 
     def getLocks(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LockDB]] =
       for {
         _ <- info"getLocks(paging=$paging, tw=$tw, request=$request)"
         r <- _
-        _ <- info"getLocks(paging=$paging, tw=$tw, request=$request) -> $r"
+        _ <- info"getLocks(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.id)}"
       } yield r
 
     def totalAddressOrders(list: List[Address]): Mid[F, Long] =
