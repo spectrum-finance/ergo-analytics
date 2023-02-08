@@ -43,7 +43,7 @@ object doobieLogging {
       )
 
     case ProcessingFailure(s, a, e1, e2, t) =>
-      log.error(
+      log.trace(
         s"""Failed Resultset Processing:
            |
            |  ${s.linesIterator.dropWhile(_.trim.isEmpty).mkString("\n  ")}
@@ -55,7 +55,7 @@ object doobieLogging {
       )
 
     case ExecFailure(s, a, e1, t) =>
-      log.error(
+      log.trace(
         s"""Failed Statement Execution:
            |
            |  ${s.linesIterator.dropWhile(_.trim.isEmpty).mkString("\n  ")}

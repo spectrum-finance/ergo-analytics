@@ -1,34 +1,37 @@
 package fi.spectrum.indexer.repository
 
-import cats.data.NonEmptyList
 import cats.effect.IO
+import cats.effect.std.Dispatcher
 import cats.effect.unsafe.implicits.global
+import cats.syntax.traverse._
 import doobie.ConnectionIO
 import doobie.implicits._
-import fi.spectrum.core.domain.TokenId
+import fi.spectrum.core.db.doobieLogging
+import fi.spectrum.core.domain.TxId
 import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
 import fi.spectrum.core.domain.analytics.{OffChainFee, Processed}
-import fi.spectrum.core.domain.order.Order
-import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
-import fi.spectrum.core.domain.order.Order.Lock.LockV1
-import fi.spectrum.core.domain.order.Order.Swap.SwapV1
+import fi.spectrum.core.domain.order.{Order, OrderState}
+import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
 import fi.spectrum.core.domain.order.Order._
-import fi.spectrum.core.domain.pool.Pool
-import fi.spectrum.core.domain.pool.Pool.AmmPool
-import fi.spectrum.core.protocol.ErgoTreeSerializer
+import fi.spectrum.core.domain.order.OrderStatus.Registered
+import fi.spectrum.core.domain.pool.Pool.{AmmPool, LmPool}
 import fi.spectrum.indexer.classes.ToDB
-import fi.spectrum.indexer.db.models.{AmmDepositDB, LockDB, OffChainFeeDB, PoolDB, RedeemDB, SwapDB, TxInfo}
+import fi.spectrum.indexer.db.models.LmPoolDB._
+import fi.spectrum.indexer.db.models._
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.{Indexer, PGContainer}
-import fi.spectrum.parser.{CatsPlatform, PoolParser}
+import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.parser.evaluation.Transactions._
+import fi.spectrum.parser.lm.order.v1.LM
+import fi.spectrum.parser.lm.compound.v1.Bundle
+import fi.spectrum.parser.lm.pool.v1.SelfHosted
 import glass.classic.Optional
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import tofu.WithContext
 import tofu.internal.ContextBase.unliftEffectCE3
 import tofu.syntax.doobie.txr._
-import fi.spectrum.parser.lock.v1.{LockParser, Lock => L}
 
 class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexer {
 
@@ -39,12 +42,12 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
 
   "Amm pool" should "work correct" in {
     val pool: AmmPool = redeemPool.get.asInstanceOf[AmmPool]
-    val expectedPool  = implicitly[ToDB[AmmPool, PoolDB]].toDB(pool).copy(height = 751721)
+    val expectedPool  = implicitly[ToDB[AmmPool, PoolDB]].toDB(pool).copy(height = 10)
 
     def run = for {
-      insertResult  <- repo.pools.insert(pool).trans
+      insertResult  <- repo.ammPools.insert(pool).trans
       expected1     <- sql"select * from pools where pool_id=${pool.poolId}".query[PoolDB].unique.trans
-      resolveResult <- repo.pools.resolve(pool).trans
+      resolveResult <- repo.ammPools.resolve(pool).trans
       expected2     <- sql"select * from pools where pool_id=${pool.poolId}".query[PoolDB].option.trans
     } yield {
       insertResult shouldEqual 1
@@ -244,6 +247,109 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
       result <- sql"select * from lq_locks where order_id=${result.order.id}".query[LockDB].option.trans
     } yield result.get shouldEqual expected
     run.unsafeRunSync()
+  }
 
+  "LM pool persist" should "work correct" in {
+
+    val pool: LmPool = SelfHosted.pool.asInstanceOf[LmPool]
+    val expectedPool = implicitly[ToDB[LmPool, LmPoolDB]].toDB(pool)
+
+    Dispatcher
+      .parallel[IO]
+      .use { dispatcher =>
+        implicit val cxt: WithContext[IO, Dispatcher[IO]] = WithContext.const(dispatcher)
+
+        implicit val elh = doobieLogging.makeEmbeddableHandler[IO, IO]("").self.unsafeRunSync()
+
+        def run = for {
+          insertResult  <- repo.lmPools.insert(pool).trans
+          expected1     <- sql"select * from lm_pools where pool_id=${pool.poolId}".query[LmPoolDB].option.trans
+          resolveResult <- repo.lmPools.resolve(pool).trans
+          expected2     <- sql"select * from lm_pools where pool_id=${pool.poolId}".query[LmPoolDB].option.trans
+        } yield {
+          insertResult shouldEqual 1
+          resolveResult shouldEqual 1
+
+          expected1.get shouldEqual expectedPool
+          expected2 shouldEqual None
+        }
+
+        run
+      }
+      .unsafeRunSync()
+  }
+
+  "Lm deposit persist" should "work correct" in {
+    val register = ProcessedOrderParser.make[IO].registered(LM.deployDepositOrderTx, 0).unsafeRunSync().get
+    val eval     = ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
+
+    def run = for {
+      insertResult  <- repo.insertAnyOrder.traverse(_(register)).trans
+      expected1     <- sql"select * from lm_deposits where order_id=${register.order.id}".query[LmDepositDB].option.trans
+      resolveResult <- repo.resolveAnyOrder.traverse(_(register)).trans
+      expected2     <- sql"select * from lm_deposits where order_id=${register.order.id}".query[LmDepositDB].option.trans
+      _             <- repo.insertAnyOrder.traverse(_(register)).trans
+      insertResult2 <- repo.insertAnyOrder.traverse(_(eval)).trans
+      expected3     <- sql"select * from lm_deposits where order_id=${register.order.id}".query[LmDepositDB].option.trans
+      resolveResul2 <- repo.resolveAnyOrder.traverse(_(eval)).trans
+      expected4     <- sql"select * from lm_deposits where order_id=${register.order.id}".query[LmDepositDB].option.trans
+    } yield {
+      insertResult.sum shouldEqual 1
+      resolveResult.sum shouldEqual 1
+      insertResult2.sum shouldEqual 1
+      resolveResul2.sum shouldEqual 1
+      import fi.spectrum.indexer.db.models.LmDepositDB._
+
+      expected1.get shouldEqual implicitly[ToDB[Processed[LmDeposit], LmDepositDB]]
+        .toDB(register.asInstanceOf[Processed[LmDeposit]])
+      expected2 shouldEqual None
+      expected3.get shouldEqual implicitly[ToDB[Processed[LmDeposit], LmDepositDB]]
+        .toDB(eval.asInstanceOf[Processed[LmDeposit]])
+        .copy(registeredTx = expected1.get.registeredTx)
+      expected4.get shouldEqual implicitly[ToDB[Processed[LmDeposit], LmDepositDB]]
+        .toDB(register.asInstanceOf[Processed[LmDeposit]])
+    }
+
+    run.unsafeRunSync()
+  }
+
+  "Compound persist" should "work correct" in {
+    val register = Processed(
+      Bundle.bundle,
+      OrderState(TxId("b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e"), 0, Registered),
+      None,
+      None,
+      None
+    ).asInstanceOf[Processed.Any]
+    val eval =
+      ProcessedOrderParser.make[IO].evaluated(Bundle.compoundTx, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
+
+    def run = for {
+      insertResult  <- repo.insertAnyOrder.traverse(_(register)).trans
+      expected1     <- sql"select * from lm_compound where order_id=${register.order.id}".query[LmCompoundDB].option.trans
+      resolveResult <- repo.resolveAnyOrder.traverse(_(register)).trans
+      expected2     <- sql"select * from lm_compound where order_id=${register.order.id}".query[LmCompoundDB].option.trans
+      _             <- repo.insertAnyOrder.traverse(_(register)).trans
+      insertResult2 <- repo.insertAnyOrder.traverse(_(eval)).trans
+      expected3     <- sql"select * from lm_compound where order_id=${register.order.id}".query[LmCompoundDB].option.trans
+      resolveResul2 <- repo.resolveAnyOrder.traverse(_(eval)).trans
+      expected4     <- sql"select * from lm_compound where order_id=${register.order.id}".query[LmCompoundDB].option.trans
+    } yield {
+      insertResult.sum shouldEqual 1
+      resolveResult.sum shouldEqual 1
+      insertResult2.sum shouldEqual 2
+      resolveResul2.sum shouldEqual 2
+
+      expected1.get shouldEqual implicitly[ToDB[Processed[Compound], LmCompoundDB]]
+        .toDB(register.asInstanceOf[Processed[Compound]])
+      expected2 shouldEqual None
+      expected3.get shouldEqual implicitly[ToDB[Processed[Compound], LmCompoundDB]]
+        .toDB(eval.asInstanceOf[Processed[Compound]])
+        .copy(registeredTx = expected1.get.registeredTx)
+      expected4.get shouldEqual implicitly[ToDB[Processed[Compound], LmCompoundDB]]
+        .toDB(register.asInstanceOf[Processed[Compound]])
+    }
+
+    run.unsafeRunSync()
   }
 }

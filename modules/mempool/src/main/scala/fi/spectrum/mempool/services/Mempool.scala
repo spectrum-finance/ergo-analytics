@@ -32,9 +32,9 @@ trait Mempool[F[_]] {
 
   def getPool(id: List[BoxId]): F[Option[Pool]]
 
-  def put(pool: Option[Pool], order: Option[Processed.Any]): F[Unit]
+  def put(pool: Option[Pool], order: List[Processed.Any]): F[Unit]
 
-  def del(pool: Option[Pool], order: Option[Processed.Any]): F[Unit]
+  def del(pool: Option[Pool], order: List[Processed.Any]): F[Unit]
 
   def getOrders(addresses: List[Address]): F[List[AddressResponse]]
 }
@@ -99,7 +99,7 @@ object Mempool {
           }
       }
 
-    def del(pool: Option[Pool], order: Option[Processed.Any]): F[Unit] = {
+    def del(pool: Option[Pool], order: List[Processed.Any]): F[Unit] = {
       def delPool  = pool.map(pool => redis.del(poolKey(pool.box.boxId.value)))
       def delOrder = order.map(order => redis.del(orderKey(order)))
       if (delPool.isEmpty && delOrder.isEmpty) unit
@@ -111,7 +111,7 @@ object Mempool {
         } yield ()
     }
 
-    def put(pool: Option[Pool], order: Option[Processed.Any]): F[Unit] = {
+    def put(pool: Option[Pool], order: List[Processed.Any]): F[Unit] = {
       def putPool  = pool.map(pool => redis.setEx(poolKey(pool.box.boxId.value), pool.asJson.noSpaces, config.ttl))
       def putOrder = order.map(order => redis.setEx(orderKey(order), order.asJson.noSpaces, config.ttl))
       if (putPool.isEmpty && putOrder.isEmpty) unit
@@ -155,14 +155,14 @@ object Mempool {
         _ <- info"getPool($id) -> ${r.map(_.box.boxId)}"
       } yield r
 
-    def put(pool: Option[Pool], order: Option[Processed.Any]): Mid[F, Unit] =
+    def put(pool: Option[Pool], order: List[Processed.Any]): Mid[F, Unit] =
       for {
         _ <- info"put(${pool.map(_.box.boxId)}, ${order.map(_.order.id)})"
         r <- _
         _ <- info"put(${pool.map(_.box.boxId)}, ${order.map(_.order.id)}) -> finish"
       } yield r
 
-    def del(pool: Option[Pool], order: Option[Processed.Any]): Mid[F, Unit] =
+    def del(pool: Option[Pool], order: List[Processed.Any]): Mid[F, Unit] =
       for {
         _ <- info"del(${pool.map(_.box.boxId)}, ${order.map(_.order.id)})"
         r <- _

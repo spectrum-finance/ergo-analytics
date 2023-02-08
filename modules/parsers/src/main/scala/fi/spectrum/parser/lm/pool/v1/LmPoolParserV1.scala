@@ -4,7 +4,7 @@ import fi.spectrum.core.domain.AssetAmount
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.analytics.Version.V1
 import fi.spectrum.core.domain.order.PoolId
-import fi.spectrum.core.domain.pool.Pool.LmPool
+import fi.spectrum.core.domain.pool.Pool.LmPoolDefault
 import fi.spectrum.core.domain.transaction.SConstant.{IntConstant, IntsConstant, LongConstant}
 import fi.spectrum.core.domain.transaction.{Output, RegisterId}
 import fi.spectrum.parser.domain.LmPoolType
@@ -12,7 +12,7 @@ import fi.spectrum.parser.lm.pool.LmPoolParser
 
 class LmPoolParserV1 extends LmPoolParser[V1, LmPoolType.Default] {
 
-  def pool(output: Output, timestamp: Long, height: Int): Option[LmPool] =
+  def pool(output: Output, timestamp: Long, height: Int): Option[LmPoolDefault] =
     for {
       nft    <- output.assets.headOption
       reward <- output.assets.lift(1)
@@ -27,7 +27,7 @@ class LmPoolParserV1 extends LmPoolParser[V1, LmPoolType.Default] {
       maxRoundingError <- output.additionalRegisters.get(RegisterId.R6).collect { case LongConstant(value) => value }
       executionBudget  <- output.additionalRegisters.get(RegisterId.R7).collect { case LongConstant(value) => value }
       epochIndex       = output.additionalRegisters.get(RegisterId.R8).collect { case IntConstant(value) => value }
-    } yield LmPool(
+    } yield LmPoolDefault(
       PoolId(nft.tokenId),
       AssetAmount.fromBoxAsset(reward),
       AssetAmount.fromBoxAsset(lp),
