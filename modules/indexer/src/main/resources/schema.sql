@@ -1,7 +1,10 @@
 create sequence if not exists pool_seq;
+create sequence if not exists lm_pool_seq;
 create sequence if not exists swaps_seq;
 create sequence if not exists redeems_seq;
 create sequence if not exists deposits_seq;
+create sequence if not exists lm_deposits_seq;
+create sequence if not exists compound_seq;
 
 create domain public.hash32type as varchar(64);
 
@@ -33,6 +36,7 @@ create index pools__pool_id on public.pools using btree (pool_id);
 create index pools__protocol_version on public.pools using btree (protocol_version);
 create index pools__x_id on public.pools using btree (x_id);
 create index pools__y_id on public.pools using btree (y_id);
+create index pools__height on public.pools using btree (height);
 
 
 CREATE TABLE IF NOT EXISTS public.swaps
@@ -207,3 +211,106 @@ alter table public.blocks
 
 create index blocks__height on public.blocks using btree (height);
 create index blocks__id on public.blocks using btree (id);
+
+create table if not exists public.lm_pools
+(
+    id                  bigint            not null default nextval('lm_pool_seq'),
+    pool_state_id       public.hash32type primary key,
+    pool_id             public.hash32type not null,
+    reward_id           public.hash32type not null,
+    reward_amount       bigint            not null,
+    lq_id               public.hash32type not null,
+    lq_amount           bigint            not null,
+    v_lq_id             public.hash32type not null,
+    v_lq_amount         bigint            not null,
+    tmp_id              public.hash32type not null,
+    tmp_amount          bigint            not null,
+    epoch_length        integer           not null,
+    epochs_num          integer           not null,
+    program_start       integer           not null,
+    redeem_blocks_delta integer           not null,
+    program_budget      integer           not null,
+    max_rounding_error  integer           not null,
+    execution_budget    integer,
+    epoch_index         integer,
+    timestamp           bigint            not null,
+    version             text              not null,
+    height              bigint            not null,
+    protocol_version    integer           not null
+);
+
+alter table public.lm_pools
+    owner to ergo_admin;
+
+create index lm_pools__pool_id on public.lm_pools using btree (pool_id);
+create index lm_pools__protocol_version on public.lm_pools using btree (protocol_version);
+create index lm_pools__reward_id on public.lm_pools using btree (reward_id);
+create index lm_pools__lq_id on public.lm_pools using btree (lq_id);
+create index lm_pools__v_lq_id on public.lm_pools using btree (v_lq_id);
+create index lm_pools__timestamp on public.lm_pools using btree (timestamp);
+create index lm_pools__height on public.lm_pools using btree (height);
+
+create table if not exists public.lm_compound
+(
+    id                               bigint            not null default nextval('compound_seq'),
+    order_id                         public.hash32type primary key,
+    pool_id                          public.hash32type not null,
+    pool_state_id                    public.hash32type,
+    v_lq_id                          public.hash32type not null,
+    v_lq_amount                      bigint            not null,
+    tmp_id                           public.hash32type not null,
+    tmp_amount                       bigint            not null,
+    bundle_key_id                    public.hash32type not null,
+    redeemer                         public.pubkey     not null,
+    version                          text              not null,
+    protocol_version                 integer           not null,
+    registered_transaction_id        public.hash32type NOT NULL,
+    registered_transaction_timestamp bigint            not null,
+    executed_transaction_id          public.hash32type,
+    executed_transaction_timestamp   bigint
+);
+
+alter table public.lm_compound
+    owner to ergo_admin;
+
+create index lm_compound__pool_id on public.lm_compound using btree (pool_id);
+create index lm_compound__pool_state_id on public.lm_compound using btree (pool_state_id);
+create index lm_compound__protocol_version on public.lm_compound using btree (protocol_version);
+create index lm_compound__input_id on public.lm_compound using btree (v_lq_id);
+create index lm_compound__lp_id on public.lm_compound using btree (bundle_key_id);
+create index lm_compound__tmp_id on public.lm_compound using btree (tmp_id);
+create index lm_compound__register_timestamp on public.lm_compound using btree (registered_transaction_timestamp);
+
+create table if not exists public.lm_deposits
+(
+    order_id                         public.hash32type primary key,
+    pool_id                          public.hash32type not null,
+    pool_state_id                    public.hash32type,
+    max_miner_fee                    bigint            not null,
+    expected_num_epochs              integer           not null,
+    input_id                         public.hash32type not null,
+    input_amount                     bigint            not null,
+    lp_id                            public.hash32type,
+    lp_amount                        bigint,
+    compound_id                      public.hash32type,
+    protocol_version                 integer           not null,
+    contract_version                 text              not null,
+    redeemer_ergo_tree               text              not null,
+    registered_transaction_id        public.hash32type NOT NULL,
+    registered_transaction_timestamp bigint            not null,
+    executed_transaction_id          public.hash32type,
+    executed_transaction_timestamp   bigint,
+    refunded_transaction_id          public.hash32type,
+    refunded_transaction_timestamp   bigint
+);
+
+alter table public.lm_deposits
+    owner to ergo_admin;
+
+create index lm_deposits__pool_id on public.lm_deposits using btree (pool_id);
+create index lm_deposits__pool_state_id on public.lm_deposits using btree (pool_state_id);
+create index lm_deposits__protocol_version on public.lm_deposits using btree (protocol_version);
+create index lm_deposits__input_id on public.lm_deposits using btree (input_id);
+create index lm_deposits__lp_id on public.lm_deposits using btree (lp_id);
+create index lm_deposits__register_timestamp on public.lm_deposits using btree (registered_transaction_timestamp);
+create index lm_deposits__compound_id on public.lm_deposits using btree (compound_id);
