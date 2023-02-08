@@ -129,18 +129,18 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
       o6         <- events.process(swap2)
       startPool  <- storage.getPool(List(swapPool.get.box.boxId))
       finishPool <- storage.getPool(List(o6._2.last.event.box.boxId))
-      order      <- storage.getOrder(List(o1._1.get.event.order.box.boxId))
+      order      <- storage.getOrder(List(o1._1.head.event.order.box.boxId))
     } yield {
-      o1._1.get shouldEqual BlockChainEvent.Apply(
+      o1._1.head shouldEqual BlockChainEvent.Apply(
         parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
       )
-      o2._1.get shouldEqual BlockChainEvent.Unapply(
+      o2._1.head shouldEqual BlockChainEvent.Unapply(
         parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
       )
-      o3._1.get shouldEqual BlockChainEvent.Apply(
+      o3._1.head shouldEqual BlockChainEvent.Apply(
         parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
       )
-      o4._1.get shouldEqual BlockChainEvent.Apply(
+      o4._1.head shouldEqual BlockChainEvent.Apply(
         parser
           .evaluated(
             swap2.transaction,
@@ -152,7 +152,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
           .unsafeRunSync()
           .get
       )
-      o5._1.get shouldEqual BlockChainEvent.Unapply(
+      o5._1.head shouldEqual BlockChainEvent.Unapply(
         parser
           .evaluated(
             swap2.transaction,
@@ -164,7 +164,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
           .unsafeRunSync()
           .get
       )
-      o6._1.get shouldEqual BlockChainEvent.Apply(
+      o6._1.head shouldEqual BlockChainEvent.Apply(
         parser
           .evaluated(
             swap2.transaction,
@@ -193,7 +193,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
         .flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10))
         .head
 
-      order.get shouldEqual o1._1.get.event
+      order.get shouldEqual o1._1.head.event
     }
 
     run.unsafeRunSync()

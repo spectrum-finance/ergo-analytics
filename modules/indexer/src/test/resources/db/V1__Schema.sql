@@ -159,3 +159,71 @@ create table if not exists assets
 );
 
 create index assets__ticker on assets using btree (ticker);
+
+create table if not exists public.lm_pools
+(
+    pool_state_id       public.hash32type primary key,
+    pool_id             public.hash32type not null,
+    reward_id           public.hash32type not null,
+    reward_amount       bigint            not null,
+    lq_id               public.hash32type not null,
+    lq_amount           bigint            not null,
+    v_lq_id             public.hash32type not null,
+    v_lq_amount         bigint            not null,
+    tmp_id              public.hash32type not null,
+    tmp_amount          bigint            not null,
+    epoch_length        integer           not null,
+    epochs_num          integer           not null,
+    program_start       integer           not null,
+    redeem_blocks_delta integer           not null,
+    program_budget      integer           not null,
+    max_rounding_error  integer           not null,
+    execution_budget    integer,
+    epoch_index         integer,
+    timestamp           bigint            not null,
+    version             text              not null,
+    height              bigint            not null,
+    protocol_version    integer           not null
+);
+
+create table if not exists public.lm_compound
+(
+    order_id                         public.hash32type primary key,
+    pool_id                          public.hash32type not null,
+    pool_state_id                    public.hash32type,
+    v_lq_id                          public.hash32type not null,
+    v_lq_amount                      bigint            not null,
+    tmp_id                           public.hash32type not null,
+    tmp_amount                       bigint            not null,
+    bundle_key_id                    public.hash32type not null,
+    redeemer                         public.pubkey     not null,
+    version                          text              not null,
+    protocol_version                 integer           not null,
+    registered_transaction_id        public.hash32type NOT NULL,
+    registered_transaction_timestamp bigint            not null,
+    executed_transaction_id          public.hash32type,
+    executed_transaction_timestamp   bigint
+);
+
+create table if not exists public.lm_deposits
+(
+    order_id                         public.hash32type primary key,
+    pool_id                          public.hash32type not null,
+    pool_state_id                    public.hash32type,
+    max_miner_fee                    bigint            not null,
+    expected_num_epochs              integer           not null,
+    input_id                         public.hash32type not null,
+    input_amount                     bigint            not null,
+    lp_id                            public.hash32type,
+    lp_amount                        bigint,
+    compound_id                      public.hash32type,
+    protocol_version                 integer           not null,
+    contract_version                 text              not null,
+    redeemer_ergo_tree               text              not null,
+    registered_transaction_id        public.hash32type NOT NULL,
+    registered_transaction_timestamp bigint            not null,
+    executed_transaction_id          public.hash32type,
+    executed_transaction_timestamp   bigint,
+    refunded_transaction_id          public.hash32type,
+    refunded_transaction_timestamp   bigint
+);

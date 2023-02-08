@@ -9,7 +9,7 @@ import tofu.logging.Logging.Make
 import tofu.logging.{Logging, Logs}
 
 trait Indexer {
-  implicit def lh: LogHandler = LogHandler.jdkLogHandler
+//  implicit def lh: LogHandler = LogHandler.jdkLogHandler
 
   implicit def logs: Logs[IO, IO]                 = Logs.sync[IO, IO]
   implicit def logging: Make[IO]                  = Logging.Make.plain[IO]
