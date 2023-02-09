@@ -4,8 +4,8 @@ import cats.syntax.list._
 import doobie._
 import doobie.implicits._
 import doobie.util.log.LogHandler
-import fi.spectrum.api.db.models.OrderDB.{AnyOrderDB, DepositDB, LockDB, RedeemDB, SwapDB}
-import fi.spectrum.api.db.models.{RegisterDeposit, RegisterRedeem, RegisterSwap}
+import fi.spectrum.api.db.models.OrderDB.{AmmDepositDB, AmmRedeemDB, AnyOrderDB, LmCompoundDB, LmDepositDB, LockDB, SwapDB}
+import fi.spectrum.api.db.models.{RegisterCompound, RegisterDeposit, RegisterLmDeposit, RegisterRedeem, RegisterSwap}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.models.history.{OrderStatusApi, TokenPair}
 import fi.spectrum.core.domain.order.OrderId
@@ -45,6 +45,16 @@ final class HistorySql(implicit lh: LogHandler) {
        |select base_id, base_amount, min_quote_id, min_quote_amount, 
        |registered_transaction_id, registered_transaction_timestamp from swaps where order_id=$orderId
        |""".stripMargin.query[RegisterSwap]
+
+  def lmDepositRegister(orderId: OrderId): Query0[RegisterLmDeposit] =
+    sql"""
+       |select expected_num_epochs, input_id, input_amount, registered_transaction_id, registered_transaction_timestamp from lm_deposits where order_id=$orderId
+       |""".stripMargin.query[RegisterLmDeposit]
+
+  def lmCompoundRegister(orderId: OrderId): Query0[RegisterCompound] =
+    sql"""
+         |select registered_transaction_id, registered_transaction_timestamp from lm_compound where order_id=$orderId
+         |""".stripMargin.query[RegisterCompound]
 
   def redeemRegister(orderId: OrderId): Query0[RegisterRedeem] =
     sql"""
@@ -100,6 +110,17 @@ final class HistorySql(implicit lh: LogHandler) {
          |		NULL::bigint AS amount,
          |		NULL AS evaluation_transaction_id,
          |		NULL AS evaluation_lock_type,
+         |      NULL,
+         |		NULL::bigint,
+         |		NULL,
+         |		NULL::bigint,
+         |		NULL,
+         |		NULL::integer,
+         |		NULL,
+         |		NULL::bigint,
+         |		NULL,
+         |		NULL::bigint,
+         |		NULL,
          |		dex_fee,
          |		fee_type,
          |		redeemer,
@@ -110,7 +131,12 @@ final class HistorySql(implicit lh: LogHandler) {
          |		refunded_transaction_id,
          |		refunded_transaction_timestamp
          |	FROM swaps
-         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "base_id", "min_quote_id")}
+         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
+      tokens,
+      pair,
+      "base_id",
+      "min_quote_id"
+    )}
          |	UNION
          |	SELECT
          |		order_id,
@@ -140,6 +166,17 @@ final class HistorySql(implicit lh: LogHandler) {
          |		NULL,
          |		NULL,
          |		NULL,
+         |      NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
          |		dex_fee,
          |		fee_type,
          |		redeemer,
@@ -150,7 +187,12 @@ final class HistorySql(implicit lh: LogHandler) {
          |		refunded_transaction_id,
          |		refunded_transaction_timestamp
          |	FROM deposits
-         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "input_id_x", "input_id_y")}
+         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
+      tokens,
+      pair,
+      "input_id_x",
+      "input_id_y"
+    )}
          |	UNION
          |	SELECT
          |		order_id,
@@ -180,6 +222,17 @@ final class HistorySql(implicit lh: LogHandler) {
          |		NULL,
          |		NULL,
          |		NULL,
+         |      NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
          |		dex_fee,
          |		fee_type,
          |		redeemer,
@@ -190,7 +243,12 @@ final class HistorySql(implicit lh: LogHandler) {
          |		refunded_transaction_id,
          |		refunded_transaction_timestamp
          |	FROM redeems
-         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "output_id_x", "output_id_y")}
+         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
+      tokens,
+      pair,
+      "output_id_x",
+      "output_id_y"
+    )}
          |	UNION
          |	SELECT
          |		order_id,
@@ -220,6 +278,17 @@ final class HistorySql(implicit lh: LogHandler) {
          |		amount,
          |		evaluation_transaction_id,
          |		evaluation_lock_type,
+         |      NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
          |		NULL,
          |		NULL,
          |		redeemer,
@@ -231,10 +300,171 @@ final class HistorySql(implicit lh: LogHandler) {
          |		NULL
          |	FROM lq_locks
          |    ${orderCondition(addresses, tw, None)} ${txIdLock(txId)} ${lockTokens(pair, tokens)}
+         |UNION
+         |	SELECT
+         |		order_id,
+         |		NULL,
+         |		'lm_compound',
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |      v_lq_id,
+         |		v_lq_amount,
+         |		tmp_id,
+         |		tmp_amount,
+         |		bundle_key_id,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		redeemer,
+         |		transaction_id,
+         |		timestamp as registered_transaction_timestamp,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL
+         |	FROM lm_compound
+         |    ${orderCondition(addresses, tw, None)} ${txIdCompound(txId)}
+         |UNION
+         |	SELECT
+         |		order_id,
+         |		NULL,
+         |		'lock',
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |      NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		expected_num_epochs,
+         |		input_id,
+         |		input_amount,
+         |		lp_id,
+         |		lp_amount,
+         |		compound_id,
+         |		NULL,
+         |		NULL,
+         |		redeemer,
+         |		transaction_id,
+         |		timestamp as registered_transaction_timestamp,
+         |		NULL,
+         |		NULL,
+         |		NULL,
+         |		NULL
+         |	FROM lm_deposits
+         |    ${orderCondition(addresses, tw, None)} ${txIdF(txId)}
 	     |) AS x
          |ORDER BY x.registered_transaction_timestamp DESC 
          |OFFSET $offset LIMIT $limit;
           """.stripMargin.query[AnyOrderDB]
+
+  def getLmDeposits(
+    addresses: List[PubKey],
+    offset: Int,
+    limit: Int,
+    tw: TimeWindow,
+    status: Option[OrderStatusApi],
+    txId: Option[TxId]
+  ): doobie.Query0[LmDepositDB] =
+    sql"""
+         |SELECT
+         |	order_id,
+         |	pool_id,
+         |	expected_num_epochs,
+         |	input_id,
+         |	input_amount,
+         |	lp_id,
+         |	lp_amount,
+         |	compound_id,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	refunded_transaction_id,
+         |	refunded_transaction_timestamp,
+         |	executed_transaction_id,
+         |	executed_transaction_timestamp
+         |FROM
+         |	lm_deposits
+         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} 
+         |ORDER BY registered_transaction_timestamp DESC
+         |OFFSET $offset LIMIT $limit;
+       """.stripMargin.query[LmDepositDB]
+
+  def getLmCompound(
+    addresses: List[PubKey],
+    offset: Int,
+    limit: Int,
+    tw: TimeWindow,
+    status: Option[OrderStatusApi],
+    txId: Option[TxId]
+  ): doobie.Query0[LmCompoundDB] =
+    sql"""
+         |SELECT
+         |	order_id,
+         |	pool_id,
+         |	v_lq_id,
+         |	v_lq_amount,
+         |	tmp_id,
+         |	tmp_amount,
+         |	bundle_key_id,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	refunded_transaction_id,
+         |	executed_transaction_timestamp
+         |FROM
+         |	lm_compound
+         |${orderCondition(addresses, tw, status)} ${txIdCompound(txId)}
+         |ORDER BY registered_transaction_timestamp DESC
+         |OFFSET $offset LIMIT $limit;
+       """.stripMargin.query[LmCompoundDB]
 
   def getSwaps(
     addresses: List[PubKey],
@@ -280,7 +510,7 @@ final class HistorySql(implicit lh: LogHandler) {
     txId: Option[TxId],
     tokens: Option[List[TokenId]],
     pair: Option[TokenPair]
-  ): Query0[DepositDB] =
+  ): Query0[AmmDepositDB] =
     sql"""
          |SELECT
          |	order_id,
@@ -307,7 +537,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "input_id_x", "input_id_y")}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
-        """.stripMargin.query[DepositDB]
+        """.stripMargin.query[AmmDepositDB]
 
   def getRedeems(
     addresses: List[PubKey],
@@ -318,7 +548,7 @@ final class HistorySql(implicit lh: LogHandler) {
     txId: Option[TxId],
     tokens: Option[List[TokenId]],
     pair: Option[TokenPair]
-  ): Query0[RedeemDB] =
+  ): Query0[AmmRedeemDB] =
     sql"""
          |SELECT
          |	order_id,
@@ -343,16 +573,20 @@ final class HistorySql(implicit lh: LogHandler) {
          |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "output_id_x", "output_id_y")}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
-        """.stripMargin.query[RedeemDB]
+        """.stripMargin.query[AmmRedeemDB]
 
   def tokensIn(list: Option[List[TokenId]], pair: Option[TokenPair], x: String, y: String): Fragment =
-    list.flatMap(_.toNel).map { list =>
-      fr"and (" ++ Fragments.in(Fragment.const(x), list) ++ fr"or" ++ Fragments.in(Fragment.const(y), list) ++ fr")"
-    }.orElse {
-      pair.map { pair =>
-        Fragment.const(s"and (($x = '${pair.x}' and $y = '${pair.y}') or ($x = '${pair.y}' and $y = '${pair.x}'))")
+    list
+      .flatMap(_.toNel)
+      .map { list =>
+        fr"and (" ++ Fragments.in(Fragment.const(x), list) ++ fr"or" ++ Fragments.in(Fragment.const(y), list) ++ fr")"
       }
-    }.getOrElse(Fragment.empty)
+      .orElse {
+        pair.map { pair =>
+          Fragment.const(s"and (($x = '${pair.x}' and $y = '${pair.y}') or ($x = '${pair.y}' and $y = '${pair.x}'))")
+        }
+      }
+      .getOrElse(Fragment.empty)
 
   def getLocks(
     addresses: List[PubKey],
@@ -407,6 +641,15 @@ final class HistorySql(implicit lh: LogHandler) {
       .map { id =>
         Fragment.const(
           s"and (registered_transaction_id='$id' or executed_transaction_id='$id' or refunded_transaction_id='$id')"
+        )
+      }
+      .getOrElse(Fragment.empty)
+
+  private def txIdCompound(txId: Option[TxId]): Fragment =
+    txId
+      .map { id =>
+        Fragment.const(
+          s"and (registered_transaction_id='$id' or executed_transaction_id='$id')"
         )
       }
       .getOrElse(Fragment.empty)

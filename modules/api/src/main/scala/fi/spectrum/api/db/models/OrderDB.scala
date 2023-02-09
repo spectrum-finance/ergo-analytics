@@ -3,10 +3,9 @@ package fi.spectrum.api.db.models
 import derevo.cats.show
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import fi.spectrum.api.v1.models.history
 import fi.spectrum.api.v1.models.history.TxData
 import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
-import fi.spectrum.core.domain.{Address, AssetAmount, PubKey, TxId}
+import fi.spectrum.core.domain.{AssetAmount, PubKey, TokenId, TxId}
 import sttp.tapir.Schema
 import tofu.logging.derivation.loggable
 
@@ -30,7 +29,7 @@ object OrderDB {
   ) extends OrderDB
 
   @derive(show, encoder, decoder, loggable)
-  final case class DepositDB(
+  final case class AmmDepositDB(
     orderId: OrderId,
     poolId: PoolId,
     inputX: AssetAmount,
@@ -46,7 +45,7 @@ object OrderDB {
   ) extends OrderDB
 
   @derive(show, encoder, decoder, loggable)
-  final case class RedeemDB(
+  final case class AmmRedeemDB(
     id: OrderId,
     poolId: PoolId,
     lp: AssetAmount,
@@ -71,6 +70,30 @@ object OrderDB {
   ) extends OrderDB
 
   @derive(show, encoder, decoder, loggable)
+  final case class LmDepositDB(
+    orderId: OrderId,
+    poolId: PoolId,
+    expectedNumEpochs: Int,
+    input: AssetAmount,
+    lp: Option[AssetAmount],
+    compoundId: Option[TokenId],
+    registerTx: TxData,
+    refundTx: Option[TxData],
+    evaluateTx: Option[TxData]
+  ) extends OrderDB
+
+  @derive(show, encoder, decoder, loggable)
+  final case class LmCompoundDB(
+    orderId: OrderId,
+    poolId: PoolId,
+    vLq: AssetAmount,
+    tmp: AssetAmount,
+    bundleKeyId: TokenId,
+    registerTx: TxData,
+    evaluateTx: Option[TxData]
+  ) extends OrderDB
+
+  @derive(show, encoder, decoder, loggable)
   case class AnyOrderDB(
     orderId: OrderId,
     poolId: Option[PoolId],
@@ -90,6 +113,13 @@ object OrderDB {
     lockAsset: Option[AssetAmount],
     lockEvalTxId: Option[TxId],
     lockEvalType: Option[String],
+    lmCompoundVLq: Option[AssetAmount],
+    lmCompoundTmp: Option[AssetAmount],
+    lmCompoundBundleKeyId: Option[TokenId],
+    lmDepositExpectedNumEpochs: Option[Int],
+    lmDepositInput: Option[AssetAmount],
+    lmDepositLp: Option[AssetAmount],
+    lmDepositCompoundId: Option[TokenId],
     fee: Option[Fee],
     redeemer: Option[PubKey],
     registerTx: TxData,
