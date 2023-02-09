@@ -8,7 +8,7 @@ import tofu.doobie.transactor.Txr
 import tofu.syntax.monadic._
 import tofu.syntax.doobie.txr._
 import fi.spectrum.api.classes.ToAPI._
-import fi.spectrum.api.v1.models.history.ApiOrder.{Deposit, Lock, Redeem, Swap}
+import fi.spectrum.api.v1.models.history.ApiOrder.{AmmDepositApi, AmmRedeemApi, LmCompoundApi, LmDepositApi, Lock, Swap}
 import org.ergoplatform.ErgoAddressEncoder
 import tofu.logging.Logs
 
@@ -44,11 +44,14 @@ object HistoryApi {
       tw: TimeWindow,
       request: HistoryApiQuery
     ): D[List[ApiOrder]] = request.orderType match {
-      case Some(OrderType.Swap)    => history.getSwaps(paging, tw, request).map(_.flatMap(_.toApi[Swap]))
-      case Some(OrderType.Deposit) => history.getDeposits(paging, tw, request).map(_.flatMap(_.toApi[Deposit]))
-      case Some(OrderType.Redeem)  => history.getRedeems(paging, tw, request).map(_.flatMap(_.toApi[Redeem]))
-      case Some(OrderType.Lock)    => history.getLocks(paging, tw, request).map(_.flatMap(_.toApi[Lock]))
-      case None                    => history.getAnyOrders(paging, tw, request).map(_.flatMap(_.toApi[ApiOrder]))
+      case Some(OrderType.Swap)       => history.getSwaps(paging, tw, request).map(_.flatMap(_.toApi[Swap]))
+      case Some(OrderType.AmmDeposit) => history.getAmmDeposits(paging, tw, request).map(_.flatMap(_.toApi[AmmDepositApi]))
+      case Some(OrderType.AmmRedeem)  => history.getAmmRedeems(paging, tw, request).map(_.flatMap(_.toApi[AmmRedeemApi]))
+      case Some(OrderType.Lock)       => history.getLocks(paging, tw, request).map(_.flatMap(_.toApi[Lock]))
+      case Some(OrderType.LmDeposit)  => history.getLmDeposits(paging, tw, request).map(_.flatMap(_.toApi[LmDepositApi]))
+      case Some(OrderType.LmCompound) => history.getLmCompounds(paging, tw, request).map(_.flatMap(_.toApi[LmCompoundApi]))
+      case Some(OrderType.LmRedeem)   => ???
+      case None                       => history.getAnyOrders(paging, tw, request).map(_.flatMap(_.toApi[ApiOrder]))
     }
   }
 }
