@@ -4,7 +4,7 @@ import cats.tagless.syntax.functorK._
 import cats.{FlatMap, Functor, Monad}
 import doobie.ConnectionIO
 import fi.spectrum.api.db.models.OrderDB._
-import fi.spectrum.api.db.models.{RegisterDeposit, RegisterRedeem, RegisterSwap}
+import fi.spectrum.api.db.models._
 import fi.spectrum.api.db.sql.HistorySql
 import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.history.HistoryApiQuery
@@ -25,10 +25,14 @@ trait History[F[_]] {
   def swapRegister(orderId: OrderId): F[Option[RegisterSwap]]
   def redeemRegister(orderId: OrderId): F[Option[RegisterRedeem]]
   def depositRegister(orderId: OrderId): F[Option[RegisterDeposit]]
+  def lmDepositRegister(orderId: OrderId): F[Option[RegisterLmDeposit]]
+  def lmCompoundRegister(orderId: OrderId): F[Option[RegisterCompound]]
   def getAnyOrders(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[AnyOrderDB]]
   def getSwaps(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[SwapDB]]
-  def getDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[DepositDB]]
-  def getRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[RedeemDB]]
+  def getAmmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[AmmDepositDB]]
+  def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LmDepositDB]]
+  def getAmmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[AmmRedeemDB]]
+  def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LmCompoundDB]]
   def getLocks(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LockDB]]
   def totalAddressOrders(list: List[Address]): F[Long]
 }
@@ -59,11 +63,17 @@ object History {
       sql.totalAddressOrders(keys).option.map(_.getOrElse(0L))
     }
 
+    def lmDepositRegister(orderId: OrderId): ConnectionIO[Option[RegisterLmDeposit]] =
+      sql.lmDepositRegister(orderId).option
+
     def swapRegister(orderId: OrderId): ConnectionIO[Option[RegisterSwap]] =
       sql.swapRegister(orderId).option
 
     def redeemRegister(orderId: OrderId): ConnectionIO[Option[RegisterRedeem]] =
       sql.redeemRegister(orderId).option
+
+    def lmCompoundRegister(orderId: OrderId): ConnectionIO[Option[RegisterCompound]] =
+      sql.lmCompoundRegister(orderId).option
 
     def depositRegister(orderId: OrderId): ConnectionIO[Option[RegisterDeposit]] =
       sql.depositRegister(orderId).option
@@ -84,6 +94,16 @@ object History {
         .to[List]
     }
 
+    def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[LmDepositDB]] = {
+      val keys = request.addresses.flatMap(formPKRedeemer).map(_.value)
+      sql.getLmDeposits(keys, paging.offset, paging.limit, tw, request.orderStatus, request.txId).to[List]
+    }
+
+    def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[LmCompoundDB]] = {
+      val keys = request.addresses.flatMap(formPKRedeemer).map(_.value)
+      sql.getLmCompound(keys, paging.offset, paging.limit, tw, request.orderStatus, request.txId).to[List]
+    }
+
     def getSwaps(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[SwapDB]] = {
       val keys = request.addresses.flatMap(formPKRedeemer).map(_.value)
       sql
@@ -100,7 +120,7 @@ object History {
         .to[List]
     }
 
-    def getDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[DepositDB]] = {
+    def getAmmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[AmmDepositDB]] = {
       val keys = request.addresses.flatMap(formPKRedeemer).map(_.value)
       sql
         .getDeposits(
@@ -116,7 +136,7 @@ object History {
         .to[List]
     }
 
-    def getRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[RedeemDB]] = {
+    def getAmmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[AmmRedeemDB]] = {
       val keys = request.addresses.flatMap(formPKRedeemer).map(_.value)
       sql
         .getRedeems(
@@ -149,13 +169,19 @@ object History {
   final class HistoryMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F]) extends History[Mid[F, *]] {
 
     def swapRegister(orderId: OrderId): Mid[F, Option[RegisterSwap]] =
-      processMetric(_, s"db.history.mempool.swap.$orderId")
+      processMetric(_, s"db.history.mempool.swap")
+
+    def lmDepositRegister(orderId: OrderId): Mid[F, Option[RegisterLmDeposit]] =
+      processMetric(_, s"db.history.mempool.lm.deposit")
+
+    def lmCompoundRegister(orderId: OrderId): Mid[F, Option[RegisterCompound]] =
+      processMetric(_, s"db.history.mempool.lm.compound}")
 
     def redeemRegister(orderId: OrderId): Mid[F, Option[RegisterRedeem]] =
-      processMetric(_, s"db.history.mempool.redeem.$orderId")
+      processMetric(_, s"db.history.mempool.redeem")
 
     def depositRegister(orderId: OrderId): Mid[F, Option[RegisterDeposit]] =
-      processMetric(_, s"db.history.mempool.deposit.$orderId")
+      processMetric(_, s"db.history.mempool.deposit")
 
     def getAnyOrders(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[AnyOrderDB]] =
       processMetric(_, s"db.history.any")
@@ -163,10 +189,10 @@ object History {
     def getSwaps(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[SwapDB]] =
       processMetric(_, s"db.history.swap")
 
-    def getDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[DepositDB]] =
+    def getAmmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[AmmDepositDB]] =
       processMetric(_, s"db.history.deposit")
 
-    def getRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[RedeemDB]] =
+    def getAmmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[AmmRedeemDB]] =
       processMetric(_, s"db.history.redeem")
 
     def getLocks(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LockDB]] =
@@ -174,6 +200,12 @@ object History {
 
     def totalAddressOrders(list: List[Address]): Mid[F, Long] =
       processMetric(_, s"db.history.order.count")
+
+    def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmDepositDB]] =
+      processMetric(_, s"db.history.lm.deposit")
+
+    def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmCompoundDB]] =
+      processMetric(_, s"db.history.lm.compound")
   }
 
   final class HistoryTracing[F[_]: FlatMap: Logging] extends History[Mid[F, *]] {
@@ -213,14 +245,14 @@ object History {
         _ <- info"getSwaps(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.id)}"
       } yield r
 
-    def getDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[DepositDB]] =
+    def getAmmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[AmmDepositDB]] =
       for {
         _ <- info"getDeposits(paging=$paging, tw=$tw, request=$request)"
         r <- _
         _ <- info"getDeposits(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.orderId)}"
       } yield r
 
-    def getRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[RedeemDB]] =
+    def getAmmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[AmmRedeemDB]] =
       for {
         _ <- info"getRedeems(paging=$paging, tw=$tw, request=$request)"
         r <- _
@@ -239,6 +271,34 @@ object History {
         _ <- info"totalAddressOrders(list=$list)"
         r <- _
         _ <- info"totalAddressOrders(list=$list) -> $r"
+      } yield r
+
+    def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmDepositDB]] =
+      for {
+        _ <- info"getLmDeposits(paging=$paging, tw=$tw, request=$request)"
+        r <- _
+        _ <- info"getLmDeposits(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.orderId)}"
+      } yield r
+
+    def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmCompoundDB]] =
+      for {
+        _ <- info"getLmCompounds(paging=$paging, tw=$tw, request=$request)"
+        r <- _
+        _ <- info"getLmCompounds(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.orderId)}"
+      } yield r
+
+    def lmDepositRegister(orderId: OrderId): Mid[F, Option[RegisterLmDeposit]] =
+      for {
+        _ <- trace"lmDepositRegister(orderId=$orderId)"
+        r <- _
+        _ <- trace"lmDepositRegister(orderId=$orderId) -> $r"
+      } yield r
+
+    def lmCompoundRegister(orderId: OrderId): Mid[F, Option[RegisterCompound]] =
+      for {
+        _ <- trace"lmCompoundRegister(orderId=$orderId)"
+        r <- _
+        _ <- trace"lmCompoundRegister(orderId=$orderId) -> $r"
       } yield r
   }
 }

@@ -5,14 +5,17 @@ import cats.{Functor, Monad}
 import fi.spectrum.api.classes.ToAPI._
 import fi.spectrum.api.db.repositories.History
 import fi.spectrum.api.services.Network
-import fi.spectrum.api.v1.models.history.ApiOrder.Deposit._
-import fi.spectrum.api.v1.models.history.ApiOrder.Redeem._
+import fi.spectrum.api.v1.models.history.ApiOrder.AmmDepositApi._
+import fi.spectrum.api.v1.models.history.ApiOrder.AmmRedeemApi._
+import fi.spectrum.api.v1.models.history.ApiOrder.LmDepositApi._
+import fi.spectrum.api.v1.models.history.ApiOrder.LmCompoundApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.Swap._
 import fi.spectrum.api.v1.models.history.ApiOrder._
 import fi.spectrum.api.v1.models.history.ApiOrder
 import fi.spectrum.core.domain.Address
 import fi.spectrum.core.domain.order.Order
-import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
+import fi.spectrum.core.domain.order.Order.Compound
+import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
 import fi.spectrum.core.domain.order.OrderStatus.{Registered, WaitingRegistration}
 import org.ergoplatform.ErgoAddressEncoder
 import tofu.doobie.transactor.Txr
@@ -57,10 +60,10 @@ object MempoolApi {
                 case x :: Nil => // query db for register order
                   x.wined[AmmDeposit]
                     .traverse(d => history.depositRegister(d.order.id).flatMapIn(d.toApi(_)))
-                    .orElseF(
-                      x.wined[Order.Redeem].traverse(r => history.redeemRegister(r.order.id).flatMapIn(r.toApi(_)))
-                    )
+                    .orElseF(x.wined[Order.Redeem].traverse(r => history.redeemRegister(r.order.id).flatMapIn(r.toApi(_))))
                     .orElseF(x.wined[Order.Swap].traverse(s => history.swapRegister(s.order.id).flatMapIn(s.toApi(_))))
+                    .orElseF(x.wined[LmDeposit].traverse(s => history.lmDepositRegister(s.order.id).flatMapIn(s.toApi(_))))
+                    .orElseF(x.wined[Compound].traverse(s => history.lmCompoundRegister(s.order.id).flatMapIn(s.toApi(_))))
                     .map(_.flatten)
                 case x :: y :: Nil => // process as completed order
                   x.toApi(y).pure[D]
