@@ -230,7 +230,9 @@ object Order {
   }
 
   @derive(loggable, encoder, decoder)
-  sealed trait Compound extends Order
+  sealed trait Compound extends Order {
+    val poolId: PoolId
+  }
 
   object Compound {
 
