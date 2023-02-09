@@ -3,6 +3,7 @@ package fi.spectrum.core.domain.order
 import fi.spectrum.core.domain.AssetAmount
 import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmDepositEvaluation
 import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
+import fi.spectrum.core.domain.order.Order.Deposit.LmDeposit.LmDepositV1
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.Order.Deposit._
 import fi.spectrum.core.domain.order.Order.Lock._
@@ -58,6 +59,9 @@ object OrderOptics {
     (swapPrism >> GenSubset[Swap, SwapV2] >> GenContains[SwapV2](_.params)) orElse
     (swapPrism >> GenSubset[Swap, SwapV3] >> GenContains[SwapV3](_.params))
   }
+
+  implicit val optionalLmDepositParams: Optional[Order, LmDepositParams] =
+    lmPrism >> GenSubset[LmDeposit, LmDepositV1] >> GenContains[LmDepositV1](_.params)
 
   implicit val lensOrderIdLock: Lens[LockV1, OrderId] = Contains[LockV1, OrderId]
 
