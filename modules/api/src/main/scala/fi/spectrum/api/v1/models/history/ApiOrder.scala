@@ -5,7 +5,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.api.classes.ToAPI
 import fi.spectrum.api.db.models.OrderDB._
-import fi.spectrum.api.db.models.{RegisterCompound, RegisterDeposit, RegisterLmDeposit, RegisterRedeem, RegisterSwap}
+import fi.spectrum.api.db.models._
 import fi.spectrum.api.v1.models.history
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.address._
@@ -15,6 +15,7 @@ import fi.spectrum.core.domain.order.Order.Compound
 import fi.spectrum.core.domain.order.Order.Compound.CompoundV1
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
+import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem
 import fi.spectrum.core.domain.order.OrderOptics._
 import fi.spectrum.core.domain.order.OrderStatus._
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
@@ -40,7 +41,7 @@ object ApiOrder {
     def toAPI(a: Processed.Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
       a.wined[AmmDeposit]
         .flatMap(AmmDepositApi.toApiDeposit.toAPI(_))
-        .orElse(a.wined[order.Order.Redeem].flatMap(AmmRedeemApi.toApiRedeem.toAPI(_)))
+        .orElse(a.wined[AmmRedeem].flatMap(AmmRedeemApi.toApiRedeem.toAPI(_)))
         .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap.toAPI(_)))
         .orElse(a.wined[order.Order.Lock].flatMap(Lock.toApiLock.toAPI(_)))
         .orElse(a.wined[LmDeposit].flatMap(LmDepositApi.toApiLmDeposit.toAPI(_)))
@@ -57,7 +58,7 @@ object ApiOrder {
       def toAPI(a: Processed.Any, c: Processed.Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
         a.wined[AmmDeposit]
           .flatMap(AmmDepositApi.toApiDeposit2.toAPI(_, c))
-          .orElse(a.wined[order.Order.Redeem].flatMap(AmmRedeemApi.toApiRedeem2.toAPI(_, c)))
+          .orElse(a.wined[AmmRedeem].flatMap(AmmRedeemApi.toApiRedeem2.toAPI(_, c)))
           .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap2.toAPI(_, c)))
           .orElse(a.wined[LmDeposit].flatMap(LmDepositApi.toApiLmDeposit2.toAPI(_, c)))
           .orElse(a.wined[order.Order.Compound].flatMap(LmCompoundApi.toApiCompound2.toAPI(_, c)))
@@ -248,10 +249,10 @@ object ApiOrder {
 
   object AmmRedeemApi extends RedeemInstances {
 
-    implicit val toApiRedeem: ToAPI[Processed[order.Order.Redeem], ApiOrder, RegisterRedeem] =
-      new ToAPI[Processed[order.Order.Redeem], ApiOrder, RegisterRedeem] {
+    implicit val toApiRedeem: ToAPI[Processed[AmmRedeem], ApiOrder, RegisterRedeem] =
+      new ToAPI[Processed[AmmRedeem], ApiOrder, RegisterRedeem] {
 
-        def toAPI(o: Processed[order.Order.Redeem])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(o: Processed[AmmRedeem])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           Optional[order.Order, RedeemParams].getOption(o.order).map { params =>
             AmmRedeemApi(
               o.order.id,
@@ -268,10 +269,10 @@ object ApiOrder {
             )
           }
 
-        def toAPI(o: Processed[order.Order.Redeem], c: RegisterRedeem)(implicit
+        def toAPI(o: Processed[AmmRedeem], c: RegisterRedeem)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
-          o.evaluation.flatMap(_.widen[RedeemEvaluation]).map { eval =>
+          o.evaluation.flatMap(_.widen[AmmRedeemEvaluation]).map { eval =>
             AmmRedeemApi(
               o.order.id,
               o.order.poolId,
@@ -288,23 +289,23 @@ object ApiOrder {
           }
       }
 
-    implicit val toApiRedeem2: ToAPI[Processed[order.Order.Redeem], ApiOrder, Processed.Any] =
-      new ToAPI[Processed[order.Order.Redeem], ApiOrder, Processed.Any] {
+    implicit val toApiRedeem2: ToAPI[Processed[AmmRedeem], ApiOrder, Processed.Any] =
+      new ToAPI[Processed[AmmRedeem], ApiOrder, Processed.Any] {
 
-        def toAPI(a: Processed[order.Order.Redeem])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(a: Processed[AmmRedeem])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           toApiRedeem.toAPI(a)
 
-        def toAPI(x: Processed[order.Order.Redeem], c: Processed.Any)(implicit
+        def toAPI(x: Processed[AmmRedeem], c: Processed.Any)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           for {
-            y      <- c.wined[order.Order.Redeem]
+            y      <- c.wined[AmmRedeem]
             params <- Optional[order.Order, RedeemParams].getOption(x.order)
           } yield {
-            val eval: Option[RedeemEvaluation] =
+            val eval: Option[AmmRedeemEvaluation] =
               x.evaluation
-                .flatMap(_.widen[RedeemEvaluation])
-                .orElse(y.evaluation.flatMap(_.widen[RedeemEvaluation]))
+                .flatMap(_.widen[AmmRedeemEvaluation])
+                .orElse(y.evaluation.flatMap(_.widen[AmmRedeemEvaluation]))
             AmmRedeemApi(
               x.order.id,
               x.order.poolId,
@@ -785,22 +786,16 @@ object ApiOrder {
           for {
             x1 <- Prism[Compound, CompoundV1].getOption(x.order)
             y  <- c.wined[Compound]
-          } yield {
-            val eval: Option[LmDepositCompoundEvaluation] =
-              x.evaluation
-                .flatMap(_.widen[LmDepositCompoundEvaluation])
-                .orElse(y.evaluation.flatMap(_.widen[LmDepositCompoundEvaluation]))
-            LmCompoundApi(
-              x.order.id,
-              history.OrderStatus.Mempool,
-              x.order.poolId,
-              x1.vLq,
-              x1.tmp,
-              x1.bundleKeyId,
-              mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
-              mkTxData(x.state, WaitingEvaluation).orElse(mkTxData(y.state, WaitingEvaluation))
-            )
-          }
+          } yield LmCompoundApi(
+            x.order.id,
+            history.OrderStatus.Mempool,
+            x.order.poolId,
+            x1.vLq,
+            x1.tmp,
+            x1.bundleKeyId,
+            mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
+            mkTxData(x.state, WaitingEvaluation).orElse(mkTxData(y.state, WaitingEvaluation))
+          )
       }
   }
 

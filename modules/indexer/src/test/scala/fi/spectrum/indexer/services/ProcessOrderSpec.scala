@@ -25,7 +25,7 @@ class ProcessOrderSpec extends AnyFlatSpec with Matchers with Indexer {
       tx,
       0,
       0,
-      _ => processed.some.pure[IO],
+      _ => List(processed).pure[IO],
       _ => pool.some.pure[IO],
       unit[IO]
     ).unsafeRunSync()
@@ -37,7 +37,7 @@ class ProcessOrderSpec extends AnyFlatSpec with Matchers with Indexer {
       compoundTx,
       0,
       0,
-      _ => res(1).some.pure[IO],
+      _ => List(res(1)).pure[IO],
       _ => pool.some.pure[IO],
       unit[IO]
     ).unsafeRunSync()

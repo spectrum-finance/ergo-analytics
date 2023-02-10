@@ -48,7 +48,7 @@ object Events {
         event.transaction,
         event.timestamp,
         event.height,
-        storage.getOrder,
+        storage.getOrders,
         storage.getPool,
         info"Empty pool&order ${event.transaction.id}"
       ).flatMap { orders =>

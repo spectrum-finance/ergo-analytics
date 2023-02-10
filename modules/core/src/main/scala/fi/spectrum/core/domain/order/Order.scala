@@ -119,44 +119,66 @@ object Order {
   /** It's any redeem order that exists in our domain.
     */
   @derive(encoder, decoder, loggable)
-  sealed abstract class Redeem extends Order {
-    val poolId: PoolId
-    val fee: Fee
-  }
+  sealed abstract class Redeem extends Order
 
   object Redeem {
 
     @derive(encoder, decoder, loggable)
-    final case class RedeemV3(
-      box: Output,
-      fee: SPF,
-      poolId: PoolId,
-      redeemer: ErgoTreeRedeemer,
-      params: RedeemParams,
-      maxMinerFee: Long,
-      version: V3
-    ) extends Redeem
+    sealed abstract class AmmRedeem extends Redeem {
+      val poolId: PoolId
+      val fee: Fee
+    }
+
+    object AmmRedeem {
+
+      @derive(encoder, decoder, loggable)
+      final case class RedeemV3(
+        box: Output,
+        fee: SPF,
+        poolId: PoolId,
+        redeemer: ErgoTreeRedeemer,
+        params: RedeemParams,
+        maxMinerFee: Long,
+        version: V3
+      ) extends AmmRedeem
+
+      @derive(encoder, decoder, loggable)
+      final case class RedeemV1(
+        box: Output,
+        fee: ERG,
+        poolId: PoolId,
+        redeemer: PublicKeyRedeemer,
+        params: RedeemParams,
+        maxMinerFee: Long,
+        version: V1
+      ) extends AmmRedeem
+
+      @derive(encoder, decoder, loggable)
+      final case class RedeemLegacyV1(
+        box: Output,
+        fee: ERG,
+        poolId: PoolId,
+        redeemer: PublicKeyRedeemer,
+        params: RedeemParams,
+        version: LegacyV1
+      ) extends AmmRedeem
+    }
 
     @derive(encoder, decoder, loggable)
-    final case class RedeemV1(
-      box: Output,
-      fee: ERG,
-      poolId: PoolId,
-      redeemer: PublicKeyRedeemer,
-      params: RedeemParams,
-      maxMinerFee: Long,
-      version: V1
-    ) extends Redeem
+    sealed abstract class LmRedeem extends Redeem
 
-    @derive(encoder, decoder, loggable)
-    final case class RedeemLegacyV1(
-      box: Output,
-      fee: ERG,
-      poolId: PoolId,
-      redeemer: PublicKeyRedeemer,
-      params: RedeemParams,
-      version: LegacyV1
-    ) extends Redeem
+    object LmRedeem {
+
+      @derive(encoder, decoder, loggable)
+      final case class LmRedeemV1(
+        box: Output,
+        bundleKeyId: TokenId,
+        expectedLq: AssetAmount,
+        maxMinerFee: Long,
+        redeemer: ErgoTreeRedeemer,
+        version: V1
+      ) extends LmRedeem
+    }
   }
 
   /** It's any swap order that exists in our domain.

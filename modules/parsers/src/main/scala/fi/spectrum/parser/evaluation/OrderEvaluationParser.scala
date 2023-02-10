@@ -4,6 +4,7 @@ import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.OrderEvaluation._
 import fi.spectrum.core.domain.analytics.{OrderEvaluation, Version}
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
+import fi.spectrum.core.domain.order.Order.Redeem.{AmmRedeem, LmRedeem}
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderOptics._
 import fi.spectrum.core.domain.order.{Order, Redeemer}
@@ -32,7 +33,8 @@ final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implici
         order match {
           case _: AmmDeposit              => ammDeposit(redeemer, output, pool, nextPool)
           case _: LmDeposit | _: Compound => lmDepositCompound(outputs)
-          case _: Redeem                  => redeem(redeemer, output, pool)
+          case _: AmmRedeem               => ammRedeem(redeemer, output, pool)
+          case _: LmRedeem                => lmRedeem(redeemer, output, pool)
           case _: Swap                    => swap(redeemer, order, output)
           case _: Lock                    => none
         }
@@ -40,7 +42,7 @@ final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implici
       .collectFirst { case Some(v) => v }
   }
 
-  def redeem(redeemer: SErgoTree, output: Output, pool: Pool): Option[RedeemEvaluation] =
+  def ammRedeem(redeemer: SErgoTree, output: Output, pool: Pool): Option[AmmRedeemEvaluation] =
     if (redeemer == output.ergoTree) {
       val outputX = implicitly[Optional[Pool, AssetAmount] with Label["x"]].getOption(pool) match {
         case Some(value) if value.isNative => AssetAmount.native(output.value).some
@@ -54,7 +56,7 @@ final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implici
       }
 
       (outputX, outputY) match {
-        case (Some(x), Some(y)) => RedeemEvaluation(x, y).some
+        case (Some(x), Some(y)) => AmmRedeemEvaluation(x, y).some
         case _                  => none
       }
     } else none
@@ -80,6 +82,11 @@ final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implici
       val actualY = poolNext.y.amount - poolPrev.y.amount
       AmmDepositEvaluation(lp, actualX, actualY)
     }
+
+  def lmRedeem(redeemer: SErgoTree, output: Output, pool: Pool): Option[LmRedeemEvaluation] =
+    if (redeemer == output.ergoTree)
+      output.assets.headOption.map(b => LmRedeemEvaluation(AssetAmount.fromBoxAsset(b), output.boxId, pool.poolId))
+    else none
 
   def lmDepositCompound(outputs: List[Output]): Option[LmDepositCompoundEvaluation] =
     outputs
