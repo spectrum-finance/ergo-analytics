@@ -40,8 +40,10 @@ object api {
       T2T.pool,
       N2T.pool,
       LM.poolV1SelfHosted,
+      LM.poolV1,
       LM.depositV1,
       LM.bundleV1,
+      LM.redeemV1,
       ergoBaseOutput
     )
 

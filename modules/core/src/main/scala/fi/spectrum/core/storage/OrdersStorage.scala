@@ -20,7 +20,7 @@ import tofu.syntax.monadic._
 trait OrdersStorage[F[_]] {
   def insertOrder(order: Processed.Any): F[Unit]
 
-  def getOrder(id: List[BoxId]): F[Option[Processed.Any]]
+  def getOrders(ids: List[BoxId]): F[List[Processed.Any]]
 
   def deleteOrder(orderId: OrderId): F[Unit]
 
@@ -66,11 +66,10 @@ object OrdersStorage {
     def insertOrder(order: Processed.Any): F[Unit] =
       rocks.put(order.order.box.boxId, order.asJson.noSpaces)
 
-    //todo: Optimisation. Try to get only the second one, if it doesnt exist, try other ones
-    def getOrder(ids: List[BoxId]): F[Option[Processed.Any]] =
+    def getOrders(ids: List[BoxId]): F[List[Processed.Any]] =
       ids
         .traverse(rocks.get[BoxId, String])
-        .map(_.flatten.map(decode[Processed.Any](_).toOption).collectFirst { case Some(v) => v })
+        .map(_.flatten.flatMap(decode[Processed.Any](_).toOption))
 
     def deleteOrder(orderId: OrderId): F[Unit] =
       rocks.delete(orderId)
@@ -102,11 +101,11 @@ object OrdersStorage {
         _ <- trace"insertOrder(${order.order.id}) -> finish"
       } yield ()
 
-    def getOrder(id: List[BoxId]): Mid[F, Option[Processed.Any]] =
+    def getOrders(ids: List[BoxId]): Mid[F, List[Processed.Any]] =
       for {
-        _ <- trace"getOrder($id)"
+        _ <- trace"getOrder($ids)"
         r <- _
-        _ <- trace"getOrder($id) -> ${r.map(_.order.id)}"
+        _ <- trace"getOrder($ids) -> ${r.map(_.order.id)}"
       } yield r
 
     def deleteOrder(orderId: OrderId): Mid[F, Unit] =
