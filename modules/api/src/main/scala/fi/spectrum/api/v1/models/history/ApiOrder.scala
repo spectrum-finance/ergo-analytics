@@ -170,7 +170,7 @@ object ApiOrder {
               address.formAddress(x.order.redeemer),
               mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
               mkTxData(x.state, WaitingRefund).orElse(mkTxData(y.state, WaitingRefund)),
-              mkTxData(x.state, WaitingRegistration).orElse(mkTxData(y.state, WaitingRegistration))
+              mkTxData(x.state, WaitingEvaluation).orElse(mkTxData(y.state, WaitingEvaluation))
             )
           }
       }
@@ -316,7 +316,7 @@ object ApiOrder {
               address.formAddress(x.order.redeemer),
               mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
               mkTxData(x.state, WaitingRefund).orElse(mkTxData(y.state, WaitingRefund)),
-              mkTxData(x.state, WaitingRegistration).orElse(mkTxData(y.state, WaitingRegistration))
+              mkTxData(x.state, WaitingEvaluation).orElse(mkTxData(y.state, WaitingEvaluation))
             )
           }
       }
@@ -641,8 +641,8 @@ object ApiOrder {
               eval.tokens.some,
               TokenId.unsafeFromString(eval.bundle.id.value).some,
               TxData(c.info.id, c.info.timestamp),
-              if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none,
-              if (o.state.status.in(WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none
+              if (o.state.status.in(WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none,
+              if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
             )
           }
       }
@@ -674,7 +674,7 @@ object ApiOrder {
               eval.map(_.bundle.id).map(r => TokenId.unsafeFromString(r.value)),
               mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
               mkTxData(x.state, WaitingRefund).orElse(mkTxData(y.state, WaitingRefund)),
-              mkTxData(x.state, WaitingRegistration).orElse(mkTxData(y.state, WaitingRegistration))
+              mkTxData(x.state, WaitingEvaluation).orElse(mkTxData(y.state, WaitingEvaluation))
             )
           }
       }
@@ -759,19 +759,17 @@ object ApiOrder {
         def toAPI(o: Processed[Compound], c: RegisterCompound)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
-          o.evaluation.flatMap(_.widen[LmDepositCompoundEvaluation]).flatMap { eval =>
-            Prism[Compound, CompoundV1].getOption(o.order).map { o1 =>
-              LmCompoundApi(
-                o.order.id,
-                history.OrderStatus.Mempool,
-                o.order.poolId,
-                o1.vLq,
-                o1.tmp,
-                o1.bundleKeyId,
-                TxData(c.info.id, c.info.timestamp),
-                if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
-              )
-            }
+          Prism[Compound, CompoundV1].getOption(o.order).map { o1 =>
+            LmCompoundApi(
+              o.order.id,
+              history.OrderStatus.Mempool,
+              o.order.poolId,
+              o1.vLq,
+              o1.tmp,
+              o1.bundleKeyId,
+              TxData(c.info.id, c.info.timestamp),
+              if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
+            )
           }
       }
 
@@ -800,7 +798,7 @@ object ApiOrder {
               x1.tmp,
               x1.bundleKeyId,
               mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
-              mkTxData(x.state, WaitingRegistration).orElse(mkTxData(y.state, WaitingRegistration))
+              mkTxData(x.state, WaitingEvaluation).orElse(mkTxData(y.state, WaitingEvaluation))
             )
           }
       }
