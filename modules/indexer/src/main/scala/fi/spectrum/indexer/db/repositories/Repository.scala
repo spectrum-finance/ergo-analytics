@@ -28,10 +28,11 @@ trait Repository[T, I, E] {
 
 object Repository {
   implicit val swapsRepository: AmmSwapRepository            = new AmmSwapRepository
-  implicit val redeemsRepository: RedeemRepository           = new RedeemRepository
+  implicit val redeemsRepository: AmmRedeemRepository        = new AmmRedeemRepository
   implicit val depositsRepository: AmmDepositRepository      = new AmmDepositRepository
   implicit val lmDepositsRepository: LmDepositRepository     = new LmDepositRepository
   implicit val lmCompoundRepository: LmCompoundRepository    = new LmCompoundRepository
+  implicit val lmRedeemRepository: LmRedeemRepository        = new LmRedeemRepository
   implicit val locksRepository: LockRepository               = new LockRepository
   implicit val offChainsFeeRepository: OffChainFeeRepository = new OffChainFeeRepository
   implicit val poolsRepository: PoolRepository               = new PoolRepository

@@ -3,7 +3,7 @@ package fi.spectrum.parser.amm.order.v1
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
-import fi.spectrum.core.domain.order.Order.Redeem.RedeemV1
+import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem.RedeemV1
 import fi.spectrum.core.domain.order.Order.Swap.SwapV1
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.order._

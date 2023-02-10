@@ -35,38 +35,38 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
       stageDeploy            <- events.process(deployPool)
       resultDeploy           <- storage.getPool(List(swapPool.get.box.boxId))
       stageRegister          <- events.process(swap1)
-      resultRegister         <- storage.getOrder(List(stageRegister._1.head.event.order.box.boxId))
+      resultRegister         <- storage.getOrders(List(stageRegister._1.head.event.order.box.boxId))
       stageRegisterRollback  <- events.process(swapRollback1)
-      resultRegisterRollback <- storage.getOrder(List(stageRegisterRollback._1.head.event.order.box.boxId))
+      resultRegisterRollback <- storage.getOrders(List(stageRegisterRollback._1.head.event.order.box.boxId))
       stageRegister2         <- events.process(swap1)
-      resultRegister2        <- storage.getOrder(List(stageRegister2._1.head.event.order.box.boxId))
+      resultRegister2        <- storage.getOrders(List(stageRegister2._1.head.event.order.box.boxId))
       stageEvaluate          <- events.process(swap2)
-      resultEvaluate         <- storage.getOrder(List(stageEvaluate._1.head.event.order.box.boxId))
+      resultEvaluate         <- storage.getOrders(List(stageEvaluate._1.head.event.order.box.boxId))
       stageEvaluateRollback  <- events.process(swapRollback2)
-      resultEvaluateRollback <- storage.getOrder(List(stageEvaluateRollback._1.head.event.order.box.boxId))
+      resultEvaluateRollback <- storage.getOrders(List(stageEvaluateRollback._1.head.event.order.box.boxId))
       stageEvaluate2         <- events.process(swap3)
-      resultEvaluate2        <- storage.getOrder(List(stageEvaluate2._1.head.event.order.box.boxId))
+      resultEvaluate2        <- storage.getOrders(List(stageEvaluate2._1.head.event.order.box.boxId))
     } yield {
       stageDeploy._2.head.event shouldEqual swapPool.get
       resultDeploy.get shouldEqual swapPool.get
 
       stageRegister._1.nonEmpty shouldEqual true
-      resultRegister.get shouldEqual stageRegister._1.head.event
+      resultRegister.head shouldEqual stageRegister._1.head.event
 
       stageRegisterRollback._1.nonEmpty shouldEqual true
       resultRegisterRollback shouldEqual None
 
       stageRegister2._1.nonEmpty shouldEqual true
-      resultRegister2.get shouldEqual stageRegister2._1.head.event
+      resultRegister2.head shouldEqual stageRegister2._1.head.event
 
       stageEvaluate._1.nonEmpty shouldEqual true
-      resultEvaluate.get shouldEqual stageRegister._1.head.event
+      resultEvaluate.head shouldEqual stageRegister._1.head.event
 
       stageEvaluateRollback._1.nonEmpty shouldEqual true
-      resultEvaluateRollback.get shouldEqual stageRegister._1.head.event
+      resultEvaluateRollback.head shouldEqual stageRegister._1.head.event
 
       stageEvaluate2._1.nonEmpty shouldEqual true
-      resultEvaluate2.get shouldEqual stageRegister._1.head.event
+      resultEvaluate2.head shouldEqual stageRegister._1.head.event
     }
 
     run.unsafeRunSync()
@@ -129,7 +129,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
       o6         <- events.process(swap2)
       startPool  <- storage.getPool(List(swapPool.get.box.boxId))
       finishPool <- storage.getPool(List(o6._2.last.event.box.boxId))
-      order      <- storage.getOrder(List(o1._1.head.event.order.box.boxId))
+      order      <- storage.getOrders(List(o1._1.head.event.order.box.boxId))
     } yield {
       o1._1.head shouldEqual BlockChainEvent.Apply(
         parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
@@ -193,7 +193,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
         .flatMap(r => PoolParser.make.parse(r, swap2.timestamp, 10))
         .head
 
-      order.get shouldEqual o1._1.head.event
+      order.head shouldEqual o1._1.head.event
     }
 
     run.unsafeRunSync()
