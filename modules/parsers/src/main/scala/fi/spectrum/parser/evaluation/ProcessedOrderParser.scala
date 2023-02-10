@@ -6,7 +6,9 @@ import derevo.derive
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{LockEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.analytics.Processed._
 import fi.spectrum.core.domain.analytics.{Processed, Version}
+import fi.spectrum.core.domain.order.Order.Compound
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
+import fi.spectrum.core.domain.order.Order.Redeem.LmRedeem
 import fi.spectrum.core.domain.order.{Order, OrderState, OrderStatus}
 import fi.spectrum.core.domain.pool.Pool
 import fi.spectrum.core.domain.transaction.Transaction

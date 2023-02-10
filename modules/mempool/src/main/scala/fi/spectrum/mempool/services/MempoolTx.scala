@@ -54,7 +54,11 @@ object MempoolTx {
                    event.transaction,
                    now,
                    0,
-                   ids => mempool.getOrder(ids).orElseF(storage.getOrder(ids)),
+                   ids =>
+                     mempool.getOrder(ids).flatMap {
+                       case xs if xs.nonEmpty => xs.pure
+                       case _                 => storage.getOrders(ids)
+                     },
                    ids => mempool.getPool(ids).orElseF(storage.getPool(ids)),
                    info"Empty pool&order in mempool tx ${event.transaction.id}"
                  )

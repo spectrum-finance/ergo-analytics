@@ -3,16 +3,17 @@ package fi.spectrum.indexer.db.models
 import cats.syntax.option._
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.analytics.AnalyticsOptics._
-import fi.spectrum.core.domain.analytics.OrderEvaluation.RedeemEvaluation
+import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmRedeemEvaluation
 import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed, Version}
-import fi.spectrum.core.domain.order.Order.Redeem.{RedeemLegacyV1, RedeemV1, RedeemV3}
+import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem
+import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem.{RedeemLegacyV1, RedeemV1, RedeemV3}
 import fi.spectrum.core.domain.order.OrderStatus.{Evaluated, Refunded, Registered}
 import fi.spectrum.core.domain.order.{Fee, Order, OrderId, PoolId}
 import fi.spectrum.indexer.classes.syntax._
 import fi.spectrum.indexer.classes.ToDB
 import glass.Subset
 
-final case class RedeemDB(
+final case class AmmRedeemDB(
   orderId: OrderId,
   poolId: PoolId,
   poolBoxId: Option[BoxId],
@@ -30,9 +31,9 @@ final case class RedeemDB(
   refundedTx: Option[TxInfo]
 )
 
-object RedeemDB {
+object AmmRedeemDB {
 
-  implicit val toDB: ToDB[Processed[Order.Redeem], RedeemDB] = processed => {
+  implicit val toDB: ToDB[Processed[AmmRedeem], AmmRedeemDB] = processed => {
     processed.order match {
       case redeem: RedeemV3       => processed.widen(redeem).toDB
       case redeem: RedeemV1       => processed.widen(redeem).toDB
@@ -40,12 +41,12 @@ object RedeemDB {
     }
   }
 
-  implicit val ___V1: ToDB[Processed[RedeemV1], RedeemDB] =
+  implicit val ___V1: ToDB[Processed[RedeemV1], AmmRedeemDB] =
     processed => {
       val redeem     = processed.order
-      val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, RedeemEvaluation].getOption)
+      val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmRedeemEvaluation].getOption)
       val txInfo     = TxInfo(processed.state.txId, processed.state.timestamp)
-      RedeemDB(
+      AmmRedeemDB(
         redeem.id,
         redeem.poolId,
         processed.poolBoxId,
@@ -64,12 +65,12 @@ object RedeemDB {
       )
     }
 
-  implicit val ___V3: ToDB[Processed[RedeemV3], RedeemDB] =
+  implicit val ___V3: ToDB[Processed[RedeemV3], AmmRedeemDB] =
     processed => {
       val redeem     = processed.order
-      val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, RedeemEvaluation].getOption)
+      val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmRedeemEvaluation].getOption)
       val txInfo     = TxInfo(processed.state.txId, processed.state.timestamp)
-      RedeemDB(
+      AmmRedeemDB(
         redeem.id,
         redeem.poolId,
         processed.poolBoxId,
@@ -88,12 +89,12 @@ object RedeemDB {
       )
     }
 
-  implicit val ___LegacyV1: ToDB[Processed[RedeemLegacyV1], RedeemDB] =
+  implicit val ___LegacyV1: ToDB[Processed[RedeemLegacyV1], AmmRedeemDB] =
     processed => {
       val redeem     = processed.order
-      val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, RedeemEvaluation].getOption)
+      val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmRedeemEvaluation].getOption)
       val txInfo     = TxInfo(processed.state.txId, processed.state.timestamp)
-      RedeemDB(
+      AmmRedeemDB(
         redeem.id,
         redeem.poolId,
         processed.poolBoxId,
