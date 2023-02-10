@@ -28,7 +28,7 @@ import tofu.logging.derivation.loggable
 @derive(representableK)
 trait Mempool[F[_]] {
 
-  def getOrder(id: List[BoxId]): F[Option[Processed.Any]]
+  def getOrder(id: List[BoxId]): F[List[Processed.Any]]
 
   def getPool(id: List[BoxId]): F[Option[Pool]]
 
@@ -123,10 +123,10 @@ object Mempool {
         } yield ()
     }
 
-    def getOrder(id: List[BoxId]): F[Option[Processed.Any]] =
-      orders.get.map(_.find { case (key, _) =>
+    def getOrder(id: List[BoxId]): F[List[Processed.Any]] =
+      orders.get.map(_.filter { case (key, _) =>
         id.contains(BoxId(key.orderId)) && key.orderType == mapToMempool(OrderStatus.WaitingRegistration).entryName
-      }.map(_._2))
+      }.values.toList)
 
     def getPool(id: List[BoxId]): F[Option[Pool]] =
       pools.get.map { pools =>
@@ -141,11 +141,11 @@ object Mempool {
 
   final private class Tracing[F[_]: Monad: Logging] extends Mempool[Mid[F, *]] {
 
-    def getOrder(id: List[BoxId]): Mid[F, Option[Processed.Any]] =
+    def getOrder(id: List[BoxId]): Mid[F, List[Processed.Any]] =
       for {
-        _ <- info"getOrder($id)"
+        _ <- info"getOrderById($id)"
         r <- _
-        _ <- info"getOrder($id) -> ${r.map(_.order.id)}"
+        _ <- info"getOrderById($id) -> ${r.map(_.order.id)}"
       } yield r
 
     def getPool(id: List[BoxId]): Mid[F, Option[Pool]] =
