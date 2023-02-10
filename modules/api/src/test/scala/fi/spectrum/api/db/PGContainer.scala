@@ -1,4 +1,4 @@
-package fi.spectrum.indexer.db
+package fi.spectrum.api.db
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
