@@ -1,16 +1,16 @@
 package fi.spectrum.indexer.db.repositories
 
-import fi.spectrum.core.domain.analytics.OrderEvaluation.RedeemEvaluation
+import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmRedeemEvaluation
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
-import fi.spectrum.indexer.db.models.{RedeemDB, UpdateEvaluatedTx}
+import fi.spectrum.indexer.db.models.{AmmRedeemDB, UpdateEvaluatedTx}
 import doobie.{ConnectionIO, Update}
 import doobie.util.log.LogHandler
 
-final class RedeemRepository
-  extends Repository[RedeemDB, OrderId, RedeemEvaluation]
-  with DeleteRepository[RedeemDB, OrderId]
-  with UpdateRepository[RedeemDB] {
+final class AmmRedeemRepository
+  extends Repository[AmmRedeemDB, OrderId, AmmRedeemEvaluation]
+  with DeleteRepository[AmmRedeemDB, OrderId]
+  with UpdateRepository[AmmRedeemDB] {
 
   val executed: String   = "executed_transaction_id"
   val executedTs: String = "executed_transaction_timestamp"
@@ -44,8 +44,8 @@ final class RedeemRepository
 
   val field: String = "order_id"
 
-  def updateExecuted(update: UpdateEvaluatedTx[RedeemEvaluation])(implicit lh: LogHandler): ConnectionIO[Int] =
-    Update[UpdateEvaluatedTx[RedeemEvaluation]](
+  def updateExecuted(update: UpdateEvaluatedTx[AmmRedeemEvaluation])(implicit lh: LogHandler): ConnectionIO[Int] =
+    Update[UpdateEvaluatedTx[AmmRedeemEvaluation]](
       s"""
          |update $tableName
          |set $executed=?, $executedTs=?, pool_state_id=?, 

@@ -12,6 +12,7 @@ import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
 import fi.spectrum.core.domain.analytics.{OffChainFee, Processed}
 import fi.spectrum.core.domain.order.{Order, OrderState}
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
+import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderStatus.Registered
 import fi.spectrum.core.domain.pool.Pool.{AmmPool, LmPool}
@@ -95,24 +96,24 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     val executed  = parser.evaluated(redeemEvaluateTransaction, 0, register, redeemPool.get, 10).unsafeRunSync().get
 
     val register1Expected =
-      implicitly[ToDB[Processed[Redeem], RedeemDB]].toDB(register.asInstanceOf[Processed[Redeem]])
+      implicitly[ToDB[Processed[AmmRedeem], AmmRedeemDB]].toDB(register.asInstanceOf[Processed[AmmRedeem]])
     val register2Expected =
-      implicitly[ToDB[Processed[Redeem], RedeemDB]].toDB(register2.asInstanceOf[Processed[Redeem]])
+      implicitly[ToDB[Processed[AmmRedeem], AmmRedeemDB]].toDB(register2.asInstanceOf[Processed[AmmRedeem]])
     val evalExpected =
-      implicitly[ToDB[Processed[Redeem], RedeemDB]].toDB(executed.asInstanceOf[Processed[Redeem]])
+      implicitly[ToDB[Processed[AmmRedeem], AmmRedeemDB]].toDB(executed.asInstanceOf[Processed[AmmRedeem]])
 
     def run = for {
-      insertResult   <- repo.redeems.insert(register).trans
-      insertResult1  <- repo.redeems.insert(register2).trans
-      expected1      <- sql"select * from redeems where order_id=${register.order.id}".query[RedeemDB].unique.trans
-      expected2      <- sql"select * from redeems where order_id=${register2.order.id}".query[RedeemDB].unique.trans
-      resolveResult  <- repo.redeems.insert(refund).trans
-      resolveResult1 <- repo.redeems.insert(executed).trans
-      expected3      <- sql"select * from redeems where order_id=${register.order.id}".query[RedeemDB].unique.trans
-      expected4      <- sql"select * from redeems where order_id=${register2.order.id}".query[RedeemDB].unique.trans
-      deleteResult   <- repo.redeems.resolve(register).trans
-      deleteResult1  <- repo.redeems.resolve(register2).trans
-      expected5      <- sql"select * from redeems".query[RedeemDB].to[List].trans
+      insertResult   <- repo.ammRedeems.insert(register).trans
+      insertResult1  <- repo.ammRedeems.insert(register2).trans
+      expected1      <- sql"select * from redeems where order_id=${register.order.id}".query[AmmRedeemDB].unique.trans
+      expected2      <- sql"select * from redeems where order_id=${register2.order.id}".query[AmmRedeemDB].unique.trans
+      resolveResult  <- repo.ammRedeems.insert(refund).trans
+      resolveResult1 <- repo.ammRedeems.insert(executed).trans
+      expected3      <- sql"select * from redeems where order_id=${register.order.id}".query[AmmRedeemDB].unique.trans
+      expected4      <- sql"select * from redeems where order_id=${register2.order.id}".query[AmmRedeemDB].unique.trans
+      deleteResult   <- repo.ammRedeems.resolve(register).trans
+      deleteResult1  <- repo.ammRedeems.resolve(register2).trans
+      expected5      <- sql"select * from redeems".query[AmmRedeemDB].to[List].trans
     } yield {
       insertResult shouldEqual 1
       insertResult1 shouldEqual 1

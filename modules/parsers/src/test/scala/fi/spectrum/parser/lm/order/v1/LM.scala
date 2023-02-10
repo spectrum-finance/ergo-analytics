@@ -3,6 +3,7 @@ package fi.spectrum.parser.lm.order.v1
 import fi.spectrum.core.domain.analytics.Version.V1
 import fi.spectrum.core.domain.{AssetAmount, SErgoTree, TokenId}
 import fi.spectrum.core.domain.order.Order.Deposit.LmDeposit.LmDepositV1
+import fi.spectrum.core.domain.order.Order.Redeem.LmRedeem.LmRedeemV1
 import fi.spectrum.core.domain.order.{LmDepositParams, PoolId}
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
 import fi.spectrum.core.domain.transaction.Output
@@ -42,8 +43,6 @@ object LM {
     )
     a.toOption.get
   }
-
-
 
   val deposit = LmDepositV1(
     depositOrder,
@@ -539,5 +538,45 @@ object LM {
          |}
          |""".stripMargin
     ).toOption.get.toTransaction
+
+  def redeemOrderOutput = decode[Output](
+    s"""{
+       |    "boxId": "6293e74ef80b60076ceba4372c9f68c8bcd610eb9ddd6b565e4adf624f4a9d7a",
+       |    "transactionId": "5de5c4de59a4592774ad07dbbc96e8ae81d9982cdf8e19e35a8725ba7c4a513e",
+       |    "blockId": "4f0d05a28148c351e91e64059e2e9e3795a4c50fbca386c5f079e092c58d89da",
+       |    "value": 1250000,
+       |    "index": 0,
+       |    "globalIndex": 26421837,
+       |    "creationHeight": 937208,
+       |    "settlementHeight": 937235,
+       |    "ergoTree": "19b4020a040208cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac4910e240008cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac4910e20e7021bda9872a7eb2aa69dd704e6a997dae9d1b40d1ff7a50e426ef78c6f6f8705a09c0104000e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304050005000580f882ad16d801d601b2a5730000eb027301d1eded93c27201730293860273037304b2db6308720173050090b0ada5d90102639593c272027306c1720273077308d90102599a8c7202018c7202027309",
+       |    "address": "7W3rNYwfSSjEb41BHn4rnLHX2TKSbXL71t5aaTnrHYWpQ9PbHQ6JZPu88cvkzQdduescZUrKtq6aiU4ajN8G946Zixo9YxV1XBKyerjMWJdRATCm4afpWbtA57Y6USgSeHxLjpRgFa3sRFA4ZziyN1rFosaVCbSa6YeLCEPpZGwfTGpgtHxDYVZtAsxcMQyaUNsAeWE84nDDyzZnNMJKbFUq1zrE3LG3hFeViZRuZN5nbCrZZPMcwsUr8pPjcUzA3fvWqKsd2tt7AmpvrPeYEKAnK2CZGx31cyccmq9RfimMfvt6ShA6s2afU3GCsQQvhmDNeA8jjjF85VAh9d2CBqqEtX5uDTx36MFueA4dFrcKw5ihMFF1HbwqfbVfQSRAcNBmqv73SNTBp2JsVTbyX6PFZFwtqFavjKFXZxHEKZqQ1pK",
+       |    "assets": [
+       |        {
+       |            "tokenId": "cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109",
+       |            "index": 0,
+       |            "amount": 9223372036854775806,
+       |            "name": null,
+       |            "decimals": null,
+       |            "type": null
+       |        }
+       |    ],
+       |    "additionalRegisters": {},
+       |    "spentTransactionId": "3fed3dbde8efd9e913486269872cc85ba211a63b5045f1008a754044b658d941",
+       |    "mainChain": true
+       |}""".stripMargin
+  ).toOption.get
+
+  val redeem = LmRedeemV1(
+    redeemOrderOutput,
+    TokenId.unsafeFromString("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109"),
+    AssetAmount(
+      TokenId.unsafeFromString("e7021bda9872a7eb2aa69dd704e6a997dae9d1b40d1ff7a50e426ef78c6f6f87"),
+      10000
+    ),
+    3000000000L,
+    ErgoTreeRedeemer(SErgoTree.unsafeFromString("0008cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491")),
+    V1
+  )
 
 }
