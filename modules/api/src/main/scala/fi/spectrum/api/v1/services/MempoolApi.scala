@@ -46,6 +46,7 @@ object MempoolApi {
     e: ErgoAddressEncoder
   ) extends MempoolApi[F] {
 
+    //todo NEL
     def ordersByAddress(addresses: List[Address]): F[List[ApiOrder]] =
       network.getMempoolData(addresses).flatMap { orders =>
         orders
