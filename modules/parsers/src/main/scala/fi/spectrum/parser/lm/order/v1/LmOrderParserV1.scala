@@ -3,16 +3,17 @@ package fi.spectrum.parser.lm.order.v1
 import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.analytics.Version.V1
-import fi.spectrum.core.domain.order.Order.Deposit
+import fi.spectrum.core.domain.order.Order.{Deposit, Redeem}
 import fi.spectrum.core.domain.order.Order.Deposit.LmDeposit.LmDepositV1
+import fi.spectrum.core.domain.order.Order.Redeem.LmRedeem.LmRedeemV1
 import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
 import fi.spectrum.core.domain.order.{LmDepositParams, Order, PoolId}
 import fi.spectrum.core.domain.transaction.Output
-import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, SErgoTree}
+import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, SErgoTree, TokenId}
 import fi.spectrum.parser.lm.compound.CompoundParser
 import fi.spectrum.parser.lm.order.LmOrderParser
 import fi.spectrum.parser.syntax._
-import fi.spectrum.parser.templates.LM.depositV1
+import fi.spectrum.parser.templates.LM.{depositV1, redeemV1}
 import sigmastate.Values
 
 final class LmOrderParserV1(parser: CompoundParser[V1]) extends LmOrderParser[V1] {
@@ -34,6 +35,28 @@ final class LmOrderParserV1(parser: CompoundParser[V1]) extends LmOrderParser[V1
           ErgoTreeRedeemer(redeemer),
           params,
           maxMinerFee,
+          Version.V1
+        ),
+        none
+      )
+      .merge
+
+  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem.LmRedeem] =
+    Either
+      .cond(
+        ErgoTreeTemplate.fromBytes(tree.template) == redeemV1,
+        for {
+          redeemer    <- tree.constants.parseBytea(2).map(SErgoTree.fromBytes)
+          lqT         <- tree.constants.parseBytea(3).map(TokenId.fromBytes)
+          lqA         <- tree.constants.parseLong(4)
+          tokens      <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
+          maxMinerFee <- tree.constants.parseLong(9)
+        } yield LmRedeemV1(
+          box,
+          tokens.tokenId,
+          AssetAmount(lqT, lqA),
+          maxMinerFee,
+          ErgoTreeRedeemer(redeemer),
           Version.V1
         ),
         none
