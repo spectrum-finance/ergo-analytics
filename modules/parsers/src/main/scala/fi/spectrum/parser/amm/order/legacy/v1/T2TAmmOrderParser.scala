@@ -4,7 +4,7 @@ import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
-import fi.spectrum.core.domain.order.Order.Redeem.RedeemLegacyV1
+import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem.RedeemLegacyV1
 import fi.spectrum.core.domain.order.Order.Swap.SwapLegacyV1
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer

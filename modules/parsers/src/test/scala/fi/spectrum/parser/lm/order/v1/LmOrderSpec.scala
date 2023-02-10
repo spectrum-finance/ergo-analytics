@@ -15,4 +15,10 @@ class LmOrderSpec extends AnyPropSpec with Matchers with CatsPlatform {
     val deposit = parser.deposit(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
     deposit shouldEqual LM.deposit
   }
+
+  property("Parse lm redeem v1 contract") {
+    val box = LM.redeemOrderOutput
+    val redeem = parser.redeem(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
+    redeem shouldEqual LM.redeem
+  }
 }

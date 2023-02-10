@@ -6,8 +6,8 @@ import glass.macros.GenSubset
 
 object AnalyticsOptics {
 
-  implicit val redeemEvalPrism: Subset[OrderEvaluation, RedeemEvaluation] =
-    GenSubset[OrderEvaluation, RedeemEvaluation]
+  implicit val redeemEvalPrism: Subset[OrderEvaluation, AmmRedeemEvaluation] =
+    GenSubset[OrderEvaluation, AmmRedeemEvaluation]
 
   implicit val swapEvalPrism: Subset[OrderEvaluation, SwapEvaluation] =
     GenSubset[OrderEvaluation, SwapEvaluation]

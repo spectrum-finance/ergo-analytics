@@ -7,6 +7,7 @@ import fi.spectrum.core.domain.order.Order.Deposit.LmDeposit.LmDepositV1
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.Order.Deposit._
 import fi.spectrum.core.domain.order.Order.Lock._
+import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem._
 import fi.spectrum.core.domain.order.Order.Redeem._
 import fi.spectrum.core.domain.order.Order.Swap._
 import glass.Contains

@@ -1,7 +1,7 @@
 package fi.spectrum.parser.evaluation
 
 import fi.spectrum.core.domain.analytics.OffChainFee
-import fi.spectrum.core.domain.analytics.OrderEvaluation.{AmmDepositEvaluation, RedeemEvaluation, SwapEvaluation}
+import fi.spectrum.core.domain.analytics.OrderEvaluation.{AmmDepositEvaluation, AmmRedeemEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.order.Fee.ERG
 import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
 import fi.spectrum.core.domain.{Address, AssetAmount, BoxId, TokenId}
@@ -1021,7 +1021,7 @@ object Transactions {
       |}
       |""".stripMargin).toOption.get.toTransaction
 
-  def redeemEval = RedeemEvaluation(
+  def redeemEval = AmmRedeemEvaluation(
     AssetAmount(
       TokenId.unsafeFromString(
         "0000000000000000000000000000000000000000000000000000000000000000"
