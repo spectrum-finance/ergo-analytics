@@ -2,6 +2,7 @@ package fi.spectrum.mempool.processes
 
 import cats.syntax.foldable._
 import cats.syntax.traverse._
+import cats.syntax.either._
 import cats.{Foldable, Functor, Monad}
 import fi.spectrum.mempool.config.ApplicationConfig
 import fi.spectrum.mempool.services.MempoolTx
@@ -26,7 +27,7 @@ object ChainSyncProcessor {
     events: CSConsumer[S, F],
     mempoolTx: MempoolTx[F],
     logs: Logging.Make[F]
-   ): ChainSyncProcessor[S] = logs.forService[ChainSyncProcessor[S]].map(implicit __ => new Live[C, F, S])
+  ): ChainSyncProcessor[S] = logs.forService[ChainSyncProcessor[S]].map(implicit __ => new Live[C, F, S])
 
   final private class Live[
     C[_]: Functor: Foldable,
@@ -39,9 +40,13 @@ object ChainSyncProcessor {
       events.stream
         .groupWithin(config.csBatchSize, config.csGroupTime)
         .evalTap(batch => info"Got next chai sync batch of size: ${batch.size}.")
+        .evalTap(batch =>
+          info"Got errors: ${batch.toList.filter(_.message.isLeft).map(_.message.leftMap(_.getMessage)).mkString(",")}"
+        )
         .evalMap { committableBatch =>
           committableBatch.toList
-            .flatMap(_.message)
+            .flatMap(_.message.toOption)
+            .flatten
             .traverse(mempoolTx.process) >> committableBatch.toList.lastOption.traverse(_.commit).void
         }
     }

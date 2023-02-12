@@ -54,7 +54,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
       resultRegister.head shouldEqual stageRegister._1.head.event
 
       stageRegisterRollback._1.nonEmpty shouldEqual true
-      resultRegisterRollback shouldEqual None
+      resultRegisterRollback shouldEqual List.empty
 
       stageRegister2._1.nonEmpty shouldEqual true
       resultRegister2.head shouldEqual stageRegister2._1.head.event
@@ -132,20 +132,20 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
       order      <- storage.getOrders(List(o1._1.head.event.order.box.boxId))
     } yield {
       o1._1.head shouldEqual BlockChainEvent.Apply(
-        parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
+        parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().head
       )
       o2._1.head shouldEqual BlockChainEvent.Unapply(
-        parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
+        parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().head
       )
       o3._1.head shouldEqual BlockChainEvent.Apply(
-        parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get
+        parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().head
       )
       o4._1.head shouldEqual BlockChainEvent.Apply(
         parser
           .evaluated(
             swap2.transaction,
             swap2.timestamp,
-            parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
+            parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().head,
             swapPool.get,
             10
           )
@@ -157,7 +157,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
           .evaluated(
             swap2.transaction,
             swap2.timestamp,
-            parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
+            parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().head,
             swapPool.get,
             10
           )
@@ -169,7 +169,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
           .evaluated(
             swap2.transaction,
             swap2.timestamp,
-            parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().get,
+            parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().head,
             swapPool.get,
             10
           )
@@ -230,6 +230,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     import java.io.File
     import scala.reflect.io.Directory
     new Directory(new File("rocks")).deleteRecursively()
+    ()
   }
 
   override def beforeEach(): Unit = {
@@ -237,6 +238,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     import scala.reflect.io.Directory
     new Directory(new File("rocks")).deleteRecursively()
     Directory(new File("rocks")).createDirectory()
+    ()
   }
 
 }

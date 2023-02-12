@@ -5,6 +5,7 @@ import cats.effect.Ref
 import cats.effect.kernel.Sync
 import cats.syntax.show._
 import cats.syntax.traverse._
+import cats.syntax.option._
 import derevo.derive
 import fi.spectrum.core.domain.{Address, BoxId}
 import fi.spectrum.core.domain.analytics.Processed
@@ -100,24 +101,39 @@ object Mempool {
       }
 
     def del(pool: Option[Pool], order: List[Processed.Any]): F[Unit] = {
-      def delPool  = pool.map(pool => redis.del(poolKey(pool.box.boxId.value)))
-      def delOrder = order.map(order => redis.del(orderKey(order)))
-      if (delPool.isEmpty && delOrder.isEmpty) unit
-      else
+      def delPool = pool.map(pool => redis.del(poolKey(pool.box.boxId.value)))
+      val (delOrder1, delOrder2) = order match {
+        case x :: Nil       => (redis.del(orderKey(x)).some, none)
+        case x :: xs :: Nil => (redis.del(orderKey(x)).some, redis.del(orderKey(xs)).some)
+        case _              => (none, none)
+      }
+      order.map(order => redis.del(orderKey(order)))
+      if (delPool.isEmpty && delOrder1.isEmpty && delOrder2.isEmpty) unit
+      else {
         for {
-          _ <- redis.transact_(List(delPool.sequence.void, delOrder.sequence.void))
+          _ <- redis.transact_(List(delPool.sequence.void, delOrder1.sequence.void, delOrder2.sequence.void))
           _ <- order.traverse(order => orders.update(_ - mkMempoolKey(order)))
           _ <- pool.traverse(pool => pools.update(_ - poolKey(pool.box.boxId.value)))
         } yield ()
+      }
     }
 
     def put(pool: Option[Pool], order: List[Processed.Any]): F[Unit] = {
-      def putPool  = pool.map(pool => redis.setEx(poolKey(pool.box.boxId.value), pool.asJson.noSpaces, config.ttl))
-      def putOrder = order.map(order => redis.setEx(orderKey(order), order.asJson.noSpaces, config.ttl))
-      if (putPool.isEmpty && putOrder.isEmpty) unit
+      def putPool = pool.map(pool => redis.setEx(poolKey(pool.box.boxId.value), pool.asJson.noSpaces, config.ttl))
+
+      val (putOrder1, putOrder2) = order match {
+        case x :: Nil => (redis.setEx(orderKey(x), x.asJson.noSpaces, config.ttl).some, none)
+        case x :: xs :: Nil =>
+          (
+            redis.setEx(orderKey(x), x.asJson.noSpaces, config.ttl).some,
+            redis.setEx(orderKey(xs), xs.asJson.noSpaces, config.ttl).some
+          )
+        case _ => (none, none)
+      }
+      if (putPool.isEmpty && putOrder1.isEmpty && putOrder2.isEmpty) unit
       else
         for {
-          _ <- redis.transact_(List(putPool.sequence.void, putOrder.sequence.void))
+          _ <- redis.transact_(List(putPool.sequence.void, putOrder1.sequence.void, putOrder2.sequence.void))
           _ <- order.traverse(order => orders.update(_ ++ Map(mkMempoolKey(order) -> order)))
           _ <- pool.traverse(pool => pools.update(_ ++ Map(poolKey(pool.box.boxId.value) -> pool)))
         } yield ()

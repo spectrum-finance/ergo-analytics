@@ -25,7 +25,7 @@ import tofu.syntax.monadic._
 @derive(representableK)
 sealed trait ProcessedOrderParser[F[_]] {
 
-  def registered(tx: Transaction, timestamp: Long): F[Option[Processed[Order]]]
+  def registered(tx: Transaction, timestamp: Long): F[List[Processed[Order]]]
 
   def evaluated(
     tx: Transaction,
@@ -86,12 +86,12 @@ object ProcessedOrderParser {
         .widenOrder
         .pure
 
-    def registered(tx: Transaction, timestamp: Long): F[Option[Processed[Order]]] =
-      tx.outputs
-        .map(orderParser.parse)
-        .collectFirst { case Some(order) => order }
+    def registered(tx: Transaction, timestamp: Long): F[List[Processed[Order]]] = {
+      tx.outputs.toList
+        .flatMap(orderParser.parse)
         .map(Processed.make(OrderState(tx.id, timestamp, OrderStatus.Registered), _))
         .pure
+    }
 
     def evaluated(
       tx: Transaction,
@@ -134,7 +134,7 @@ object ProcessedOrderParser {
         _ <- info"reLock(${tx.id}, ${order.order.id}, ${input.map(_.order.id)}) -> (${r.evaluation}, ${r.state})"
       } yield r
 
-    def registered(tx: Transaction, timestamp: Long): Mid[F, Option[Processed[Order]]] =
+    def registered(tx: Transaction, timestamp: Long): Mid[F, List[Processed[Order]]] =
       for {
         _ <- info"registered(${tx.id})"
         r <- _

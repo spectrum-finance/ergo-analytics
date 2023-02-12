@@ -18,6 +18,7 @@ import fi.spectrum.parser.lm.compound.CompoundParser
 import glass.Label
 import glass.classic.{Optional, Prism}
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
+import cats.syntax.eq._
 
 /** Parse order evaluation result
   */
@@ -31,12 +32,13 @@ final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implici
     outputs
       .map { output =>
         order match {
-          case _: AmmDeposit              => ammDeposit(redeemer, output, pool, nextPool)
-          case _: LmDeposit | _: Compound => lmDepositCompound(outputs)
-          case _: AmmRedeem               => ammRedeem(redeemer, output, pool)
-          case _: LmRedeem                => lmRedeem(redeemer, output, pool)
-          case _: Swap                    => swap(redeemer, order, output)
-          case _: Lock                    => none
+          case _: AmmDeposit => ammDeposit(redeemer, output, pool, nextPool)
+          case _: LmDeposit  => lmDepositCompound(outputs)
+          case c: Compound   => lmCompound(c, outputs)
+          case _: AmmRedeem  => ammRedeem(redeemer, output, pool)
+          case _: LmRedeem   => lmRedeem(redeemer, output, pool)
+          case _: Swap       => swap(redeemer, order, output)
+          case _: Lock       => none
         }
       }
       .collectFirst { case Some(v) => v }
@@ -87,6 +89,26 @@ final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implici
     if (redeemer == output.ergoTree)
       output.assets.headOption.map(b => LmRedeemEvaluation(AssetAmount.fromBoxAsset(b), output.boxId, pool.poolId))
     else none
+
+  def lmCompound(order: Compound, outputs: List[Output]): Option[LmDepositCompoundEvaluation] =
+    outputs
+      .flatMap(out => bundleParser.compound(out, ErgoTreeSerializer.default.deserialize(out.ergoTree)))
+      .collectFirst { case o if o === order => o }
+      .flatMap { compound =>
+        outputs
+          .find { out =>
+            e.fromProposition(ErgoTreeSerializer.default.deserialize(out.ergoTree))
+              .toOption
+              .collect { case address: P2PKAddress => PubKey.fromBytes(address.pubkeyBytes) }
+              .exists(x => x.value == order.redeemer.hexString && out.boxId != compound.box.boxId)
+          }
+          .flatMap { out =>
+            out.assets.headOption
+              .map { asset =>
+                LmDepositCompoundEvaluation(AssetAmount.fromBoxAsset(asset), out.boxId, compound)
+              }
+          }
+      }
 
   def lmDepositCompound(outputs: List[Output]): Option[LmDepositCompoundEvaluation] =
     outputs
