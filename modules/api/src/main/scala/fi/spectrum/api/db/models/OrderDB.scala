@@ -94,6 +94,19 @@ object OrderDB {
   ) extends OrderDB
 
   @derive(show, encoder, decoder, loggable)
+  final case class LmRedeemsDB(
+    orderId: OrderId,
+    poolId: Option[PoolId],
+    bundleKeyId: TokenId,
+    expectedLq: AssetAmount,
+    out: Option[AssetAmount],
+    boxId: Option[TokenId],
+    registerTx: TxData,
+    refundTx: Option[TxData],
+    evaluateTx: Option[TxData]
+  ) extends OrderDB
+
+  @derive(show, encoder, decoder, loggable)
   case class AnyOrderDB(
     orderId: OrderId,
     poolId: Option[PoolId],
@@ -120,6 +133,10 @@ object OrderDB {
     lmDepositInput: Option[AssetAmount],
     lmDepositLp: Option[AssetAmount],
     lmDepositCompoundId: Option[TokenId],
+    lmRedeemBundleKeyId: Option[TokenId],
+    lmRedeemExpectedLq: Option[AssetAmount],
+    lmRedeemOut: Option[AssetAmount],
+    lmRedeemBoxId: Option[TokenId],
     fee: Option[Fee],
     redeemer: Option[PubKey],
     registerTx: TxData,

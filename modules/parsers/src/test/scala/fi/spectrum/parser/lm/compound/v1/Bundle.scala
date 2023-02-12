@@ -68,6 +68,64 @@ object Bundle {
        |""".stripMargin
   ).toOption.get
 
+  val registerOutputCompound =
+    decode[Output](
+      s"""
+         |{
+         |    "boxId": "d43f9cd556853127181b2aa5f2bedc1c1e4719b5237caa53d1d6f851e988116b",
+         |    "transactionId": "b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e",
+         |    "blockId": "39a3222f60392d7fd0fc0069f919930e81a5bc722024dfefd490446220d0fd9e",
+         |    "value": 1250000,
+         |    "index": 2,
+         |    "globalIndex": 25847031,
+         |    "creationHeight": 923467,
+         |    "settlementHeight": 923469,
+         |    "ergoTree": "19b803160400040004040404040404020400040005000402040204000502040404000402050205000404040005fcffffffffffffffff010100d80ed601b2a5730000d602db63087201d603e4c6a7050ed604b2a4730100d605db63087204d6068cb2720573020002d607998cb27202730300027206d608e4c6a70408d609db6308a7d60a8cb2720973040001d60bb27209730500d60cb27209730600d60d8c720c02d60e8c720b02d1ed938cb27202730700017203959372077308d808d60fb2a5e4e3000400d610b2a5e4e3010400d611db63087210d612b27211730900d613b2e4c672040410730a00d614c672010804d6157e99721395e67214e47214e4c67201070405d616b2db6308720f730b00eded93c2720fd07208edededededed93e4c672100408720893e4c67210050e720393c27210c2a7938602720a730cb27211730d00938c7212018c720b019399720e8c72120299720e9c7215720d93b27211730e00720ced938c7216018cb27205730f0001927e8c721602069d9c9c7e9de4c6720405057e721305067e720d067e999d720e720d7215067e997206731006958f7207731193b2db6308b2a47312007313008602720a73147315",
+         |    "address": "LDQVxoiCdZqP7uW7FP1DMaqiZQ9dfMob93zMYKX9X7sXupnJZ6Lmn8u5C3T2Qgiw9gQoiw9xQfLCn8zWagMECeQDUEsKUnbUk4fAYLeySrg2DRuC7BsUYM2Cwux55bz5QuvpEsQeE8iM9xxr4t4YNrhKrY9T8ytB4y8bWVjuSPHzTJSr4gfqieD3agt4Avf5Ctf461aBqS4v4H2XvHsfrbokmqEUE7G94PPLP6p4EsdNXqzX9jqQyGZSiXz2vuxx3H3WZM4ZcKFfva1T3NKyKxRQ9FfZM5wsEdL2WcrntSnRcNdjn541ewYoeYEHMV5Jbvu9sgb75Cm8EBpcj31Jox4TVdfQ87w94LCnvU2RvNdc5JnBq149KDnugY3SjNJ81ZZF57LuMWqm6JQfEUANjw3CiZQpdm6LFKmGy3jdk4tr2KiToZj71JNjRCnqH5VCSJJLERXHj6BKDM9V4rjycRxhCN79auYSWvGxgbSSeZRJD7xkeGSxbAG56hN9is3BGSaBBVa7TNDwYMDG7juTVVCCP3K1WNyVJpfZJK6EDANECWgeqrFLSVZ42JafrhdWjE1KwEttz39MF67nELBuQsXpWYQV2VmEhcv",
+         |    "assets": [
+         |        {
+         |            "tokenId": "3fdce3da8d364f13bca60998c20660c79c19923f44e141df01349d2e63651e86",
+         |            "index": 0,
+         |            "amount": 100,
+         |            "name": null,
+         |            "decimals": null,
+         |            "type": null
+         |        },
+         |        {
+         |            "tokenId": "c256908dd9fd477bde350be6a41c0884713a1b1d589357ae731763455ef28c10",
+         |            "index": 1,
+         |            "amount": 1400,
+         |            "name": null,
+         |            "decimals": null,
+         |            "type": null
+         |        },
+         |        {
+         |            "tokenId": "251177a50ed3d4df8fc8575b3d9e03a0ba81f506a329a3ba7d8bb20994303794",
+         |            "index": 2,
+         |            "amount": 1,
+         |            "name": null,
+         |            "decimals": null,
+         |            "type": null
+         |        }
+         |    ],
+         |    "additionalRegisters": {
+         |        "R4": {
+         |            "serializedValue": "08cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491",
+         |            "sigmaType": "SSigmaProp",
+         |            "renderedValue": "03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491"
+         |        },
+         |        "R5": {
+         |            "serializedValue": "0e207956620de75192984d639cab2c989269d9a5310ad870ad547426952a9e660699",
+         |            "sigmaType": "Coll[SByte]",
+         |            "renderedValue": "7956620de75192984d639cab2c989269d9a5310ad870ad547426952a9e660699"
+         |        }
+         |    },
+         |    "spentTransactionId": null,
+         |    "mainChain": true
+         |}
+         |""".stripMargin
+    ).toOption.get
+
   val bundle = CompoundV1(
     output,
     AssetAmount(
@@ -95,7 +153,7 @@ object Bundle {
       |    "timestamp": 1674355639070,
       |    "index": 9,
       |    "globalIndex": 4651974,
-      |    "numConfirmations": 12623,
+      |    "numConfirmations": 15431,
       |    "inputs": [
       |        {
       |            "boxId": "b2ca1990e7ae05e2398d72f5d3ffd8aadac4093a9be7372e854572a5e8171a6d",

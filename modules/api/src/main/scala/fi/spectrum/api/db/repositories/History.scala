@@ -27,14 +27,16 @@ trait History[F[_]] {
   def depositRegister(orderId: OrderId): F[Option[RegisterDeposit]]
   def lmDepositRegister(orderId: OrderId): F[Option[RegisterLmDeposit]]
   def lmCompoundRegister(orderId: OrderId): F[Option[RegisterCompound]]
+  def lmRedeemRegister(orderId: OrderId): F[Option[RegisterLmRedeem]]
   def getAnyOrders(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[AnyOrderDB]]
   def getSwaps(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[SwapDB]]
   def getAmmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[AmmDepositDB]]
   def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LmDepositDB]]
   def getAmmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[AmmRedeemDB]]
   def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LmCompoundDB]]
+  def getLmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LmRedeemsDB]]
   def getLocks(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LockDB]]
-  def totalAddressOrders(list: List[Address]): F[Long]
+  def addressCount(list: List[Address]): F[Long]
 }
 
 object History {
@@ -58,13 +60,16 @@ object History {
 
   final class Live(sql: HistorySql)(implicit e: ErgoAddressEncoder) extends History[ConnectionIO] {
 
-    def totalAddressOrders(list: List[Address]): ConnectionIO[Long] = {
+    def addressCount(list: List[Address]): ConnectionIO[Long] = {
       val keys = list.flatMap(formPKRedeemer).map(_.value)
-      sql.totalAddressOrders(keys).option.map(_.getOrElse(0L))
+      sql.addressCount(keys).option.map(_.getOrElse(0L))
     }
 
     def lmDepositRegister(orderId: OrderId): ConnectionIO[Option[RegisterLmDeposit]] =
       sql.lmDepositRegister(orderId).option
+
+    def lmRedeemRegister(orderId: OrderId): ConnectionIO[Option[RegisterLmRedeem]] =
+      sql.lmRedeemRegister(orderId).option
 
     def swapRegister(orderId: OrderId): ConnectionIO[Option[RegisterSwap]] =
       sql.swapRegister(orderId).option
@@ -92,6 +97,11 @@ object History {
           request.tokenPair
         )
         .to[List]
+    }
+
+    def getLmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[LmRedeemsDB]] = {
+      val keys = request.addresses.flatMap(formPKRedeemer).map(_.value)
+      sql.getLmRedeems(keys, paging.offset, paging.limit, tw, request.orderStatus, request.txId).to[List]
     }
 
     def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[LmDepositDB]] = {
@@ -198,7 +208,7 @@ object History {
     def getLocks(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LockDB]] =
       processMetric(_, s"db.history.lock")
 
-    def totalAddressOrders(list: List[Address]): Mid[F, Long] =
+    def addressCount(list: List[Address]): Mid[F, Long] =
       processMetric(_, s"db.history.order.count")
 
     def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmDepositDB]] =
@@ -206,6 +216,12 @@ object History {
 
     def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmCompoundDB]] =
       processMetric(_, s"db.history.lm.compound")
+
+    def lmRedeemRegister(orderId: OrderId): Mid[F, Option[RegisterLmRedeem]] =
+      processMetric(_, s"db.history.lm.redeem")
+
+    def getLmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmRedeemsDB]] =
+      processMetric(_, s"db.history.lm.redeems")
   }
 
   final class HistoryTracing[F[_]: FlatMap: Logging] extends History[Mid[F, *]] {
@@ -266,7 +282,7 @@ object History {
         _ <- info"getLocks(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.id)}"
       } yield r
 
-    def totalAddressOrders(list: List[Address]): Mid[F, Long] =
+    def addressCount(list: List[Address]): Mid[F, Long] =
       for {
         _ <- info"totalAddressOrders(list=$list)"
         r <- _
@@ -299,6 +315,20 @@ object History {
         _ <- trace"lmCompoundRegister(orderId=$orderId)"
         r <- _
         _ <- trace"lmCompoundRegister(orderId=$orderId) -> $r"
+      } yield r
+
+    def lmRedeemRegister(orderId: OrderId): Mid[F, Option[RegisterLmRedeem]] =
+      for {
+        _ <- trace"lmRedeemRegister(orderId=$orderId)"
+        r <- _
+        _ <- trace"lmRedeemRegister(orderId=$orderId) -> $r"
+      } yield r
+
+    def getLmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmRedeemsDB]] =
+      for {
+        _ <- info"getLmRedeems(paging=$paging, tw=$tw, request=$request)"
+        r <- _
+        _ <- info"getLmRedeems(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.orderId)}"
       } yield r
   }
 }

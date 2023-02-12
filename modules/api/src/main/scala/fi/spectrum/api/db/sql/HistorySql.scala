@@ -4,16 +4,17 @@ import cats.syntax.list._
 import doobie._
 import doobie.implicits._
 import doobie.util.log.LogHandler
-import fi.spectrum.api.db.models.OrderDB.{AmmDepositDB, AmmRedeemDB, AnyOrderDB, LmCompoundDB, LmDepositDB, LockDB, SwapDB}
-import fi.spectrum.api.db.models.{RegisterCompound, RegisterDeposit, RegisterLmDeposit, RegisterRedeem, RegisterSwap}
-import fi.spectrum.api.v1.endpoints.models.TimeWindow
-import fi.spectrum.api.v1.models.history.{OrderStatusApi, TokenPair}
+import fi.spectrum.api.db.models.OrderDB.{AmmDepositDB, AmmRedeemDB, AnyOrderDB, LmCompoundDB, LmDepositDB, LmRedeemsDB, LockDB, SwapDB}
+import fi.spectrum.api.db.models.{RegisterCompound, RegisterDeposit, RegisterLmDeposit, RegisterLmRedeem, RegisterRedeem, RegisterSwap}
+import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
+import fi.spectrum.api.v1.models.history.{HistoryApiQuery, OrderStatusApi, TokenPair}
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.core.domain.{PubKey, TokenId, TxId}
 
 final class HistorySql(implicit lh: LogHandler) {
 
-  def totalAddressOrders(list: List[PubKey]): doobie.Query0[Long] =
+  //todo
+  def addressCount(list: List[PubKey]): doobie.Query0[Long] =
     sql"""
          |SELECT
          |	sum(x.y)
@@ -51,6 +52,12 @@ final class HistorySql(implicit lh: LogHandler) {
        |select expected_num_epochs, input_id, input_amount, registered_transaction_id, registered_transaction_timestamp from lm_deposits where order_id=$orderId
        |""".stripMargin.query[RegisterLmDeposit]
 
+  def lmRedeemRegister(orderId: OrderId): Query0[RegisterLmRedeem] =
+    sql"""
+         |select bundle_key_id, expected_lq_id, expected_lq_amount, registered_transaction_id,
+         |registered_transaction_timestamp from lm_redeem where order_id=$orderId
+         |""".stripMargin.query[RegisterLmRedeem]
+
   def lmCompoundRegister(orderId: OrderId): Query0[RegisterCompound] =
     sql"""
          |select registered_transaction_id, registered_transaction_timestamp from lm_compound where order_id=$orderId
@@ -61,6 +68,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |select lp_id, lp_amount,
          |registered_transaction_id, registered_transaction_timestamp from redeems where order_id=$orderId
          |""".stripMargin.query[RegisterRedeem]
+
 
   def depositRegister(orderId: OrderId): Query0[RegisterDeposit] =
     sql"""
@@ -406,6 +414,36 @@ final class HistorySql(implicit lh: LogHandler) {
          |ORDER BY x.registered_transaction_timestamp DESC 
          |OFFSET $offset LIMIT $limit;
           """.stripMargin.query[AnyOrderDB]
+
+  def getLmRedeems(addresses: List[PubKey],
+                   offset: Int,
+                   limit: Int,
+                   tw: TimeWindow,
+                   status: Option[OrderStatusApi],
+                   txId: Option[TxId]): doobie.Query0[LmRedeemsDB] =
+    sql"""
+         |SELECT
+         |	order_id,
+         |	pool_id,
+         |	bundle_key_id,
+         |	expected_id,
+         |	expected_amount,
+         |	out_id,
+         |	out_amount,
+         |	out_box_id,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	refunded_transaction_id,
+         |	refunded_transaction_timestamp,
+         |	executed_transaction_id,
+         |	executed_transaction_timestamp
+         |FROM
+         |	lm_redeems
+         |${orderCondition(addresses, tw, status)} ${txIdF(txId)}
+         |ORDER BY registered_transaction_timestamp DESC
+         |OFFSET $offset LIMIT $limit;
+                          """.stripMargin.query[LmRedeemsDB]
+
 
   def getLmDeposits(
     addresses: List[PubKey],

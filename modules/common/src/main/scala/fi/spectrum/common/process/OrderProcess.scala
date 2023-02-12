@@ -16,7 +16,6 @@ import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import tofu.syntax.foption._
 import tofu.syntax.monadic._
 
-//todo tests
 object OrderProcess {
 
   def processOrder[F[_]: Monad](

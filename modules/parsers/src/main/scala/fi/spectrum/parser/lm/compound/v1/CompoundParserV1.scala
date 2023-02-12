@@ -19,7 +19,10 @@ final class CompoundParserV1 extends CompoundParser[V1] {
   def compound(box: Output, tree: Values.ErgoTree): Option[Compound] =
     Either
       .cond(
-        ErgoTreeTemplate.fromBytes(tree.template) == bundleV1,
+        {
+          println(s"Here3 ${ErgoTreeTemplate.fromBytes(tree.template) == bundleV1}")
+          ErgoTreeTemplate.fromBytes(tree.template) == bundleV1
+        },
         for {
           redeemer <- box.additionalRegisters.get(RegisterId.R4).collect { case SigmaPropConstant(x) => x }
           poolId <- box.additionalRegisters
