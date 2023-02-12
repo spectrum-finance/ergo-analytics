@@ -2,7 +2,7 @@ package fi.spectrum.parser.lm.order
 
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.CatsPlatform
-import fi.spectrum.parser.lm.compound.v1.Bundle
+import fi.spectrum.parser.lm.compound.v1.Compound
 import fi.spectrum.parser.lm.compound.v1.CompoundParserV1._
 import fi.spectrum.parser.lm.order.v1.{LM, LmOrderParserV1}
 import org.scalatest.matchers.should.Matchers
@@ -25,8 +25,8 @@ class AnyLmOrderSpec extends AnyPropSpec with Matchers with CatsPlatform {
   }
 
   property("Parse lm compound v1 contract") {
-    val box     = Bundle.output
+    val box     = Compound.compoundNotLastEpochOutput
     val deposit = parser.order(box, ErgoTreeSerializer.default.deserialize(box.ergoTree)).get
-    deposit shouldEqual Bundle.bundle
+    deposit shouldEqual Compound.compoundNotLastEpoch
   }
 }

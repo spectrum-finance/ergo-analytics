@@ -15,7 +15,8 @@ lazy val commonScalacOption = List(
   "-feature",
   "-unchecked",
   "-Xfatal-warnings",
-  "-Ymacro-annotations"
+  "-Ymacro-annotations",
+  "-Ywarn-value-discard"
 )
 
 def compilerDependencies = List(CompilerPlugins.betterMonadicFor, CompilerPlugins.kindProjector)

@@ -9,6 +9,7 @@ import fi.spectrum.api.v1.models.history.ApiOrder.AmmDepositApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.AmmRedeemApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.LmDepositApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.LmCompoundApi._
+import fi.spectrum.api.v1.models.history.ApiOrder.LmRedeemApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.Swap._
 import fi.spectrum.api.v1.models.history.ApiOrder._
 import fi.spectrum.api.v1.models.history.ApiOrder
@@ -16,7 +17,7 @@ import fi.spectrum.core.domain.Address
 import fi.spectrum.core.domain.order.Order
 import fi.spectrum.core.domain.order.Order.Compound
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
-import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem
+import fi.spectrum.core.domain.order.Order.Redeem.{AmmRedeem, LmRedeem}
 import fi.spectrum.core.domain.order.OrderStatus.{Registered, WaitingRegistration}
 import org.ergoplatform.ErgoAddressEncoder
 import tofu.doobie.transactor.Txr
@@ -66,6 +67,7 @@ object MempoolApi {
                     .orElseF(x.wined[Order.Swap].traverse(s => h.swapRegister(s.order.id).flatMapIn(s.toApi(_))))
                     .orElseF(x.wined[LmDeposit].traverse(s => h.lmDepositRegister(s.order.id).flatMapIn(s.toApi(_))))
                     .orElseF(x.wined[Compound].traverse(s => h.lmCompoundRegister(s.order.id).flatMapIn(s.toApi(_))))
+                    .orElseF(x.wined[LmRedeem].traverse(s => h.lmRedeemRegister(s.order.id).flatMapIn(s.toApi(_))))
                     .map(_.flatten)
                 case x :: y :: Nil => // process as completed order
                   x.toApi(y).pure[D]

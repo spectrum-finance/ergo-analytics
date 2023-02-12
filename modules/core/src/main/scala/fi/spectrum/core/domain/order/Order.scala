@@ -1,5 +1,6 @@
 package fi.spectrum.core.domain.order
 
+import cats.Eq
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.core.domain.{AssetAmount, TokenId}
@@ -258,12 +259,16 @@ object Order {
 
   object Compound {
 
+    implicit def eq: Eq[Compound] = (x: Compound, y: Compound) =>
+      (x, y) match {
+        case (x1: CompoundV1, y1: CompoundV1) =>
+          x1.params.bundleKeyId == y1.params.bundleKeyId && x1.redeemer.value == y1.redeemer.value
+      }
+
     @derive(loggable, encoder, decoder)
     final case class CompoundV1(
       box: Output,
-      vLq: AssetAmount,
-      tmp: AssetAmount,
-      bundleKeyId: TokenId,
+      params: LmCompoundParams,
       poolId: PoolId,
       redeemer: PublicKeyRedeemer,
       version: V1
