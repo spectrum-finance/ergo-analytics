@@ -8,7 +8,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
-import fi.spectrum.core.domain.{BlockId, TxId}
+import fi.spectrum.core.domain.{BlockId, BoxId, TxId}
 import fi.spectrum.core.storage.OrdersStorage
 import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.graphite.{GraphiteClient, Metrics}

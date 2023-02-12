@@ -18,7 +18,7 @@ class ProcessedSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse executed order") {
     val ts         = System.currentTimeMillis()
-    val registered = processedParser.registered(swapRegisterTransaction, ts).unsafeRunSync().get
+    val registered = processedParser.registered(swapRegisterTransaction, ts).unsafeRunSync().head
     val processed  = processedParser.evaluated(swapEvaluateTransaction, ts, registered, swapPool.get, 10).unsafeRunSync().get
 
     processed.poolBoxId shouldBe Some(BoxId("000bde68859c4ca2430c992604d80ea3bd0bf1c97bfa26ed60e8b9bccbffa79f"))
@@ -29,7 +29,7 @@ class ProcessedSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse registered order") {
     val ts        = System.currentTimeMillis()
-    val processed = processedParser.registered(swapRegisterTransaction, ts).unsafeRunSync().get
+    val processed = processedParser.registered(swapRegisterTransaction, ts).unsafeRunSync().head
 
     processed.poolBoxId.nonEmpty shouldBe false
     processed.evaluation.nonEmpty shouldBe false
@@ -40,7 +40,7 @@ class ProcessedSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse refund order") {
     val ts        = System.currentTimeMillis()
-    val register  = processedParser.registered(swapRegisterRefundTransaction, ts).unsafeRunSync().get
+    val register  = processedParser.registered(swapRegisterRefundTransaction, ts).unsafeRunSync().head
     val processed = processedParser.refunded(swapRefundTransaction, ts, register).unsafeRunSync()
 
     processed.poolBoxId.nonEmpty shouldBe false

@@ -4,6 +4,9 @@ import cats.MonadError
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.common.http.AdaptThrowable.AdaptThrowableEitherT
+import tofu.logging.Logging
+import tofu.syntax.logging._
+import tofu.syntax.monadic._
 
 @derive(encoder, decoder)
 sealed trait HttpError
@@ -23,10 +26,11 @@ object HttpError {
   case object NoContent extends HttpError
 
   implicit def adaptThrowable[F[_]](implicit
-    F: MonadError[F, Throwable]
+    F: MonadError[F, Throwable], L: Logging[F]
   ): AdaptThrowableEitherT[F, HttpError] =
     new AdaptThrowableEitherT[F, HttpError] {
 
-      final def adapter: Throwable => F[HttpError] = e => F.pure(Unknown(500, e.getMessage))
+      final def adapter: Throwable => F[HttpError] = e =>
+        info"API error is: ${e.getMessage}".as(Unknown(500, "Something went wrong"))
     }
 }

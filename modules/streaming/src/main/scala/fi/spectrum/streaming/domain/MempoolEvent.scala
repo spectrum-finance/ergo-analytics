@@ -9,6 +9,7 @@ import fs2.kafka.{Deserializer, RecordDeserializer}
 import io.circe.parser.decode
 import org.ergoplatform.ErgoLikeTransactionSerializer
 import scorex.util.encode.Base64
+import cats.syntax.either._
 
 import scala.util.Try
 
@@ -26,8 +27,15 @@ object MempoolEvent {
   final case class MempoolUnapply(transaction: Transaction) extends MempoolEvent
 
   implicit def mempoolEventDeserializer[F[_]: Sync]: RecordDeserializer[F, Option[MempoolEvent]] =
-    RecordDeserializer.lift(Deserializer.string.map { str =>
-      decode[KafkaMempoolEvent](str).toOption.flatMap(fromKafkaEvent)
+    RecordDeserializer.lift(Deserializer.string.attempt.map { str =>
+      str
+        .flatMap(decode[KafkaMempoolEvent](_))
+        .leftMap { err =>
+          println(s"Err: ${err.getMessage} -> ${Either.catchNonFatal(str)}")
+          err
+        }
+        .toOption
+        .flatMap(fromKafkaEvent)
     })
 
   private def fromKafkaEvent(event: KafkaMempoolEvent): Option[MempoolEvent] =

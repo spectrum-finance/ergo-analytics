@@ -258,8 +258,8 @@ create table if not exists public.lm_compound
     pool_state_id                    public.hash32type,
     v_lq_id                          public.hash32type not null,
     v_lq_amount                      bigint            not null,
-    tmp_id                           public.hash32type not null,
-    tmp_amount                       bigint            not null,
+    tmp_id                           public.hash32type,
+    tmp_amount                       bigint,
     bundle_key_id                    public.hash32type not null,
     redeemer                         public.pubkey     not null,
     version                          text              not null,
@@ -320,16 +320,16 @@ create table if not exists public.lm_redeems
     order_id                         public.hash32type primary key,
     pool_id                          public.hash32type,
     pool_state_id                    public.hash32type,
+    max_miner_fee                    bigint            not null,
     bundle_key_id                    public.hash32type not null,
     expected_lq_id                   public.hash32type not null,
     expected_lq_amount               bigint            not null,
-    max_miner_fee                    bigint            not null,
     redeemer_ergo_tree               text              not null,
     out_id                           public.hash32type,
     out_amount                       bigint,
-    box_id                           public.hash32type,
-    contract_version                 text              not null,
+    out_box_id                       public.hash32type,
     protocol_version                 integer           not null,
+    contract_version                 text              not null,
     registered_transaction_id        public.hash32type NOT NULL,
     registered_transaction_timestamp bigint            not null,
     executed_transaction_id          public.hash32type,
@@ -338,3 +338,5 @@ create table if not exists public.lm_redeems
     refunded_transaction_timestamp   bigint
 );
 
+alter table public.lm_redeems
+    owner to ergo_admin;
