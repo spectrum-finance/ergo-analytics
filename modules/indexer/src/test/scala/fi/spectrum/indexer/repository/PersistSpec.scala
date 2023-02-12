@@ -12,10 +12,11 @@ import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
 import fi.spectrum.core.domain.analytics.{OffChainFee, Processed}
 import fi.spectrum.core.domain.order.{Order, OrderState}
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
-import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem
+import fi.spectrum.core.domain.order.Order.Redeem.{AmmRedeem, LmRedeem}
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderStatus.Registered
 import fi.spectrum.core.domain.pool.Pool.{AmmPool, LmPool}
+import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.db.models.LmPoolDB._
 import fi.spectrum.indexer.db.models._
@@ -24,8 +25,8 @@ import fi.spectrum.indexer.db.{Indexer, PGContainer}
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.parser.evaluation.Transactions._
-import fi.spectrum.parser.lm.order.v1.LM
-import fi.spectrum.parser.lm.compound.v1.Bundle
+import fi.spectrum.parser.lm.order.v1.{LM, LmOrderParserV1}
+import fi.spectrum.parser.lm.compound.v1.Compound
 import fi.spectrum.parser.lm.pool.v1.SelfHosted
 import glass.classic.Optional
 import org.scalatest.flatspec.AnyFlatSpec
@@ -62,7 +63,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "Off-chain fee" should "work correct" in {
-    val register    = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().get
+    val register    = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().head
     val executed    = parser.evaluated(swapEvaluateTransaction, 0, register, swapPool.get, 10).unsafeRunSync().get
     val expectedFee = implicitly[ToDB[OffChainFee, OffChainFeeDB]].toDB(executed.offChainFee.get)
 
@@ -90,8 +91,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "AMM redeems persist" should "work correct" in {
-    val register  = parser.registered(redeemRegisterTransaction, 0).unsafeRunSync().get
-    val register2 = parser.registered(redeemRegisterRefundTransaction, 0).unsafeRunSync().get
+    val register  = parser.registered(redeemRegisterTransaction, 0).unsafeRunSync().head
+    val register2 = parser.registered(redeemRegisterRefundTransaction, 0).unsafeRunSync().head
     val refund    = parser.refunded(redeemRefundTransaction, 0, register2).unsafeRunSync()
     val executed  = parser.evaluated(redeemEvaluateTransaction, 0, register, redeemPool.get, 10).unsafeRunSync().get
 
@@ -136,8 +137,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "AMM deposit persist" should "work correct" in {
-    val register  = parser.registered(depositRegisterTransaction, 0).unsafeRunSync().get
-    val register2 = parser.registered(depositRegisterRefundTransaction, 0).unsafeRunSync().get
+    val register  = parser.registered(depositRegisterTransaction, 0).unsafeRunSync().head
+    val register2 = parser.registered(depositRegisterRefundTransaction, 0).unsafeRunSync().head
     val refund    = parser.refunded(depositRefundTransaction, 0, register2).unsafeRunSync()
     val executed  = parser.evaluated(depositEvaluateTransaction, 0, register, depositPool.get, 10).unsafeRunSync().get
 
@@ -181,8 +182,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "AMM swap persist" should "work correct" in {
-    val register  = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().get
-    val register2 = parser.registered(swapRegisterRefundTransaction, 0).unsafeRunSync().get
+    val register  = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().head
+    val register2 = parser.registered(swapRegisterRefundTransaction, 0).unsafeRunSync().head
     val refunded  = parser.refunded(swapRefundTransaction, 0, register2).unsafeRunSync()
     val executed  = parser.evaluated(swapEvaluateTransaction, 0, register, swapPool.get, 10).unsafeRunSync().get
 
@@ -238,7 +239,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "LQ locks persist" should "work correct" in {
-    val result = parser.registered(lockTransaction, 0).unsafeRunSync().get
+    val result = parser.registered(lockTransaction, 0).unsafeRunSync().head
     val expected =
       implicitly[ToDB[Processed[Lock], LockDB]]
         .toDB(result.asInstanceOf[Processed[Order.Lock]])
@@ -281,8 +282,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "Lm deposit persist" should "work correct" in {
-    val register = ProcessedOrderParser.make[IO].registered(LM.deployDepositOrderTx, 0).unsafeRunSync().get
-    val eval     = ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
+    val register = ProcessedOrderParser.make[IO].registered(LM.deployDepositOrderTx, 0).unsafeRunSync().head
+    val eval     = ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, register, SelfHosted.pool, 0).unsafeRunSync().head
 
     def run = for {
       insertResult  <- repo.insertAnyOrder.traverse(_(register)).trans
@@ -316,14 +317,14 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
 
   "Compound persist" should "work correct" in {
     val register = Processed(
-      Bundle.bundle,
+      Compound.compoundNotLastEpoch,
       OrderState(TxId("b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e"), 0, Registered),
       None,
       None,
       None
     ).asInstanceOf[Processed.Any]
     val eval =
-      ProcessedOrderParser.make[IO].evaluated(Bundle.compoundTx, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
+      ProcessedOrderParser.make[IO].evaluated(Compound.compoundTx, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
 
     def run = for {
       insertResult  <- repo.insertAnyOrder.traverse(_(register)).trans
@@ -349,6 +350,46 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
         .copy(registeredTx = expected1.get.registeredTx)
       expected4.get shouldEqual implicitly[ToDB[Processed[Compound], LmCompoundDB]]
         .toDB(register.asInstanceOf[Processed[Compound]])
+    }
+
+    run.unsafeRunSync()
+  }
+
+  "Lm redeem persist" should "work correct" in {
+    val register = Processed(
+      LM.redeem,
+      OrderState(TxId("b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e"), 0, Registered),
+      None,
+      None,
+      None
+    ).asInstanceOf[Processed.Any]
+    val eval =
+      ProcessedOrderParser.make[IO].evaluated(LM.redeemEvaluate, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
+
+    def run = for {
+      insertResult  <- repo.insertAnyOrder.traverse(_(register)).trans
+      expected1     <- sql"select * from lm_redeems where order_id=${register.order.id}".query[LmRedeemDB].option.trans
+      resolveResult <- repo.resolveAnyOrder.traverse(_(register)).trans
+      expected2     <- sql"select * from lm_redeems where order_id=${register.order.id}".query[LmRedeemDB].option.trans
+      _             <- repo.insertAnyOrder.traverse(_(register)).trans
+      insertResult2 <- repo.insertAnyOrder.traverse(_(eval)).trans
+      expected3     <- sql"select * from lm_redeems where order_id=${register.order.id}".query[LmRedeemDB].option.trans
+      resolveResul2 <- repo.resolveAnyOrder.traverse(_(eval)).trans
+      expected4     <- sql"select * from lm_redeems where order_id=${register.order.id}".query[LmRedeemDB].option.trans
+    } yield {
+      insertResult.sum shouldEqual 1
+      resolveResult.sum shouldEqual 1
+      insertResult2.sum shouldEqual 1
+      resolveResul2.sum shouldEqual 1
+
+      expected1.get shouldEqual implicitly[ToDB[Processed[LmRedeem], LmRedeemDB]]
+        .toDB(register.asInstanceOf[Processed[LmRedeem]])
+      expected2 shouldEqual None
+      expected3.get shouldEqual implicitly[ToDB[Processed[LmRedeem], LmRedeemDB]]
+        .toDB(eval.asInstanceOf[Processed[LmRedeem]])
+        .copy(registeredTx = expected1.get.registeredTx)
+      expected4.get shouldEqual implicitly[ToDB[Processed[LmRedeem], LmRedeemDB]]
+        .toDB(register.asInstanceOf[Processed[LmRedeem]])
     }
 
     run.unsafeRunSync()

@@ -4,16 +4,32 @@ import cats.syntax.list._
 import doobie._
 import doobie.implicits._
 import doobie.util.log.LogHandler
-import fi.spectrum.api.db.models.OrderDB.{AmmDepositDB, AmmRedeemDB, AnyOrderDB, LmCompoundDB, LmDepositDB, LockDB, SwapDB}
-import fi.spectrum.api.db.models.{RegisterCompound, RegisterDeposit, RegisterLmDeposit, RegisterRedeem, RegisterSwap}
-import fi.spectrum.api.v1.endpoints.models.TimeWindow
-import fi.spectrum.api.v1.models.history.{OrderStatusApi, TokenPair}
+import fi.spectrum.api.db.models.OrderDB.{
+  AmmDepositDB,
+  AmmRedeemDB,
+  AnyOrderDB,
+  LmCompoundDB,
+  LmDepositDB,
+  LmRedeemsDB,
+  LockDB,
+  SwapDB
+}
+import fi.spectrum.api.db.models.{
+  RegisterCompound,
+  RegisterDeposit,
+  RegisterLmDeposit,
+  RegisterLmRedeem,
+  RegisterRedeem,
+  RegisterSwap
+}
+import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
+import fi.spectrum.api.v1.models.history.{HistoryApiQuery, OrderStatusApi, TokenPair}
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.core.domain.{PubKey, TokenId, TxId}
 
 final class HistorySql(implicit lh: LogHandler) {
 
-  def totalAddressOrders(list: List[PubKey]): doobie.Query0[Long] =
+  def addressCount(list: List[PubKey]): doobie.Query0[Long] =
     sql"""
          |SELECT
          |	sum(x.y)
@@ -37,6 +53,21 @@ final class HistorySql(implicit lh: LogHandler) {
          |		count(1) AS y
          |	FROM
          |		redeems where ${in(list)}
+         |UNION
+         |	SELECT
+         |		count(1) AS y
+         |	FROM
+         |		lm_redeems where ${in2(list)}
+         |UNION
+         |	SELECT
+         |		count(1) AS y
+         |	FROM
+         |		lm_deposits where ${in2(list)}
+         |UNION
+         |	SELECT
+         |		count(1) AS y
+         |	FROM
+         |		lm_compound where ${in(list)}
          |) AS x
        """.stripMargin.query[Long]
 
@@ -50,6 +81,12 @@ final class HistorySql(implicit lh: LogHandler) {
     sql"""
        |select expected_num_epochs, input_id, input_amount, registered_transaction_id, registered_transaction_timestamp from lm_deposits where order_id=$orderId
        |""".stripMargin.query[RegisterLmDeposit]
+
+  def lmRedeemRegister(orderId: OrderId): Query0[RegisterLmRedeem] =
+    sql"""
+         |select bundle_key_id, expected_lq_id, expected_lq_amount, registered_transaction_id,
+         |registered_transaction_timestamp from lm_redeems where order_id=$orderId
+         |""".stripMargin.query[RegisterLmRedeem]
 
   def lmCompoundRegister(orderId: OrderId): Query0[RegisterCompound] =
     sql"""
@@ -77,116 +114,129 @@ final class HistorySql(implicit lh: LogHandler) {
     txId: Option[TxId],
     tokens: Option[List[TokenId]],
     pair: Option[TokenPair]
-  ): Query0[AnyOrderDB] =
+  ): Query0[AnyOrderDB] = {
     sql"""
          |SELECT
          |	*
          |FROM (
          |	SELECT
-         |		order_id,
-         |		pool_id,
-         |		'swap',
-         |		base_id,
-         |		base_amount,
-         |		min_quote_id,
-         |		min_quote_amount,
-         |		quote_amount,
-         |		NULL AS input_id_x,
-         |		NULL AS input_amount_x,
-         |		NULL AS input_id_y,
-         |		NULL AS input_amount_y,
-         |		NULL AS output_id_lp,
-         |		NULL AS output_amount_lp,
-         |		NULL AS actual_input_amount_x,
-         |		NULL AS actual_input_amount_y,
-         |		NULL AS lp_id,
-         |		NULL::bigint AS lp_amount,
-         |		NULL AS output_id_x,
-         |		NULL::bigint AS output_amount_x,
-         |		NULL AS output_id_y,
-         |		NULL::bigint AS output_amount_y,
-         |		NULL::integer AS deadline,
-         |		NULL AS token_id,
-         |		NULL::bigint AS amount,
-         |		NULL AS evaluation_transaction_id,
-         |		NULL AS evaluation_lock_type,
-         |      NULL,
-         |		NULL::bigint,
-         |		NULL,
-         |		NULL::bigint,
-         |		NULL,
-         |		NULL::integer,
-         |		NULL,
-         |		NULL::bigint,
-         |		NULL,
-         |		NULL::bigint,
-         |		NULL,
-         |		dex_fee,
-         |		fee_type,
-         |		redeemer,
-         |		registered_transaction_id,
-         |		registered_transaction_timestamp,
-         |		executed_transaction_id,
-         |		executed_transaction_timestamp,
-         |		refunded_transaction_id,
-         |		refunded_transaction_timestamp
-         |	FROM swaps
-         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
+         |	order_id,
+         |	pool_id,
+         |	'swap',
+         |	base_id AS swap_base_id,
+         |	base_amount AS swap_base_amount,
+         |	min_quote_id AS swap_min_quote_id,
+         |	min_quote_amount AS swap_min_quote_amount,
+         |	quote_amount AS swap_quote_amount,
+         |	NULL AS deposit_input_id_x,
+         |	NULL AS deposit_input_amount_x,
+         |	NULL AS deposit_input_id_y,
+         |	NULL AS deposit_input_amount_y,
+         |	NULL AS deposit_output_id_lp,
+         |	NULL AS deposit_output_amount_lp,
+         |	NULL AS deposit_actual_input_amount_x,
+         |	NULL AS deposit_actual_input_amount_y,
+         |	NULL AS redeem_lp_id,
+         |	NULL::bigint AS redeem_lp_amount,
+         |	NULL AS redeem_output_id_x,
+         |	NULL::bigint AS redeem_output_amount_x,
+         |	NULL AS redeem_output_id_y,
+         |	NULL::bigint AS redeem_output_amount_y,
+         |	NULL::integer AS lock_deadline,
+         |	NULL AS lock_token_id,
+         |	NULL::bigint AS lock_amount,
+         |	NULL AS lock_evaluation_transaction_id,
+         |	NULL AS lock_evaluation_lock_type,
+         |	NULL AS lm_compound_v_lq_id,
+         |	NULL::bigint AS lm_compound_v_lq_amount,
+         |	NULL AS lm_compound_tmp_id,
+         |	NULL::bigint AS lm_compound_tmp_amount,
+         |	NULL AS lm_compound_bundle_key_id,
+         |	NULL::integer AS lm_deposits_expected_num_epochs,
+         |	NULL AS lm_deposits_input_id,
+         |	NULL::bigint AS lm_deposits_input_amount,
+         |	NULL AS lm_deposits_lp_id,
+         |	NULL::bigint AS lm_deposits_lp_amount,
+         |	NULL AS lm_deposits_compound_id,
+         |	NULL AS lm_redeems_bundle_key_id,
+         |	NULL AS lm_redeems_expected_lq_id,
+         |	NULL::bigint AS lm_redeems_expected_lq_amount,
+         |	NULL AS lm_redeems_out_id,
+         |	NULL::bigint AS lm_redeems_out_amount,
+         |	NULL AS lm_redeems_box_id,
+         |	dex_fee,
+         |	fee_type,
+         |	redeemer,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	executed_transaction_id,
+         |	executed_transaction_timestamp,
+         |	refunded_transaction_id,
+         |	refunded_transaction_timestamp
+         |FROM
+         |	swaps ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
       tokens,
       pair,
       "base_id",
       "min_quote_id"
     )}
          |	UNION
-         |	SELECT
-         |		order_id,
-         |		pool_id,
-         |		'deposit',
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		input_id_x,
-         |		input_amount_x,
-         |		input_id_y,
-         |		input_amount_y,
-         |		output_id_lp,
-         |		output_amount_lp,
-         |		actual_input_amount_x,
-         |		actual_input_amount_y,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |      NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		dex_fee,
-         |		fee_type,
-         |		redeemer,
-         |		registered_transaction_id,
-         |		registered_transaction_timestamp,
-         |		executed_transaction_id,
-         |		executed_transaction_timestamp,
-         |		refunded_transaction_id,
-         |		refunded_transaction_timestamp
-         |	FROM deposits
+         |SELECT
+         |	order_id,
+         |	pool_id,
+         |	'deposit',
+         |	NULL AS swap_base_id,
+         |	NULL AS swap_base_amount,
+         |	NULL AS swap_min_quote_id,
+         |	NULL AS swap_min_quote_amount,
+         |	NULL AS swap_quote_amount,
+         |	input_id_x AS deposit_input_id_x,
+         |	input_amount_x AS deposit_input_amount_x,
+         |	input_id_y AS deposit_input_id_y,
+         |	input_amount_y AS deposit_input_amount_y,
+         |	output_id_lp AS deposit_output_id_lp,
+         |	output_amount_lp AS deposit_output_amount_lp,
+         |	actual_input_amount_x AS deposit_actual_input_amount_x,
+         |	actual_input_amount_y AS deposit_actual_input_amount_y,
+         |	NULL AS redeem_lp_id,
+         |	NULL::bigint AS redeem_lp_amount,
+         |	NULL AS redeem_output_id_x,
+         |	NULL::bigint AS redeem_output_amount_x,
+         |	NULL AS redeem_output_id_y,
+         |	NULL::bigint AS redeem_output_amount_y,
+         |	NULL::integer AS lock_deadline,
+         |	NULL AS lock_token_id,
+         |	NULL::bigint AS lock_amount,
+         |	NULL AS lock_evaluation_transaction_id,
+         |	NULL AS lock_evaluation_lock_type,
+         |	NULL AS lm_compound_v_lq_id,
+         |	NULL::bigint AS lm_compound_v_lq_amount,
+         |	NULL AS lm_compound_tmp_id,
+         |	NULL::bigint AS lm_compound_tmp_amount,
+         |	NULL AS lm_compound_bundle_key_id,
+         |	NULL::integer AS lm_deposits_expected_num_epochs,
+         |	NULL AS lm_deposits_input_id,
+         |	NULL::bigint AS lm_deposits_input_amount,
+         |	NULL AS lm_deposits_lp_id,
+         |	NULL::bigint AS lm_deposits_lp_amount,
+         |	NULL AS lm_deposits_compound_id,
+         |	NULL AS lm_redeems_bundle_key_id,
+         |	NULL AS lm_redeems_expected_lq_id,
+         |	NULL::bigint AS lm_redeems_expected_lq_amount,
+         |	NULL AS lm_redeems_out_id,
+         |	NULL::bigint AS lm_redeems_out_amount,
+         |	NULL AS lm_redeems_box_id,
+         |	dex_fee,
+         |	fee_type,
+         |	redeemer,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	executed_transaction_id,
+         |	executed_transaction_timestamp,
+         |	refunded_transaction_id,
+         |	refunded_transaction_timestamp
+         |FROM
+         |	deposits
          |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
       tokens,
       pair,
@@ -194,54 +244,60 @@ final class HistorySql(implicit lh: LogHandler) {
       "input_id_y"
     )}
          |	UNION
-         |	SELECT
-         |		order_id,
-         |		pool_id,
-         |		'redeem',
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		lp_id,
-         |		lp_amount,
-         |		output_id_x,
-         |		output_amount_x,
-         |		output_id_y,
-         |		output_amount_y,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |      NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		dex_fee,
-         |		fee_type,
-         |		redeemer,
-         |		registered_transaction_id,
-         |		registered_transaction_timestamp,
-         |		executed_transaction_id,
-         |		executed_transaction_timestamp,
-         |		refunded_transaction_id,
-         |		refunded_transaction_timestamp
+         |SELECT
+         |	order_id,
+         |	pool_id,
+         |	'redeem',
+         |	NULL AS swap_base_id,
+         |	NULL AS swap_base_amount,
+         |	NULL AS swap_min_quote_id,
+         |	NULL AS swap_min_quote_amount,
+         |	NULL AS swap_quote_amount,
+         |	NULL AS deposit_input_id_x,
+         |	NULL AS deposit_input_amount_x,
+         |	NULL AS deposit_input_id_y,
+         |	NULL AS deposit_input_amount_y,
+         |	NULL AS deposit_output_id_lp,
+         |	NULL AS deposit_output_amount_lp,
+         |	NULL AS deposit_actual_input_amount_x,
+         |	NULL AS deposit_actual_input_amount_y,
+         |	lp_id AS redeem_lp_id,
+         |	lp_amount::bigint AS redeem_lp_amount,
+         |	output_id_x AS redeem_output_id_x,
+         |	output_amount_x::bigint AS redeem_output_amount_x,
+         |	output_id_y AS redeem_output_id_y,
+         |	output_amount_y::bigint AS redeem_output_amount_y,
+         |	NULL::integer AS lock_deadline,
+         |	NULL AS lock_token_id,
+         |	NULL::bigint AS lock_amount,
+         |	NULL AS lock_evaluation_transaction_id,
+         |	NULL AS lock_evaluation_lock_type,
+         |	NULL AS lm_compound_v_lq_id,
+         |	NULL::bigint AS lm_compound_v_lq_amount,
+         |	NULL AS lm_compound_tmp_id,
+         |	NULL::bigint AS lm_compound_tmp_amount,
+         |	NULL AS lm_compound_bundle_key_id,
+         |	NULL::integer AS lm_deposits_expected_num_epochs,
+         |	NULL AS lm_deposits_input_id,
+         |	NULL::bigint AS lm_deposits_input_amount,
+         |	NULL AS lm_deposits_lp_id,
+         |	NULL::bigint AS lm_deposits_lp_amount,
+         |	NULL AS lm_deposits_compound_id,
+         |	NULL AS lm_redeems_bundle_key_id,
+         |	NULL AS lm_redeems_expected_lq_id,
+         |	NULL::bigint AS lm_redeems_expected_lq_amount,
+         |	NULL AS lm_redeems_out_id,
+         |	NULL::bigint AS lm_redeems_out_amount,
+         |	NULL AS lm_redeems_box_id,
+         |	dex_fee,
+         |	fee_type,
+         |	redeemer,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	executed_transaction_id,
+         |	executed_transaction_timestamp,
+         |	refunded_transaction_id,
+         |	refunded_transaction_timestamp
          |	FROM redeems
          |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
       tokens,
@@ -250,162 +306,269 @@ final class HistorySql(implicit lh: LogHandler) {
       "output_id_y"
     )}
          |	UNION
-         |	SELECT
-         |		order_id,
-         |		NULL,
-         |		'lock',
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		deadline,
-         |		token_id,
-         |		amount,
-         |		evaluation_transaction_id,
-         |		evaluation_lock_type,
-         |      NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		redeemer,
-         |		transaction_id,
-         |		timestamp as registered_transaction_timestamp,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL
+         |SELECT
+         |	order_id,
+         |	NULL,
+         |	'lock',
+         |	NULL AS swap_base_id,
+         |	NULL AS swap_base_amount,
+         |	NULL AS swap_min_quote_id,
+         |	NULL AS swap_min_quote_amount,
+         |	NULL AS swap_quote_amount,
+         |	NULL AS deposit_input_id_x,
+         |	NULL AS deposit_input_amount_x,
+         |	NULL AS deposit_input_id_y,
+         |	NULL AS deposit_input_amount_y,
+         |	NULL AS deposit_output_id_lp,
+         |	NULL AS deposit_output_amount_lp,
+         |	NULL AS deposit_actual_input_amount_x,
+         |	NULL AS deposit_actual_input_amount_y,
+         |	NULL AS redeem_lp_id,
+         |	NULL::bigint AS redeem_lp_amount,
+         |	NULL AS redeem_output_id_x,
+         |	NULL::bigint AS redeem_output_amount_x,
+         |	NULL AS redeem_output_id_y,
+         |	NULL::bigint AS redeem_output_amount_y,
+         |	deadline::integer AS lock_deadline,
+         |	token_id AS lock_token_id,
+         |	amount::bigint AS lock_amount,
+         |	evaluation_transaction_id AS lock_evaluation_transaction_id,
+         |	evaluation_lock_type AS lock_evaluation_lock_type,
+         |	NULL AS lm_compound_v_lq_id,
+         |	NULL::bigint AS lm_compound_v_lq_amount,
+         |	NULL AS lm_compound_tmp_id,
+         |	NULL::bigint AS lm_compound_tmp_amount,
+         |	NULL AS lm_compound_bundle_key_id,
+         |	NULL::integer AS lm_deposits_expected_num_epochs,
+         |	NULL AS lm_deposits_input_id,
+         |	NULL::bigint AS lm_deposits_input_amount,
+         |	NULL AS lm_deposits_lp_id,
+         |	NULL::bigint AS lm_deposits_lp_amount,
+         |	NULL AS lm_deposits_compound_id,
+         |	NULL AS lm_redeems_bundle_key_id,
+         |	NULL AS lm_redeems_expected_lq_id,
+         |	NULL::bigint AS lm_redeems_expected_lq_amount,
+         |	NULL AS lm_redeems_out_id,
+         |	NULL::bigint AS lm_redeems_out_amount,
+         |	NULL AS lm_redeems_box_id,
+         |	NULL,
+         |	NULL,
+         |	redeemer,
+         |	transaction_id,
+         |	timestamp as registered_transaction_timestamp,
+         |	NULL,
+         |	NULL,
+         |	NULL,
+         |	NULL
          |	FROM lq_locks
          |    ${orderCondition(addresses, tw, None)} ${txIdLock(txId)} ${lockTokens(pair, tokens)}
          |UNION
-         |	SELECT
-         |		order_id,
-         |		NULL,
-         |		'lm_compound',
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |      v_lq_id,
-         |		v_lq_amount,
-         |		tmp_id,
-         |		tmp_amount,
-         |		bundle_key_id,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		redeemer,
-         |		transaction_id,
-         |		timestamp as registered_transaction_timestamp,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL
+         |SELECT
+         |	order_id,
+         |	pool_id,
+         |	'compound',
+         |	NULL AS swap_base_id,
+         |	NULL AS swap_base_amount,
+         |	NULL AS swap_min_quote_id,
+         |	NULL AS swap_min_quote_amount,
+         |	NULL AS swap_quote_amount,
+         |	NULL AS deposit_input_id_x,
+         |	NULL AS deposit_input_amount_x,
+         |	NULL AS deposit_input_id_y,
+         |	NULL AS deposit_input_amount_y,
+         |	NULL AS deposit_output_id_lp,
+         |	NULL AS deposit_output_amount_lp,
+         |	NULL AS deposit_actual_input_amount_x,
+         |	NULL AS deposit_actual_input_amount_y,
+         |	NULL AS redeem_lp_id,
+         |	NULL::bigint AS redeem_lp_amount,
+         |	NULL AS redeem_output_id_x,
+         |	NULL::bigint AS redeem_output_amount_x,
+         |	NULL AS redeem_output_id_y,
+         |	NULL::bigint AS redeem_output_amount_y,
+         |	NULL::integer AS lock_deadline,
+         |	NULL AS lock_token_id,
+         |	NULL::bigint AS lock_amount,
+         |	NULL AS lock_evaluation_transaction_id,
+         |	NULL AS lock_evaluation_lock_type,
+         |	v_lq_id AS lm_compound_v_lq_id,
+         |	v_lq_amount::bigint AS lm_compound_v_lq_amount,
+         |	tmp_id AS lm_compound_tmp_id,
+         |	tmp_amount::bigint AS lm_compound_tmp_amount,
+         |	bundle_key_id AS lm_compound_bundle_key_id,
+         |	NULL::integer AS lm_deposits_expected_num_epochs,
+         |	NULL AS lm_deposits_input_id,
+         |	NULL::bigint AS lm_deposits_input_amount,
+         |	NULL AS lm_deposits_lp_id,
+         |	NULL::bigint AS lm_deposits_lp_amount,
+         |	NULL AS lm_deposits_compound_id,
+         |	NULL AS lm_redeems_bundle_key_id,
+         |	NULL AS lm_redeems_expected_lq_id,
+         |	NULL::bigint AS lm_redeems_expected_lq_amount,
+         |	NULL AS lm_redeems_out_id,
+         |	NULL::bigint AS lm_redeems_out_amount,
+         |	NULL AS lm_redeems_box_id,
+         |	NULL,
+         |	NULL,
+         |	redeemer,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	executed_transaction_id,
+         |	executed_transaction_timestamp,
+         |	NULL,
+         |	NULL
          |	FROM lm_compound
          |    ${orderCondition(addresses, tw, None)} ${txIdCompound(txId)}
          |UNION
-         |	SELECT
-         |		order_id,
-         |		NULL,
-         |		'lock',
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |      NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		expected_num_epochs,
-         |		input_id,
-         |		input_amount,
-         |		lp_id,
-         |		lp_amount,
-         |		compound_id,
-         |		NULL,
-         |		NULL,
-         |		redeemer,
-         |		transaction_id,
-         |		timestamp as registered_transaction_timestamp,
-         |		NULL,
-         |		NULL,
-         |		NULL,
-         |		NULL
+         |SELECT
+         |	order_id,
+         |	pool_id,
+         |	'lm_deposit',
+         |	NULL AS swap_base_id,
+         |	NULL AS swap_base_amount,
+         |	NULL AS swap_min_quote_id,
+         |	NULL AS swap_min_quote_amount,
+         |	NULL AS swap_quote_amount,
+         |	NULL AS deposit_input_id_x,
+         |	NULL AS deposit_input_amount_x,
+         |	NULL AS deposit_input_id_y,
+         |	NULL AS deposit_input_amount_y,
+         |	NULL AS deposit_output_id_lp,
+         |	NULL AS deposit_output_amount_lp,
+         |	NULL AS deposit_actual_input_amount_x,
+         |	NULL AS deposit_actual_input_amount_y,
+         |	NULL AS redeem_lp_id,
+         |	NULL::bigint AS redeem_lp_amount,
+         |	NULL AS redeem_output_id_x,
+         |	NULL::bigint AS redeem_output_amount_x,
+         |	NULL AS redeem_output_id_y,
+         |	NULL::bigint AS redeem_output_amount_y,
+         |	NULL::integer AS lock_deadline,
+         |	NULL AS lock_token_id,
+         |	NULL::bigint AS lock_amount,
+         |	NULL AS lock_evaluation_transaction_id,
+         |	NULL AS lock_evaluation_lock_type,
+         |	NULL AS lm_compound_v_lq_id,
+         |	NULL::bigint AS lm_compound_v_lq_amount,
+         |	NULL AS lm_compound_tmp_id,
+         |	NULL::bigint AS lm_compound_tmp_amount,
+         |	NULL AS lm_compound_bundle_key_id,
+         |	expected_num_epochs::integer AS lm_deposits_expected_num_epochs,
+         |	input_id AS lm_deposits_input_id,
+         |	input_amount::bigint AS lm_deposits_input_amount,
+         |	lp_id AS lm_deposits_lp_id,
+         |	lp_amount::bigint AS lm_deposits_lp_amount,
+         |	compound_id AS lm_deposits_compound_id,
+         |	null AS lm_redeems_bundle_key_id,
+         |	NULL AS lm_redeems_expected_lq_id,
+         |	NULL::bigint AS lm_redeems_expected_lq_amount,
+         |	NULL AS lm_redeems_out_id,
+         |	NULL::bigint AS lm_redeems_out_amount,
+         |	NULL AS lm_redeems_box_id,
+         |	null,
+         |	null,
+         |	redeemer_ergo_tree,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	executed_transaction_id,
+         |	executed_transaction_timestamp,
+         |	refunded_transaction_id,
+         |	refunded_transaction_timestamp
          |	FROM lm_deposits
-         |    ${orderCondition(addresses, tw, None)} ${txIdF(txId)}
-	     |) AS x
+         |    ${orderCondition2(addresses, tw, None)} ${txIdF(txId)}
+	     |UNION
+         |SELECT
+         |	order_id,
+         |	pool_id,
+         |	'lm_redeems',
+         |	NULL AS swap_base_id,
+         |	NULL AS swap_base_amount,
+         |	NULL AS swap_min_quote_id,
+         |	NULL AS swap_min_quote_amount,
+         |	NULL AS swap_quote_amount,
+         |	NULL AS deposit_input_id_x,
+         |	NULL AS deposit_input_amount_x,
+         |	NULL AS deposit_input_id_y,
+         |	NULL AS deposit_input_amount_y,
+         |	NULL AS deposit_output_id_lp,
+         |	NULL AS deposit_output_amount_lp,
+         |	NULL AS deposit_actual_input_amount_x,
+         |	NULL AS deposit_actual_input_amount_y,
+         |	NULL AS redeem_lp_id,
+         |	NULL::bigint AS redeem_lp_amount,
+         |	NULL AS redeem_output_id_x,
+         |	NULL::bigint AS redeem_output_amount_x,
+         |	NULL AS redeem_output_id_y,
+         |	NULL::bigint AS redeem_output_amount_y,
+         |	NULL::integer AS lock_deadline,
+         |	NULL AS lock_token_id,
+         |	NULL::bigint AS lock_amount,
+         |	NULL AS lock_evaluation_transaction_id,
+         |	NULL AS lock_evaluation_lock_type,
+         |	NULL AS lm_compound_v_lq_id,
+         |	NULL::bigint AS lm_compound_v_lq_amount,
+         |	NULL AS lm_compound_tmp_id,
+         |	NULL::bigint AS lm_compound_tmp_amount,
+         |	NULL AS lm_compound_bundle_key_id,
+         |	null::integer AS lm_deposits_expected_num_epochs,
+         |	null AS lm_deposits_input_id,
+         |	null::bigint AS lm_deposits_input_amount,
+         |	null AS lm_deposits_lp_id,
+         |	null::bigint AS lm_deposits_lp_amount,
+         |	null AS lm_deposits_compound_id,
+         |	bundle_key_id AS lm_redeems_bundle_key_id,
+         |	expected_lq_id AS lm_redeems_expected_lq_id,
+         |	expected_lq_amount::bigint AS lm_redeems_expected_lq_amount,
+         |	out_id AS lm_redeems_out_id,
+         |	out_amount::bigint AS lm_redeems_out_amount,
+         |	out_box_id AS lm_redeems_box_id,
+         |	null,
+         |	null,
+         |	redeemer_ergo_tree,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	executed_transaction_id,
+         |	executed_transaction_timestamp,
+         |	refunded_transaction_id,
+         |	refunded_transaction_timestamp
+         |	FROM lm_redeems
+         |    ${orderCondition2(addresses, tw, None)} ${txIdF(txId)}
+         |) AS x
          |ORDER BY x.registered_transaction_timestamp DESC 
          |OFFSET $offset LIMIT $limit;
           """.stripMargin.query[AnyOrderDB]
+  }
+
+  def getLmRedeems(
+    addresses: List[PubKey],
+    offset: Int,
+    limit: Int,
+    tw: TimeWindow,
+    status: Option[OrderStatusApi],
+    txId: Option[TxId]
+  ): doobie.Query0[LmRedeemsDB] =
+    sql"""
+         |SELECT
+         |	order_id,
+         |	pool_id,
+         |	bundle_key_id,
+         |	expected_lq_id,
+         |	expected_lq_amount,
+         |	out_id,
+         |	out_amount,
+         |	out_box_id,
+         |	registered_transaction_id,
+         |	registered_transaction_timestamp,
+         |	refunded_transaction_id,
+         |	refunded_transaction_timestamp,
+         |	executed_transaction_id,
+         |	executed_transaction_timestamp
+         |FROM
+         |	lm_redeems
+         |${orderCondition2(addresses, tw, status)} ${txIdF(txId)}
+         |ORDER BY registered_transaction_timestamp DESC
+         |OFFSET $offset LIMIT $limit;
+         """.stripMargin.query[LmRedeemsDB]
 
   def getLmDeposits(
     addresses: List[PubKey],
@@ -433,7 +596,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	lm_deposits
-         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} 
+         |${orderCondition2(addresses, tw, status)} ${txIdF(txId)}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
        """.stripMargin.query[LmDepositDB]
@@ -457,7 +620,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	bundle_key_id,
          |	registered_transaction_id,
          |	registered_transaction_timestamp,
-         |	refunded_transaction_id,
+         |	executed_transaction_id,
          |	executed_transaction_timestamp
          |FROM
          |	lm_compound
@@ -625,6 +788,18 @@ final class HistorySql(implicit lh: LogHandler) {
       orderStatus(status)
     )
 
+  private def orderCondition2(
+    addresses: List[PubKey],
+    tw: TimeWindow,
+    status: Option[OrderStatusApi]
+  ): doobie.Fragment =
+    Fragments.whereAndOpt(
+      addresses.toNel.map(Fragments.in(fr"redeemer_ergo_tree", _)),
+      tw.from.map(f => Fragment.const(s"registered_transaction_timestamp > $f")),
+      tw.to.map(t => Fragment.const(s"registered_transaction_timestamp <= $t")),
+      orderStatus(status)
+    )
+
   private def orderStatus(status: Option[OrderStatusApi]): Option[Fragment] =
     status
       .map {
@@ -664,6 +839,7 @@ final class HistorySql(implicit lh: LogHandler) {
       .getOrElse(Fragment.empty)
 
   def in = (in: List[PubKey]) => in.toNel.map(Fragments.in(fr"redeemer", _)).getOrElse(Fragment.empty)
+  def in2 = (in: List[PubKey]) => in.toNel.map(Fragments.in(fr"redeemer_ergo_tree", _)).getOrElse(Fragment.empty)
 
   def lockTokens(pair: Option[TokenPair], tokens: Option[List[TokenId]]): Fragment =
     if (pair.isEmpty && tokens.isEmpty) Fragment.const("and true") else Fragment.const("and false")

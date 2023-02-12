@@ -83,6 +83,10 @@ object OrdersStorage {
         .map(mkPoolKey)
         .traverse(rocks.get[String, String])
         .map(_.flatten)
+        .flatTap { r =>
+          r.traverse(p => info"Parse pool: $p")
+
+        }
         .map(_.map(decode[Pool](_)))
         .map(_.flatMap(_.toOption).headOption)
 

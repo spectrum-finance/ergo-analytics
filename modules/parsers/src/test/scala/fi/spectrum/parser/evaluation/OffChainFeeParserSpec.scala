@@ -19,7 +19,7 @@ class OffChainFeeParserSpec extends AnyPropSpec with Matchers with CatsPlatform 
 
   property("Parse off-chain fee") {
 
-    val register = ProcessedOrderParser.make[IO].registered(swapRegisterTransaction, 0).unsafeRunSync().get
+    val register = ProcessedOrderParser.make[IO].registered(swapRegisterTransaction, 0).unsafeRunSync().head
     val pool =
       swapEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0, 10)).collectFirst { case Some(v) => v }.get
     val processed = ProcessedOrderParser

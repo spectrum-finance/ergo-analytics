@@ -21,17 +21,16 @@ class LmRedeemRepository
     "order_id",
     "pool_id",
     "pool_state_id",
+    "max_miner_fee",
     "bundle_key_id",
     "expected_lq_id",
     "expected_lq_amount",
-    "max_miner_fee",
     "redeemer_ergo_tree",
     "out_id",
     "out_amount",
-    "box_id",
-    "contract_version",
+    "out_box_id",
     "protocol_version",
-    "redeemer_ergo_tree",
+    "contract_version",
     "registered_transaction_id",
     "registered_transaction_timestamp",
     executed,
@@ -48,7 +47,7 @@ class LmRedeemRepository
     Update[UpdateEvaluatedTx[LmRedeemEvaluation]](
       s"""
          |update $tableName
-         |set $executed=?, $executedTs=?, pool_state_id=?, out_id=?, out_amount=?, box_id=?, pool_id=?
+         |set $executed=?, $executedTs=?, pool_state_id=?, out_id=?, out_amount=?, out_box_id=?, pool_id=?
          |where order_id=?""".stripMargin
     )
       .toUpdate0(update)
@@ -59,7 +58,7 @@ class LmRedeemRepository
       s"""
          |update $tableName
          |set $executed=null, $executedTs=null, pool_id=null, pool_state_id=null, out_id=null,
-         |out_amount=null, box_id=null
+         |out_amount=null, out_box_id=null
          |where order_id=?""".stripMargin
     )
       .toUpdate0(delete)

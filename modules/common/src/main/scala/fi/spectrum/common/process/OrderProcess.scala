@@ -16,7 +16,6 @@ import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import tofu.syntax.foption._
 import tofu.syntax.monadic._
 
-//todo tests
 object OrderProcess {
 
   def processOrder[F[_]: Monad](
@@ -31,22 +30,25 @@ object OrderProcess {
   ): F[List[Processed.Any]] =
     orderParser
       .registered(tx, timestamp)
-      .semiflatMap {
-        case lock @ Processed(order: LockV1, _, _, _, _) =>
-          getOrders(tx.inputs.toList).map(_.headOption).flatMap { maybeOrder =>
-            orderParser.reLock(tx, lock.widen(order), maybeOrder.flatMap(_.wined[LockV1]))
-          }
-        case order => order.pure
+      .flatMap {
+        case (lock @ Processed(order: LockV1, _, _, _, _)) :: Nil =>
+          getOrders(tx.inputs.toList)
+            .map(_.headOption)
+            .flatMap { maybeOrder =>
+              orderParser.reLock(tx, lock.widen(order), maybeOrder.flatMap(_.wined[LockV1]))
+            }
+            .map(o => List(o).some)
+        case list if list.nonEmpty => list.someF
+        case _                     => noneF[F, List[Processed.Any]]
       }
-      .mapIn(List(_))
       .orElseF(eval(tx, getOrders, getPool, height, timestamp, logIfEmpty))
       .flatMap {
-        case Some((order: Processed.Any) :: Nil) =>
+        case Some(elems @ (order: Processed.Any) :: _) =>
           if (order.wined[Compound].exists(_.state.status.in(Registered))) {
             eval(tx, getOrders, getPool, height, timestamp, logIfEmpty).map { o =>
-              List(o.getOrElse(List.empty), order.some).flatten
+              List(o.getOrElse(List.empty), elems).flatten
             }
-          } else List(order).pure
+          } else elems.map(_.widenOrder).pure[F]
         case _ => List.empty[Processed.Any].pure
       }
 
@@ -74,7 +76,7 @@ object OrderProcess {
       pool   <- getPool(tx.inputs.toList)
     } yield (orders, pool)
 
-    def lmRedeem(orders: List[Processed.Any], pool: Pool): F[List[Processed.Any]] =
+    def lmRedeem(orders: List[Processed.Any], pool: Pool): F[Option[List[Processed.Any]]] =
       orders match {
         case head :: next :: Nil =>
           val result = for {
@@ -89,9 +91,16 @@ object OrderProcess {
                 }
               }
             }
-            .map(_.getOrElse(List.empty))
-        case _ => List.empty[Processed.Any].pure[F]
+        case _ => noneF[F, List[Processed.Any]]
       }
+
+    def lmCompoundBatch(orders: List[Processed.Any], pool: Pool): F[List[Processed.Any]] =
+      orders
+        .flatMap(_.wined[Compound])
+        .traverse { order =>
+          orderParser.evaluated(tx, timestamp, order.widenOrder, pool, height)
+        }
+        .map(_.flatten)
 
     def evalOrder: F[Option[Processed.Any]] = getState.flatMap {
       case (order :: Nil, Some(pool)) =>
@@ -106,7 +115,7 @@ object OrderProcess {
 
     getState
       .flatMap {
-        case (value, Some(p)) => lmRedeem(value, p)
+        case (value, Some(p)) => lmRedeem(value, p).getOrElseF(lmCompoundBatch(value, p))
         case _                => List.empty[Processed.Any].pure[F]
       }
       .flatMap {
