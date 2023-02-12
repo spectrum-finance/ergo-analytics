@@ -26,7 +26,7 @@ final class HistoryEndpoints {
 
   def orderHistoryE: Endpoint[Unit, (Paging, TimeWindow, HistoryApiQuery), HttpError, OrderHistoryResponse, Any] =
     baseEndpoint.post
-      .in(PathPrefix / "order" / "history")
+      .in(PathPrefix / "order")
       .in(paging)
       .in(timeWindow)
       .in(jsonBody[HistoryApiQuery])

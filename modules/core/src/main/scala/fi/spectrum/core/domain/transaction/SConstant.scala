@@ -35,12 +35,12 @@ object SConstant {
 
   implicit val encoder: Encoder[SConstant] = { c =>
     val (renderedValue, sigmaType: SigmaType) = c match {
-      case IntConstant(value)       => value.toString          -> SInt
-      case LongConstant(value)      => value.toString          -> SLong
-      case ByteaConstant(value)     => value.value.value       -> SCollection(SByte)
-      case IntsConstant(value)      => value.mkString("")      -> SCollection(SInt)
-      case SigmaPropConstant(value) => value.value.value.value -> SSigmaProp
-      case UnresolvedConstant(raw)  => raw                     -> SAny
+      case IntConstant(value)       => value.toString                    -> SInt
+      case LongConstant(value)      => value.toString                    -> SLong
+      case ByteaConstant(value)     => value.value.value                 -> SCollection(SByte)
+      case IntsConstant(value)      => "[" ++ value.mkString(",") ++ "]" -> SCollection(SInt)
+      case SigmaPropConstant(value) => value.value.value.value           -> SSigmaProp
+      case UnresolvedConstant(raw)  => raw                               -> SAny
     }
     Json.obj("renderedValue" -> Json.fromString(renderedValue), "sigmaType" -> sigmaType.asJson)
   }
