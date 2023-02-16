@@ -90,7 +90,7 @@ object Main extends IOApp {
       implicit0(metricsF: Metrics[F])                  = Metrics.make[F]
       implicit0(storage: OrdersStorage[F])             = OrdersStorage.make[F]
       implicit0(ordersParser: ProcessedOrderParser[F]) = ProcessedOrderParser.make[F]
-      _ <- storage.deletePool(BoxId("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109")).toResource
+//      _ <- storage.deletePool(BoxId("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109")).toResource
       implicit0(poolsParser: PoolParser)               = PoolParser.make
       implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
       implicit0(redisCache: RedisCache[F]) = RedisCache.make[F]
