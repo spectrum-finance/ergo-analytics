@@ -8,7 +8,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
-import fi.spectrum.core.domain.{BlockId, TxId}
+import fi.spectrum.core.domain.{BlockId, BoxId, TxId}
 import fi.spectrum.core.storage.OrdersStorage
 import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.graphite.{GraphiteClient, Metrics}
@@ -99,6 +99,7 @@ object Main extends IOApp {
       implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
       implicit0(metricsF: Metrics[F])          = Metrics.make[F]
       implicit0(storage: OrdersStorage[F])     = OrdersStorage.make[F]
+      _ <- storage.deletePool(BoxId("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109")).toResource
       implicit0(explorer: Explorer[F]) <- Explorer.make[F].toResource
       implicit0(assets: Assets[F])     <- Assets.make[F, xa.DB].toResource
       implicit0(ordersParser: ProcessedOrderParser[F]) = ProcessedOrderParser.make[F]
