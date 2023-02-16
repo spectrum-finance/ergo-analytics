@@ -338,3 +338,5 @@ create table if not exists public.lm_redeems
     refunded_transaction_timestamp   bigint
 );
 
+alter table public.lm_redeems
+    owner to ergo_admin;
