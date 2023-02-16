@@ -57,12 +57,12 @@ final class HistorySql(implicit lh: LogHandler) {
          |	SELECT
          |		count(1) AS y
          |	FROM
-         |		lm_redeems where ${in(list)}
+         |		lm_redeems where ${in2(list)}
          |UNION
          |	SELECT
          |		count(1) AS y
          |	FROM
-         |		lm_deposits where ${in(list)}
+         |		lm_deposits where ${in2(list)}
          |UNION
          |	SELECT
          |		count(1) AS y
@@ -839,6 +839,7 @@ final class HistorySql(implicit lh: LogHandler) {
       .getOrElse(Fragment.empty)
 
   def in = (in: List[PubKey]) => in.toNel.map(Fragments.in(fr"redeemer", _)).getOrElse(Fragment.empty)
+  def in2 = (in: List[PubKey]) => in.toNel.map(Fragments.in(fr"redeemer_ergo_tree", _)).getOrElse(Fragment.empty)
 
   def lockTokens(pair: Option[TokenPair], tokens: Option[List[TokenId]]): Fragment =
     if (pair.isEmpty && tokens.isEmpty) Fragment.const("and true") else Fragment.const("and false")
