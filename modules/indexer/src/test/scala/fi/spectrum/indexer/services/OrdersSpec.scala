@@ -29,11 +29,11 @@ class OrdersSpec extends AnyFlatSpec with Matchers with PGContainer with Indexer
 
     val service = Orders.make[IO, ConnectionIO]
 
-    val depositRegister: Processed.Any = parser.registered(depositRegisterTransaction, 0L).unsafeRunSync().get
+    val depositRegister: Processed.Any = parser.registered(depositRegisterTransaction, 0L).unsafeRunSync().head
     val depositExecute =
       parser.evaluated(depositEvaluateTransaction, 0L, depositRegister, depositPool.get, 10).unsafeRunSync().get
 
-    val swapRegister = parser.registered(swapRegisterRefundTransaction, 0L).unsafeRunSync().get
+    val swapRegister = parser.registered(swapRegisterRefundTransaction, 0L).unsafeRunSync().head
     val swapRefunded = parser.refunded(swapRefundTransaction, 0L, swapRegister).unsafeRunSync()
 
     val eventsCase1 = List(

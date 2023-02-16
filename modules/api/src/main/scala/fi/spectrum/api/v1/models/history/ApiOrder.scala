@@ -736,7 +736,7 @@ object ApiOrder {
     status: history.OrderStatus,
     poolId: PoolId,
     vLq: AssetAmount,
-    tmp: AssetAmount,
+    tmp: Option[AssetAmount],
     compoundId: TokenId,
     registerTx: TxData,
     evaluateTx: Option[TxData]
@@ -753,9 +753,9 @@ object ApiOrder {
               o.order.id,
               history.OrderStatus.Mempool,
               o.order.poolId,
-              o1.vLq,
-              o1.tmp,
-              o1.bundleKeyId,
+              o1.params.vLq,
+              o1.params.tmp,
+              o1.params.bundleKeyId,
               TxData(o.state.txId, o.state.timestamp),
               none
             )
@@ -769,9 +769,9 @@ object ApiOrder {
               o.order.id,
               history.OrderStatus.Mempool,
               o.order.poolId,
-              o1.vLq,
-              o1.tmp,
-              o1.bundleKeyId,
+              o1.params.vLq,
+              o1.params.tmp,
+              o1.params.bundleKeyId,
               TxData(c.info.id, c.info.timestamp),
               if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
             )
@@ -794,9 +794,9 @@ object ApiOrder {
             x.order.id,
             history.OrderStatus.Mempool,
             x.order.poolId,
-            x1.vLq,
-            x1.tmp,
-            x1.bundleKeyId,
+            x1.params.vLq,
+            x1.params.tmp,
+            x1.params.bundleKeyId,
             mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
             mkTxData(x.state, WaitingEvaluation).orElse(mkTxData(y.state, WaitingEvaluation))
           )
@@ -829,9 +829,9 @@ object ApiOrder {
         def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] =
           for {
             vLq    <- d.lmCompoundVLq
-            tmp    <- d.lmCompoundTmp
             key    <- d.lmCompoundBundleKeyId
             poolId <- d.poolId
+            tmp = d.lmCompoundTmp
           } yield LmCompoundApi(
             d.orderId,
             history.OrderStatus.Ledger,

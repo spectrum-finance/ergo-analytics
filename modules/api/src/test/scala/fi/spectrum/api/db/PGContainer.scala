@@ -62,5 +62,6 @@ trait PGContainer extends BeforeAndAfter with BeforeAndAfterAll {
          |truncate off_chain_fee;
          |truncate lm_deposits;
          |truncate lm_compound;
+         |truncate lm_redeems;
          |""".stripMargin.update.run.transact(xa).unsafeRunSync()
 }

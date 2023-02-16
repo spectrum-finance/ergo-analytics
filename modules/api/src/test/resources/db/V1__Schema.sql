@@ -227,3 +227,26 @@ create table if not exists public.lm_deposits
     refunded_transaction_id          public.hash32type,
     refunded_transaction_timestamp   bigint
 );
+
+create table if not exists public.lm_redeems
+(
+    order_id                         public.hash32type primary key,
+    pool_id                          public.hash32type,
+    pool_state_id                    public.hash32type,
+    bundle_key_id                    public.hash32type not null,
+    expected_lq_id                   public.hash32type not null,
+    expected_lq_amount               bigint            not null,
+    max_miner_fee                    bigint            not null,
+    redeemer_ergo_tree               text              not null,
+    out_id                           public.hash32type,
+    out_amount                       bigint,
+    box_id                           public.hash32type,
+    contract_version                 text              not null,
+    protocol_version                 integer           not null,
+    registered_transaction_id        public.hash32type NOT NULL,
+    registered_transaction_timestamp bigint            not null,
+    executed_transaction_id          public.hash32type,
+    executed_transaction_timestamp   bigint,
+    refunded_transaction_id          public.hash32type,
+    refunded_transaction_timestamp   bigint
+);

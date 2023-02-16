@@ -25,7 +25,7 @@ import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.parser.evaluation.Transactions._
 import fi.spectrum.parser.lm.order.v1.LM
-import fi.spectrum.parser.lm.compound.v1.Bundle
+import fi.spectrum.parser.lm.compound.v1.Compound
 import fi.spectrum.parser.lm.pool.v1.SelfHosted
 import glass.classic.Optional
 import org.scalatest.flatspec.AnyFlatSpec
@@ -62,7 +62,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "Off-chain fee" should "work correct" in {
-    val register    = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().get
+    val register    = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().head
     val executed    = parser.evaluated(swapEvaluateTransaction, 0, register, swapPool.get, 10).unsafeRunSync().get
     val expectedFee = implicitly[ToDB[OffChainFee, OffChainFeeDB]].toDB(executed.offChainFee.get)
 
@@ -90,8 +90,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "AMM redeems persist" should "work correct" in {
-    val register  = parser.registered(redeemRegisterTransaction, 0).unsafeRunSync().get
-    val register2 = parser.registered(redeemRegisterRefundTransaction, 0).unsafeRunSync().get
+    val register  = parser.registered(redeemRegisterTransaction, 0).unsafeRunSync().head
+    val register2 = parser.registered(redeemRegisterRefundTransaction, 0).unsafeRunSync().head
     val refund    = parser.refunded(redeemRefundTransaction, 0, register2).unsafeRunSync()
     val executed  = parser.evaluated(redeemEvaluateTransaction, 0, register, redeemPool.get, 10).unsafeRunSync().get
 
@@ -136,8 +136,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "AMM deposit persist" should "work correct" in {
-    val register  = parser.registered(depositRegisterTransaction, 0).unsafeRunSync().get
-    val register2 = parser.registered(depositRegisterRefundTransaction, 0).unsafeRunSync().get
+    val register  = parser.registered(depositRegisterTransaction, 0).unsafeRunSync().head
+    val register2 = parser.registered(depositRegisterRefundTransaction, 0).unsafeRunSync().head
     val refund    = parser.refunded(depositRefundTransaction, 0, register2).unsafeRunSync()
     val executed  = parser.evaluated(depositEvaluateTransaction, 0, register, depositPool.get, 10).unsafeRunSync().get
 
@@ -181,8 +181,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "AMM swap persist" should "work correct" in {
-    val register  = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().get
-    val register2 = parser.registered(swapRegisterRefundTransaction, 0).unsafeRunSync().get
+    val register  = parser.registered(swapRegisterTransaction, 0).unsafeRunSync().head
+    val register2 = parser.registered(swapRegisterRefundTransaction, 0).unsafeRunSync().head
     val refunded  = parser.refunded(swapRefundTransaction, 0, register2).unsafeRunSync()
     val executed  = parser.evaluated(swapEvaluateTransaction, 0, register, swapPool.get, 10).unsafeRunSync().get
 
@@ -238,7 +238,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "LQ locks persist" should "work correct" in {
-    val result = parser.registered(lockTransaction, 0).unsafeRunSync().get
+    val result = parser.registered(lockTransaction, 0).unsafeRunSync().head
     val expected =
       implicitly[ToDB[Processed[Lock], LockDB]]
         .toDB(result.asInstanceOf[Processed[Order.Lock]])
@@ -281,8 +281,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
   }
 
   "Lm deposit persist" should "work correct" in {
-    val register = ProcessedOrderParser.make[IO].registered(LM.deployDepositOrderTx, 0).unsafeRunSync().get
-    val eval     = ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
+    val register = ProcessedOrderParser.make[IO].registered(LM.deployDepositOrderTx, 0).unsafeRunSync().head
+    val eval     = ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, register, SelfHosted.pool, 0).unsafeRunSync().head
 
     def run = for {
       insertResult  <- repo.insertAnyOrder.traverse(_(register)).trans
@@ -316,14 +316,14 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
 
   "Compound persist" should "work correct" in {
     val register = Processed(
-      Bundle.bundle,
+      Compound.compoundNotLastEpoch,
       OrderState(TxId("b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e"), 0, Registered),
       None,
       None,
       None
     ).asInstanceOf[Processed.Any]
     val eval =
-      ProcessedOrderParser.make[IO].evaluated(Bundle.compoundTx, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
+      ProcessedOrderParser.make[IO].evaluated(Compound.compoundTx, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
 
     def run = for {
       insertResult  <- repo.insertAnyOrder.traverse(_(register)).trans

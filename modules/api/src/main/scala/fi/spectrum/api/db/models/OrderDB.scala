@@ -87,7 +87,7 @@ object OrderDB {
     orderId: OrderId,
     poolId: PoolId,
     vLq: AssetAmount,
-    tmp: AssetAmount,
+    tmp: Option[AssetAmount],
     bundleKeyId: TokenId,
     registerTx: TxData,
     evaluateTx: Option[TxData]
