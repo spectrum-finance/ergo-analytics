@@ -552,8 +552,8 @@ final class HistorySql(implicit lh: LogHandler) {
          |	order_id,
          |	pool_id,
          |	bundle_key_id,
-         |	expected_id,
-         |	expected_amount,
+         |	expected_lq_id,
+         |	expected_lq_amount,
          |	out_id,
          |	out_amount,
          |	out_box_id,
@@ -565,7 +565,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	lm_redeems
-         |${orderCondition(addresses, tw, status)} ${txIdF(txId)}
+         |${orderCondition2(addresses, tw, status)} ${txIdF(txId)}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
          """.stripMargin.query[LmRedeemsDB]
@@ -596,7 +596,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	lm_deposits
-         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} 
+         |${orderCondition2(addresses, tw, status)} ${txIdF(txId)}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
        """.stripMargin.query[LmDepositDB]
@@ -620,7 +620,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	bundle_key_id,
          |	registered_transaction_id,
          |	registered_transaction_timestamp,
-         |	refunded_transaction_id,
+         |	executed_transaction_id,
          |	executed_transaction_timestamp
          |FROM
          |	lm_compound
