@@ -8,6 +8,7 @@ import doobie.implicits._
 import doobie.util.update.Update0
 import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.Processed
+import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.indexer.db.models.{AmmDepositDB, SwapDB, TxInfo}
 import fi.spectrum.indexer.db.persist.PersistBundle
 import fi.spectrum.indexer.db.{Indexer, PGContainer}
@@ -18,6 +19,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import tofu.syntax.doobie.txr._
 import fi.spectrum.parser.evaluation.Transactions._
+import fi.spectrum.parser.lm.order.v1.{LM, LmOrderParserV1}
 
 class OrdersSpec extends AnyFlatSpec with Matchers with PGContainer with Indexer {
 

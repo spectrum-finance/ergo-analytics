@@ -99,7 +99,6 @@ object Main extends IOApp {
       implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
       implicit0(metricsF: Metrics[F])          = Metrics.make[F]
       implicit0(storage: OrdersStorage[F])     = OrdersStorage.make[F]
-      _ <- storage.deletePool(BoxId("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109")).toResource
       implicit0(explorer: Explorer[F]) <- Explorer.make[F].toResource
       implicit0(assets: Assets[F])     <- Assets.make[F, xa.DB].toResource
       implicit0(ordersParser: ProcessedOrderParser[F]) = ProcessedOrderParser.make[F]

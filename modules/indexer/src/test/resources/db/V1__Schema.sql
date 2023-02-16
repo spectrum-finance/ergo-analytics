@@ -231,7 +231,7 @@ create table if not exists public.lm_deposits
 create table if not exists public.lm_redeems
 (
     order_id                         public.hash32type primary key,
-    pool_id                          public.hash32type not null,
+    pool_id                          public.hash32type,
     pool_state_id                    public.hash32type,
     max_miner_fee                    bigint            not null,
     bundle_key_id                    public.hash32type not null,

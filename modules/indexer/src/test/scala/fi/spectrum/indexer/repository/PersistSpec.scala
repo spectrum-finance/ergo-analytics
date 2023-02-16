@@ -12,10 +12,11 @@ import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
 import fi.spectrum.core.domain.analytics.{OffChainFee, Processed}
 import fi.spectrum.core.domain.order.{Order, OrderState}
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
-import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem
+import fi.spectrum.core.domain.order.Order.Redeem.{AmmRedeem, LmRedeem}
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderStatus.Registered
 import fi.spectrum.core.domain.pool.Pool.{AmmPool, LmPool}
+import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.db.models.LmPoolDB._
 import fi.spectrum.indexer.db.models._
@@ -24,7 +25,7 @@ import fi.spectrum.indexer.db.{Indexer, PGContainer}
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.parser.evaluation.Transactions._
-import fi.spectrum.parser.lm.order.v1.LM
+import fi.spectrum.parser.lm.order.v1.{LM, LmOrderParserV1}
 import fi.spectrum.parser.lm.compound.v1.Compound
 import fi.spectrum.parser.lm.pool.v1.SelfHosted
 import glass.classic.Optional
@@ -349,6 +350,46 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
         .copy(registeredTx = expected1.get.registeredTx)
       expected4.get shouldEqual implicitly[ToDB[Processed[Compound], LmCompoundDB]]
         .toDB(register.asInstanceOf[Processed[Compound]])
+    }
+
+    run.unsafeRunSync()
+  }
+
+  "Lm redeem persist" should "work correct" in {
+    val register = Processed(
+      LM.redeem,
+      OrderState(TxId("b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e"), 0, Registered),
+      None,
+      None,
+      None
+    ).asInstanceOf[Processed.Any]
+    val eval =
+      ProcessedOrderParser.make[IO].evaluated(LM.redeemEvaluate, 0, register, SelfHosted.pool, 0).unsafeRunSync().get
+
+    def run = for {
+      insertResult  <- repo.insertAnyOrder.traverse(_(register)).trans
+      expected1     <- sql"select * from lm_redeems where order_id=${register.order.id}".query[LmRedeemDB].option.trans
+      resolveResult <- repo.resolveAnyOrder.traverse(_(register)).trans
+      expected2     <- sql"select * from lm_redeems where order_id=${register.order.id}".query[LmRedeemDB].option.trans
+      _             <- repo.insertAnyOrder.traverse(_(register)).trans
+      insertResult2 <- repo.insertAnyOrder.traverse(_(eval)).trans
+      expected3     <- sql"select * from lm_redeems where order_id=${register.order.id}".query[LmRedeemDB].option.trans
+      resolveResul2 <- repo.resolveAnyOrder.traverse(_(eval)).trans
+      expected4     <- sql"select * from lm_redeems where order_id=${register.order.id}".query[LmRedeemDB].option.trans
+    } yield {
+      insertResult.sum shouldEqual 1
+      resolveResult.sum shouldEqual 1
+      insertResult2.sum shouldEqual 1
+      resolveResul2.sum shouldEqual 1
+
+      expected1.get shouldEqual implicitly[ToDB[Processed[LmRedeem], LmRedeemDB]]
+        .toDB(register.asInstanceOf[Processed[LmRedeem]])
+      expected2 shouldEqual None
+      expected3.get shouldEqual implicitly[ToDB[Processed[LmRedeem], LmRedeemDB]]
+        .toDB(eval.asInstanceOf[Processed[LmRedeem]])
+        .copy(registeredTx = expected1.get.registeredTx)
+      expected4.get shouldEqual implicitly[ToDB[Processed[LmRedeem], LmRedeemDB]]
+        .toDB(register.asInstanceOf[Processed[LmRedeem]])
     }
 
     run.unsafeRunSync()
