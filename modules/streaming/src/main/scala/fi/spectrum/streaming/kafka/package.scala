@@ -9,6 +9,6 @@ package object kafka {
   type MempoolConsumer[S[_], F[_]] = Consumer.Aux[TxId, Option[MempoolEvent], KafkaOffset, S, F]
   type BlocksConsumer[S[_], F[_]]  = Consumer.Aux[BlockId, Option[BlockEvent], KafkaOffset, S, F]
 
-  type CSConsumer[S[_], F[_]] = Consumer.Aux[String, Option[ChainSyncEvent], KafkaOffset, S, F]
+  type CSConsumer[S[_], F[_]] = Consumer.Aux[String, Either[Throwable, Option[ChainSyncEvent]], KafkaOffset, S, F]
   type CSProducer[S[_]]       = Producer[String, ChainSyncEvent, S]
 }

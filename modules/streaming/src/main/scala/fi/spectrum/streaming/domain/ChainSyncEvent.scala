@@ -36,14 +36,8 @@ object ChainSyncEvent {
   implicit def show2: Show[UnapplyChainSync] = a =>
     s"UnapplyChainSync(${a.pool.map(_.box.boxId)}, ${a.order.map(_.order.id)})"
 
-  implicit def chainSyncEventDeserializer[F[_]: Sync]: RecordDeserializer[F, Option[ChainSyncEvent]] =
-    RecordDeserializer.lift(Deserializer.string.attempt.map { str =>
-      str
-        .flatMap(decode[ChainSyncEvent](_))
-        .leftMap { err =>
-          println(s"Err: ${err.getMessage} -> ${Either.catchNonFatal(str)}")
-          err
-        }
-        .toOption
-    })
+  implicit def chainSyncEventDeserializer[F[_]: Sync]: RecordDeserializer[F, Either[Throwable, Option[ChainSyncEvent]]] =
+    RecordDeserializer.lift(Deserializer.string.map { str =>
+      decode[ChainSyncEvent](str).toOption
+    }).attempt
 }

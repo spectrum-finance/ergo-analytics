@@ -82,8 +82,9 @@ object Main extends IOApp {
       config <- ConfigBundle.load[F](configPathOpt).toResource
       implicit0(context: WithContext[F, ConfigBundle]) = config.makeContext[F]
       implicit0(e: ErgoAddressEncoder) <- ProtocolConfig.access[F].map(_.networkType.addressEncoder).toResource
-      implicit0(logsF: Logging.Make[F])    = Logging.Make.plain[F]
-      implicit0(csC: CSConsumer[S, F])     = makeConsumer[String, Option[ChainSyncEvent]](config.csConsumer)
+      implicit0(logsF: Logging.Make[F]) = Logging.Make.plain[F]
+      implicit0(csC: CSConsumer[S, F]) =
+        makeConsumer[String, Either[Throwable, Option[ChainSyncEvent]]](config.csConsumer)
       implicit0(mC: MempoolConsumer[S, F]) = makeConsumer[TxId, Option[MempoolEvent]](config.mempoolConsumer)
       implicit0(graphiteF: GraphiteClient[F]) <- GraphiteClient.make[F, F](config.graphite)
       implicit0(rocks: TxRocksDB[F])          <- TxRocksDB.make[F, F](config.rocks.path)
@@ -91,7 +92,7 @@ object Main extends IOApp {
       implicit0(storage: OrdersStorage[F])             = OrdersStorage.make[F]
       implicit0(ordersParser: ProcessedOrderParser[F]) = ProcessedOrderParser.make[F]
 //      _ <- storage.deletePool(BoxId("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109")).toResource
-      implicit0(poolsParser: PoolParser)               = PoolParser.make
+      implicit0(poolsParser: PoolParser) = PoolParser.make
       implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
       implicit0(redisCache: RedisCache[F]) = RedisCache.make[F]
       implicit0(mempool: Mempool[F]) <- Mempool.make[F].toResource
