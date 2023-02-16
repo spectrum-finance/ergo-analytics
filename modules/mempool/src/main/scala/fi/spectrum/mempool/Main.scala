@@ -40,7 +40,7 @@ import sttp.tapir.server.http4s.Http4sServerOptions
 import tofu.fs2.LiftStream
 import tofu.fs2Instances._
 import tofu.lift.IsoK
-import tofu.logging.Logging
+import tofu.logging.{Logging, Logs}
 import tofu.streams.{Chunks, Evals, Temporal}
 import tofu.syntax.monadic._
 import tofu.{In, WithContext}
@@ -83,6 +83,7 @@ object Main extends IOApp {
       implicit0(context: WithContext[F, ConfigBundle]) = config.makeContext[F]
       implicit0(e: ErgoAddressEncoder) <- ProtocolConfig.access[F].map(_.networkType.addressEncoder).toResource
       implicit0(logsF: Logging.Make[F]) = Logging.Make.plain[F]
+      implicit0(logsFF: Logs[F, F])     = Logs.sync[F, F]
       implicit0(csC: CSConsumer[S, F]) =
         makeConsumer[String, Either[Throwable, Option[ChainSyncEvent]]](config.csConsumer)
       implicit0(mC: MempoolConsumer[S, F]) = makeConsumer[TxId, Option[MempoolEvent]](config.mempoolConsumer)

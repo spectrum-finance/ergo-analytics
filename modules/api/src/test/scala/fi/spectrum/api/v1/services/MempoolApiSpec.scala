@@ -17,9 +17,9 @@ import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.core.domain.order.Order.Compound.CompoundV1
 import fi.spectrum.core.domain.order.Order.Deposit.LmDeposit.LmDepositV1
 import fi.spectrum.core.domain.order.Order.Redeem.LmRedeem.LmRedeemV1
-import fi.spectrum.core.domain.order.OrderState
+import fi.spectrum.core.domain.order.{OrderState, Redeemer}
 import fi.spectrum.core.domain.order.OrderStatus.Registered
-import fi.spectrum.core.domain.{Address, TokenId, TxId}
+import fi.spectrum.core.domain.{Address, PubKey, TokenId, TxId}
 import fi.spectrum.graphite.Metrics
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.parser.lm.compound.v1.Compound
@@ -411,6 +411,12 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
   }
 
   "Mempool api" should "process any order request correct" in {
+    import fi.spectrum.core.domain.address._
+
+    println(
+      formAddress(Redeemer.PublicKeyRedeemer(PubKey.unsafeFromString("0008cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491")))
+    )
+
     val result = history.getAnyOrders(
       Paging(0, 10),
       TimeWindow(None, None),

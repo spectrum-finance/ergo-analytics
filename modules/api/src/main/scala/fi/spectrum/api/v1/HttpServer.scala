@@ -15,6 +15,7 @@ import org.http4s.server.Router
 import org.http4s.server.middleware.CORS
 import sttp.tapir.server.http4s.Http4sServerOptions
 import tofu.lift.Unlift
+import tofu.logging.Logs
 
 object HttpServer {
 
@@ -28,14 +29,16 @@ object HttpServer {
     history: HistoryApi[F],
     opts: Http4sServerOptions[F],
     cache: CachingMiddleware[F],
-    metrics: MetricsMiddleware[F]
-  ): fs2.Stream[I, ExitCode] = {
-    val ammStatsR  = AmmStatsRoutes.make[F](requestConf)
-    val historyR   = HistoryRoutes.make[F]
-    val docsR      = DocsRoutes.make[F](requestConf)
-    val routes     = unliftRoutes[F, I](metrics.middleware(historyR <+> cache.middleware(ammStatsR <+> docsR)))
-    val corsRoutes = CORS.policy.withAllowOriginAll(routes)
-    val api        = Router("/" -> corsRoutes).orNotFound
-    BlazeServerBuilder[I].bindHttp(conf.port, conf.host).withHttpApp(api).serve
-  }
+    metrics: MetricsMiddleware[F],
+    logs: Logs[I, F]
+  ): fs2.Stream[I, ExitCode] =
+    fs2.Stream.eval(logs.forService[HttpServer.type]).flatMap { implicit __ =>
+      val ammStatsR  = AmmStatsRoutes.make[F](requestConf)
+      val historyR   = HistoryRoutes.make[F]
+      val docsR      = DocsRoutes.make[F](requestConf)
+      val routes     = unliftRoutes[F, I](metrics.middleware(historyR <+> cache.middleware(ammStatsR <+> docsR)))
+      val corsRoutes = CORS.policy.withAllowOriginAll(routes)
+      val api        = Router("/" -> corsRoutes).orNotFound
+      BlazeServerBuilder[I].bindHttp(conf.port, conf.host).withHttpApp(api).serve
+    }
 }
