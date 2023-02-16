@@ -45,6 +45,7 @@ import tofu.streams.{Chunks, Evals, Temporal}
 import tofu.syntax.monadic._
 import tofu.{In, WithContext}
 import mouse.all._
+import ChainSyncEvent._
 
 object Main extends IOApp {
 
