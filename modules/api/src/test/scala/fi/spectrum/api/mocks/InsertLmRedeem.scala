@@ -44,18 +44,17 @@ object InsertLmRedeem {
     fields.map(_ => "?").mkString(", ")
 
   final def insert(processed: Processed[LmRedeemV1]): doobie.ConnectionIO[Int] = {
-    val a =  ???
-//      Insert(
-//      processed.order.id,
-//      processed.order.poolId,
-//      processed.order.params.vLq,
-//      processed.order.params.tmp,
-//      processed.order.params.bundleKeyId.unwrapped,
-//      processed.order.redeemer.value.value.value.value,
-//      processed.order.version.entryName,
-//      ProtocolVersion.init.value,
-//      TxInfo(processed.state.txId, processed.state.timestamp)
-//    )
+    val a =
+      Insert(
+        processed.order.id,
+        processed.order.bundleKeyId,
+        processed.order.expectedLq,
+        processed.order.maxMinerFee,
+        processed.order.redeemer.value.value.value.value,
+        processed.order.version.entryName,
+        ProtocolVersion.init.value,
+        TxInfo(processed.state.txId, processed.state.timestamp)
+      )
     Update[Insert](s"""
          |insert into $tableName ($fieldsString) values ($holdersString)
        """.stripMargin).toUpdate0(a).run

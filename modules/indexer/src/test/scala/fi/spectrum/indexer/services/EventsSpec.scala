@@ -230,6 +230,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     import java.io.File
     import scala.reflect.io.Directory
     new Directory(new File("rocks")).deleteRecursively()
+    ()
   }
 
   override def beforeEach(): Unit = {
@@ -237,6 +238,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
     import scala.reflect.io.Directory
     new Directory(new File("rocks")).deleteRecursively()
     Directory(new File("rocks")).createDirectory()
+    ()
   }
 
 }

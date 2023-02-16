@@ -7,14 +7,16 @@ import doobie.ConnectionIO
 import doobie.implicits._
 import fi.spectrum.api.db.repositories.History
 import fi.spectrum.api.db.{Api, PGContainer}
-import fi.spectrum.api.mocks.{InsertLmCompound, InsertLmDeposit, MetricsMock, NetworkMock}
+import fi.spectrum.api.mocks.{InsertLmCompound, InsertLmDeposit, InsertLmRedeem, MetricsMock, NetworkMock}
 import fi.spectrum.api.models.MempoolData
+import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.history.ApiOrder.{LmCompoundApi, LmDepositApi, LmRedeemApi}
-import fi.spectrum.api.v1.models.history.{OrderStatus, TxData}
+import fi.spectrum.api.v1.models.history.{HistoryApiQuery, OrderStatus, TxData}
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{LmDepositCompoundEvaluation, LmRedeemEvaluation}
 import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.core.domain.order.Order.Compound.CompoundV1
 import fi.spectrum.core.domain.order.Order.Deposit.LmDeposit.LmDepositV1
+import fi.spectrum.core.domain.order.Order.Redeem.LmRedeem.LmRedeemV1
 import fi.spectrum.core.domain.order.OrderState
 import fi.spectrum.core.domain.order.OrderStatus.Registered
 import fi.spectrum.core.domain.{Address, TokenId, TxId}
@@ -356,7 +358,6 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
     res shouldEqual expected
   }
 
-
   "Mempool api" should "process lm eval (only eval order is in mempool) redeem correct" in {
     val registerOrder = Processed(
       LM.redeem,
@@ -384,7 +385,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val mempool = MempoolApi.make[IO, IO, ConnectionIO].unsafeRunSync()
 
-    val insert = InsertLmDeposit.insert(registerOrder.asInstanceOf[Processed[LmDepositV1]]).trans.unsafeRunSync()
+    val insert = InsertLmRedeem.insert(registerOrder.asInstanceOf[Processed[LmRedeemV1]]).trans.unsafeRunSync()
 
     println(insert)
 
@@ -407,5 +408,22 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
     )
 
     res shouldEqual expected
+  }
+
+  "Mempool api" should "process any order request correct" in {
+    val result = history.getAnyOrders(
+      Paging(0, 10),
+      TimeWindow(None, None),
+      HistoryApiQuery(
+        List(Address.fromStringUnsafe("9i245HdmSYwYsVR2qudtULu3BRBenPagNbT6uLi2Np9QZzdQWGH")),
+        None,
+        None,
+        None,
+        None,
+        None
+      )
+    ).trans.unsafeRunSync()
+
+    println(result)
   }
 }

@@ -27,6 +27,6 @@ object HttpError {
   ): AdaptThrowableEitherT[F, HttpError] =
     new AdaptThrowableEitherT[F, HttpError] {
 
-      final def adapter: Throwable => F[HttpError] = e => F.pure(Unknown(500, e.getMessage))
+      final def adapter: Throwable => F[HttpError] = e => F.pure(Unknown(500, "Something went wrong"))
     }
 }
