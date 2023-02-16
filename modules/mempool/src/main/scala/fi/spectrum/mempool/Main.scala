@@ -94,8 +94,8 @@ object Main extends IOApp {
 //      _ <- storage.deletePool(BoxId("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109")).toResource
       implicit0(poolsParser: PoolParser) = PoolParser.make
       implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
-      implicit0(redisCache: RedisCache[F]) = RedisCache.make[F]
-      implicit0(mempool: Mempool[F]) <- Mempool.make[F].toResource
+      implicit0(redisCache: RedisCache[F])               <- RedisCache.make[F].toResource
+      implicit0(mempool: Mempool[F])                     <- Mempool.make[F].toResource
       implicit0(mempoolTx: MempoolTx[F])                 = MempoolTx.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
       csProcessor                                        = ChainSyncProcessor.make[Chunk, F, S]
