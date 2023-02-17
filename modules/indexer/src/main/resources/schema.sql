@@ -33,6 +33,7 @@ alter table public.pools
     owner to ergo_admin;
 
 create index pools__pool_id on public.pools using btree (pool_id);
+create index pools__pool_state_id on public.pools using btree (pool_state_id);
 create index pools__protocol_version on public.pools using btree (protocol_version);
 create index pools__x_id on public.pools using btree (x_id);
 create index pools__y_id on public.pools using btree (y_id);
@@ -76,6 +77,7 @@ create index swaps__protocol_version on public.swaps using btree (protocol_versi
 create index swaps__base_id on public.swaps using btree (base_id);
 create index swaps__min_quote_id on public.swaps using btree (min_quote_id);
 create index swaps__register_timestamp on public.swaps using btree (registered_transaction_timestamp);
+create index swaps__executed_timestamp on public.swaps using btree (executed_transaction_timestamp);
 
 create table if not exists public.redeems
 (
@@ -197,6 +199,8 @@ create table if not exists public.assets
 alter table public.assets
     owner to ergo_admin;
 
+create index assets__ticker on public.assets using btree (ticker);
+create index assets__id on public.assets using btree (id);
 create index assets__ticker on public.assets using btree (ticker);
 
 create table if not exists public.blocks

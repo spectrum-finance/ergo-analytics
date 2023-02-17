@@ -5,6 +5,7 @@ import cats.effect.kernel.Async
 import cats.syntax.semigroupk._
 import fi.spectrum.api.configs.{HttpConfig, RequestConfig}
 import fi.spectrum.api.models.TraceId
+import fi.spectrum.api.v1.ErrorsMiddleware.ErrorsMiddleware
 import fi.spectrum.common.http.syntax.routes.unliftRoutes
 import fi.spectrum.api.v1.routes.{AmmStatsRoutes, DocsRoutes, HistoryRoutes}
 import fi.spectrum.api.v1.services.{AmmStats, HistoryApi, LqLocks, MempoolApi}
@@ -30,13 +31,16 @@ object HttpServer {
     opts: Http4sServerOptions[F],
     cache: CachingMiddleware[F],
     metrics: MetricsMiddleware[F],
+    errorsMiddleware: ErrorsMiddleware[F],
     logs: Logs[I, F]
   ): fs2.Stream[I, ExitCode] =
     fs2.Stream.eval(logs.forService[HttpServer.type]).flatMap { implicit __ =>
-      val ammStatsR  = AmmStatsRoutes.make[F](requestConf)
-      val historyR   = HistoryRoutes.make[F]
-      val docsR      = DocsRoutes.make[F](requestConf)
-      val routes     = unliftRoutes[F, I](metrics.middleware(historyR <+> cache.middleware(ammStatsR <+> docsR)))
+      val ammStatsR = AmmStatsRoutes.make[F](requestConf)
+      val historyR  = HistoryRoutes.make[F]
+      val docsR     = DocsRoutes.make[F](requestConf)
+      val routes = unliftRoutes[F, I](
+        errorsMiddleware.middleware(metrics.middleware(historyR <+> cache.middleware(ammStatsR <+> docsR)))
+      )
       val corsRoutes = CORS.policy.withAllowOriginAll(routes)
       val api        = Router("/" -> corsRoutes).orNotFound
       BlazeServerBuilder[I].bindHttp(conf.port, conf.host).withHttpApp(api).serve
