@@ -85,7 +85,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
       implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
       implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
-      implicit0(assets: Asset[xa.DB])                    <- Asset.make[I, xa.DB].toResource
+      implicit0(asset: Asset[xa.DB])                     <- Asset.make[I, xa.DB].toResource
       implicit0(blocks: Blocks[xa.DB])                   <- Blocks.make[I, xa.DB].toResource
       implicit0(pools: Pools[xa.DB])                     <- Pools.make[I, xa.DB].toResource
       implicit0(orders: Orders[xa.DB])                   <- Orders.make[I, xa.DB].toResource
@@ -95,6 +95,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(cache: Cache[F])                         <- Cache.make[I, F].toResource
       implicit0(httpRespCache: HttpResponseCaching[F])   <- HttpResponseCaching.make[I, F].toResource
       implicit0(network: Network[F])                     <- Network.make[I, F].toResource
+      implicit0(assets: Assets[F])                       <- Assets.make[I, F, xa.DB].toResource
       implicit0(ergRate: ErgRate[F])                     <- ErgRate.make[I, F].toResource
       implicit0(snapshots: Snapshots[F])                 <- Snapshots.make[I, F, xa.DB].toResource
       implicit0(volumes: Volumes24H[F])                  <- Volumes24H.make[I, F, xa.DB].toResource

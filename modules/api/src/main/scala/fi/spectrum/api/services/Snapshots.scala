@@ -4,6 +4,7 @@ import cats.Monad
 import cats.effect.Ref
 import cats.effect.kernel.Sync
 import derevo.derive
+import fi.spectrum.api.db.models.PoolSnapshotDB
 import fi.spectrum.api.db.models.amm.PoolSnapshot
 import fi.spectrum.api.db.repositories.Pools
 import tofu.doobie.transactor.Txr
@@ -17,7 +18,7 @@ import tofu.syntax.monadic._
 @derive(representableK)
 trait Snapshots[F[_]] {
   def update: F[Unit]
-  def get: F[List[PoolSnapshot]]
+  def get: F[List[PoolSnapshotDB]]
 }
 
 object Snapshots {
@@ -29,10 +30,10 @@ object Snapshots {
   ): I[Snapshots[F]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[Snapshots[F]]
-      cache                          <- Ref.in[I, F, List[PoolSnapshot]](List.empty)
+      cache                          <- Ref.in[I, F, List[PoolSnapshotDB]](List.empty)
     } yield new Tracing[F] attach new Live[F, D](cache)
 
-  final private class Live[F[_]: Monad, D[_]](cache: Ref[F, List[PoolSnapshot]])(implicit
+  final private class Live[F[_]: Monad, D[_]](cache: Ref[F, List[PoolSnapshotDB]])(implicit
     txr: Txr[F, D],
     pools: Pools[D]
   ) extends Snapshots[F] {
@@ -42,13 +43,13 @@ object Snapshots {
       _         <- cache.set(snapshots)
     } yield ()
 
-    def get: F[List[PoolSnapshot]] = cache.get
+    def get: F[List[PoolSnapshotDB]] = cache.get
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Snapshots[Mid[F, *]] {
     def update: Mid[F, Unit] = info"It's time to update snapshots!" >> _
 
-    def get: Mid[F, List[PoolSnapshot]] = info"Get current snapshots" >> _
+    def get: Mid[F, List[PoolSnapshotDB]] = info"Get current snapshots" >> _
   }
 
 }

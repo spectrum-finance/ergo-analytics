@@ -1,19 +1,19 @@
 package fi.spectrum.api.v1.services
 
 import cats.data.OptionT
+import cats.syntax.option._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
 import cats.{Functor, Monad, Parallel}
 import derevo.derive
 import fi.spectrum.api.currencies.UsdUnits
-import fi.spectrum.api.db.models.amm
 import fi.spectrum.api.db.models.amm._
 import fi.spectrum.api.db.repositories.{Asset, Blocks, Orders, Pools}
 import fi.spectrum.api.domain.{CryptoVolume, Fees, TotalValueLocked, Volume}
 import fi.spectrum.api.models.{AssetClass, CryptoUnits, FullAsset}
 import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
-import fi.spectrum.api.services.{Snapshots, VerifiedTokens, Volumes24H}
+import fi.spectrum.api.services.{Assets, Snapshots, VerifiedTokens, Volumes24H}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.amm.types.{MarketId, RealPrice}
@@ -71,11 +71,12 @@ object AmmStats {
     txr: Txr[F, D],
     pools: Pools[D],
     orders: Orders[D],
-    assets: Asset[D],
+    asset: Asset[D],
     blocks: Blocks[D],
     tokens: VerifiedTokens[F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
+    assets: Assets[F],
     solver: FiatPriceSolver[F],
     ammMath: AmmStatsMath[F],
     metrics: Metrics[F],
@@ -87,19 +88,22 @@ object AmmStats {
     txr: Txr[F, D],
     pools: Pools[D],
     orders: Orders[D],
-    assets: Asset[D],
+    asset: Asset[D],
     blocks: Blocks[D],
     tokens: VerifiedTokens[F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
+    assets: Assets[F],
     solver: FiatPriceSolver[F],
     ammMath: AmmStatsMath[F]
   ) extends AmmStats[F] {
 
     def convertToFiat(id: TokenId, amount: Long): F[Option[FiatEquiv]] =
       (for {
-        pools     <- OptionT.liftF(snapshots.get)
-        assetInfo <- OptionT(assets.assetById(id).trans)
+        poolSnapshotsDB <- OptionT.liftF(snapshots.get)
+        assets          <- OptionT.liftF(assets.get)
+        pools = poolSnapshotsDB.flatMap(_.toPoolSnapshot(assets))
+        assetInfo <- OptionT(asset.assetById(id).trans)
         equiv     <- OptionT(solver.convert(FullAsset.fromAssetInfo(assetInfo, amount), UsdUnits, pools))
       } yield FiatEquiv(equiv.value, UsdUnits)).value
 
@@ -117,9 +121,12 @@ object AmmStats {
 
     private def calculatePlatformSummary(window: TimeWindow, f: PoolSnapshot => Boolean): F[PlatformStats] =
       for {
-        volumes       <- pools.volumes(window).trans
-        poolSnapshots <- snapshots.get
-        filtered = poolSnapshots.filter(f)
+        volumesDB <- pools.volumes(window).trans
+        assets    <- assets.get
+        volumes = volumesDB.flatMap(_.toPoolVolumeSnapshot(assets))
+        poolSnapshotsDB <- snapshots.get
+        poolSnapshots = poolSnapshotsDB.flatMap(_.toPoolSnapshot(assets))
+        filtered      = poolSnapshots.filter(f)
         lockedX <- filtered.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, poolSnapshots).map(_.toList))
         lockedY <- filtered.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, poolSnapshots).map(_.toList))
         tvl = TotalValueLocked(lockedX.map(_.value).sum + lockedY.map(_.value).sum, UsdUnits)
@@ -138,11 +145,15 @@ object AmmStats {
 
     private def calculatePoolsSummary(f: PoolSnapshot => Boolean): F[List[PoolSummary]] =
       for {
-        volumes <- volumes24H.get
-        filtered <- snapshots.get.map(_.filter { s =>
-                      s.lockedX.ticker.nonEmpty && s.lockedY.ticker.nonEmpty &&
-                      s.lockedX.id == ErgoAssetId && f(s)
-                    })
+        volumesDB <- volumes24H.get
+        assets    <- assets.get
+        volumes = volumesDB.flatMap(_.toPoolVolumeSnapshot(assets))
+        poolSnapshotsDB <- snapshots.get
+        poolSnapshots = poolSnapshotsDB.flatMap(_.toPoolSnapshot(assets))
+        filtered = poolSnapshots.filter { s =>
+                     s.lockedX.ticker.nonEmpty && s.lockedY.ticker.nonEmpty &&
+                     s.lockedX.id == ErgoAssetId && f(s)
+                   }
         poolsTvl <- filtered.flatTraverse(p => processPoolTvl(p).map(_.map(tvl => (tvl, p))).map(_.toList))
         maxTvlPools =
           poolsTvl
@@ -174,17 +185,22 @@ object AmmStats {
 
     private def processPoolTvl(pool: PoolSnapshot): F[Option[TotalValueLocked]] =
       (for {
-        poolSnapshots <- OptionT.liftF(snapshots.get)
-        lockedX       <- OptionT(solver.convert(pool.lockedX, UsdUnits, poolSnapshots))
-        lockedY       <- OptionT(solver.convert(pool.lockedY, UsdUnits, poolSnapshots))
+        poolSnapshotsDB <- OptionT.liftF(snapshots.get)
+        assets          <- OptionT.liftF(assets.get)
+        poolSnapshots = poolSnapshotsDB.flatMap(_.toPoolSnapshot(assets))
+        lockedX <- OptionT(solver.convert(pool.lockedX, UsdUnits, poolSnapshots))
+        lockedY <- OptionT(solver.convert(pool.lockedY, UsdUnits, poolSnapshots))
         tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
       } yield tvl).value
 
     def getPoolsStats(window: TimeWindow): F[List[PoolStats]] =
-      snapshots.get.flatMap { snapshots: List[PoolSnapshot] =>
-        snapshots
-          .parTraverse(pool => getPoolSummary(pool, window, snapshots))
-          .map(_.flatten)
+      snapshots.get.flatMap { snapshotsDB =>
+        assets.get.flatMap { assets =>
+          val snapshots = snapshotsDB.flatMap(_.toPoolSnapshot(assets))
+          snapshots
+            .parTraverse(pool => getPoolSummary(pool, window, snapshots))
+            .map(_.flatten)
+        }
       }
 
     private def getPoolSummary(
@@ -194,7 +210,7 @@ object AmmStats {
     ): F[Option[PoolStats]] = {
       val poolId = pool.id
 
-      def poolData: D[Option[(PoolInfo, Option[amm.PoolFeesSnapshot], Option[PoolVolumeSnapshot])]] =
+      def poolData =
         (for {
           info     <- OptionT(pools.getFirstPoolSwapTime(poolId))
           feesSnap <- OptionT.liftF(pools.fees(poolId, window))
@@ -202,9 +218,12 @@ object AmmStats {
         } yield (info, feesSnap, vol)).value
 
       (for {
-        (info, feesSnap, vol) <- OptionT(poolData.trans)
-        lockedX               <- OptionT(solver.convert(pool.lockedX, UsdUnits, poolSnapshots))
-        lockedY               <- OptionT(solver.convert(pool.lockedY, UsdUnits, poolSnapshots))
+        (info, feesSnapDB, volDB) <- OptionT(poolData.trans)
+        assets                    <- OptionT.liftF(assets.get)
+        vol      = volDB.flatMap(_.toPoolVolumeSnapshot(assets))
+        feesSnap = feesSnapDB.flatMap(_.toPoolFeesSnapshot(assets))
+        lockedX <- OptionT(solver.convert(pool.lockedX, UsdUnits, poolSnapshots))
+        lockedY <- OptionT(solver.convert(pool.lockedY, UsdUnits, poolSnapshots))
         tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
         volume            <- processPoolVolume(vol, window, poolSnapshots)
         fees              <- processPoolFee(feesSnap, window, poolSnapshots)
@@ -247,11 +266,15 @@ object AmmStats {
           feesSnap <- OptionT.liftF(pools.fees(poolId, window))
         } yield (info, vol, feesSnap)).value
       (for {
-        (info, vol, feesSnap) <- OptionT(queryPoolStats.trans)
-        pools                 <- OptionT.liftF(snapshots.get)
-        pool                  <- OptionT.fromOption[F](pools.find(_.id == poolId))
-        lockedX               <- OptionT(solver.convert(pool.lockedX, UsdUnits, pools))
-        lockedY               <- OptionT(solver.convert(pool.lockedY, UsdUnits, pools))
+        (info, volDB, feesSnapDB) <- OptionT(queryPoolStats.trans)
+        poolSnapshotsDB           <- OptionT.liftF(snapshots.get)
+        assets                    <- OptionT.liftF(assets.get)
+        vol      = volDB.flatMap(_.toPoolVolumeSnapshot(assets))
+        feesSnap = feesSnapDB.flatMap(_.toPoolFeesSnapshot(assets))
+        pools    = poolSnapshotsDB.flatMap(_.toPoolSnapshot(assets))
+        pool    <- OptionT.fromOption[F](pools.find(_.id == poolId))
+        lockedX <- OptionT(solver.convert(pool.lockedX, UsdUnits, pools))
+        lockedY <- OptionT(solver.convert(pool.lockedY, UsdUnits, pools))
         tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
         volume            <- processPoolVolume(vol, window, pools)
         fees              <- processPoolFee(feesSnap, window, pools)
@@ -322,6 +345,11 @@ object AmmStats {
         .flatMap { amounts =>
           snapshots.get.map(_.find(_.id == poolId)).map(amounts -> _)
         }
+        .flatMap {
+          case (amounts, Some(snapDB)) =>
+            assets.get.map(snapDB.toPoolSnapshot).map(amounts -> _)
+          case x => (x._1, none[PoolSnapshot]).pure[F]
+        }
         .map {
           case (amounts, Some(snap)) =>
             amounts.map { amount =>
@@ -334,9 +362,11 @@ object AmmStats {
 
     def getSwapTransactions(window: TimeWindow): F[TransactionsInfo] =
       (for {
-        swaps  <- OptionT.liftF(orders.getSwapTxs(window).trans)
-        numTxs <- OptionT.fromOption[F](swaps.headOption.map(_.numTxs))
-        pools  <- OptionT.liftF(snapshots.get)
+        swaps           <- OptionT.liftF(orders.getSwapTxs(window).trans)
+        numTxs          <- OptionT.fromOption[F](swaps.headOption.map(_.numTxs))
+        poolSnapshotsDB <- OptionT.liftF(snapshots.get)
+        assets          <- OptionT.liftF(assets.get)
+        pools = poolSnapshotsDB.flatMap(_.toPoolSnapshot(assets))
         volumes <- OptionT.liftF(
                      swaps.flatTraverse(swap =>
                        solver
@@ -349,9 +379,11 @@ object AmmStats {
 
     def getDepositTransactions(window: TimeWindow): F[TransactionsInfo] =
       (for {
-        deposits <- OptionT.liftF(orders.getDepositTxs(window).trans)
-        numTxs   <- OptionT.fromOption[F](deposits.headOption.map(_.numTxs))
-        pools    <- OptionT.liftF(snapshots.get)
+        deposits        <- OptionT.liftF(orders.getDepositTxs(window).trans)
+        numTxs          <- OptionT.fromOption[F](deposits.headOption.map(_.numTxs))
+        poolSnapshotsDB <- OptionT.liftF(snapshots.get)
+        assets          <- OptionT.liftF(assets.get)
+        pools = poolSnapshotsDB.flatMap(_.toPoolSnapshot(assets))
         volumes <- OptionT.liftF(deposits.flatTraverse { deposit =>
                      solver
                        .convert(deposit.assetX, UsdUnits, pools)
@@ -372,35 +404,44 @@ object AmmStats {
       pools
         .volumes(window)
         .trans
-        .flatMap(volumes => snapshots.get.map(volumes -> _))
-        .map { case (volumes, snapshots) =>
-          snapshots.flatMap { snapshot =>
-            val currentOpt = volumes
-              .find(_.poolId == snapshot.id)
+        .flatMap(volumes =>
+          snapshots.get
+            .flatMap { snapshotsDB =>
+              assets.get.map(r => snapshotsDB.flatMap(_.toPoolSnapshot(r)))
+            }
+            .map(volumes -> _)
+        )
+        .flatMap { case (volumesDB, snapshots) =>
+          assets.get.map { assets =>
+            val volumes = volumesDB.flatMap(_.toPoolVolumeSnapshot(assets))
+            snapshots.flatMap { snapshot =>
+              val currentOpt = volumes
+                .find(_.poolId == snapshot.id)
 
-            currentOpt.toList.map { vol =>
-              val tx = snapshot.lockedX
-              val ty = snapshot.lockedY
-              val vx = vol.volumeByX
-              val vy = vol.volumeByY
-              AmmMarketSummary(
-                MarketId(tx.id, ty.id),
-                tx.id,
-                tx.ticker,
-                ty.id,
-                ty.ticker,
-                RealPrice.calculate(tx.amount, tx.decimals, ty.amount, ty.decimals).setScale(6),
-                CryptoVolume(
-                  BigDecimal(vx.amount),
-                  CryptoUnits(AssetClass(vx.id, vx.ticker, vx.decimals)),
-                  window
-                ),
-                CryptoVolume(
-                  BigDecimal(vy.amount),
-                  CryptoUnits(AssetClass(vy.id, vy.ticker, vy.decimals)),
-                  window
+              currentOpt.toList.map { vol =>
+                val tx = snapshot.lockedX
+                val ty = snapshot.lockedY
+                val vx = vol.volumeByX
+                val vy = vol.volumeByY
+                AmmMarketSummary(
+                  MarketId(tx.id, ty.id),
+                  tx.id,
+                  tx.ticker,
+                  ty.id,
+                  ty.ticker,
+                  RealPrice.calculate(tx.amount, tx.decimals, ty.amount, ty.decimals).setScale(6),
+                  CryptoVolume(
+                    BigDecimal(vx.amount),
+                    CryptoUnits(AssetClass(vx.id, vx.ticker, vx.decimals)),
+                    window
+                  ),
+                  CryptoVolume(
+                    BigDecimal(vy.amount),
+                    CryptoUnits(AssetClass(vy.id, vy.ticker, vy.decimals)),
+                    window
+                  )
                 )
-              )
+              }
             }
           }
         }
