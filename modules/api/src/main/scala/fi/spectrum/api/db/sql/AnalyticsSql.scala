@@ -57,7 +57,7 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |	p.x_id,
          |	sx.tx,
          |	p.y_id,
-         |	sx.ty,
+         |	sx.ty
          |FROM
          |	pools p
          |	LEFT JOIN (
@@ -78,82 +78,125 @@ final class AnalyticsSql(implicit lg: LogHandler) {
   def getPoolVolumes(id: PoolId, tw: TimeWindow): Query0[PoolVolumeSnapshotDB] = {
     val fragment = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
-         |select distinct on (p.pool_id)
-         |  p.pool_id,
-         |  p.x_id,
-         |  sx.tx,
-         |  p.y_id,
-         |  sx.ty,
-         |from pools p
-         |left join (
-         |  select
-         |    s.pool_id,
-         |    cast(sum(case when (s.base_id = p.y_id) then s.quote_amount else 0 end) as BIGINT) as tx,
-         |    cast(sum(case when (s.base_id = p.x_id) then s.quote_amount else 0 end) as BIGINT) as ty
-         |  from swaps s
-         |  left join pools p on p.pool_state_id = s.pool_state_id
-         |  where s.pool_id = $id and $fragment
-         |  group by s.pool_id
-         |) as sx on sx.pool_id = p.pool_id
-         |where sx.pool_id is not null
+         |SELECT DISTINCT ON (p.pool_id)
+         |	p.pool_id,
+         |	p.x_id,
+         |	sx.tx,
+         |	p.y_id,
+         |	sx.ty
+         |FROM
+         |	pools p
+         |	LEFT JOIN (
+         |		SELECT
+         |			s.pool_id,
+         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
+         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
+         |		FROM
+         |			swaps s
+         |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id
+         |		WHERE
+         |			s.pool_id = $id and $fragment
+         |		GROUP BY
+         |			s.pool_id) AS sx ON sx.pool_id = p.pool_id
+         |WHERE
+         |	sx.pool_id IS NOT NULL
          """.stripMargin.query[PoolVolumeSnapshotDB]
   }
 
   def getPoolFees(poolId: PoolId, tw: TimeWindow): Query0[PoolFeesSnapshotDB] = {
     val fragment = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
-         |select distinct on (p.pool_id)
-         |  p.pool_id,
-         |  p.x_id,
-         |  sx.tx,
-         |  p.y_id,
-         |  sx.ty,
-         |from pools p
-         |left join (
-         |  select
-         |    s.pool_id,
-         |    cast(sum(case when (s.base_id = p.y_id) then s.quote_amount::decimal * (1000 - p.fee_num) / 1000 else 0 end) as bigint) as tx,
-         |    cast(sum(case when (s.base_id = p.x_id) then s.quote_amount::decimal * (1000 - p.fee_num) / 1000 else 0 end) as bigint) as ty
-         |  from swaps s
-         |  left join pools p on p.pool_state_id = s.pool_state_id
-         |  where p.pool_id = $poolId and $fragment
-         |  group by s.pool_id
-         |) as sx on sx.pool_id = p.pool_id
-         |where sx.pool_id is not null
+         |SELECT DISTINCT ON (p.pool_id)
+         |	p.pool_id,
+         |	p.x_id,
+         |	sx.tx,
+         |	p.y_id,
+         |	sx.ty
+         |FROM
+         |	pools p
+         |	LEFT JOIN (
+         |		SELECT
+         |			s.pool_id,
+         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount::decimal * (1000 - p.fee_num) / 1000 ELSE 0 END) AS bigint) AS tx,
+         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount::decimal * (1000 - p.fee_num) / 1000 ELSE 0 END) AS bigint) AS ty
+         |		FROM
+         |			swaps s
+         |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id
+         |		WHERE
+         |			p.pool_id = $poolId
+         |			AND $fragment
+         |		GROUP BY
+         |			s.pool_id) AS sx ON sx.pool_id = p.pool_id
+         |WHERE
+         |	sx.pool_id IS NOT NULL
          """.stripMargin.query[PoolFeesSnapshotDB]
   }
 
   def getPrevPoolTrace(id: PoolId, depth: Int, currHeight: Int): Query0[PoolTrace] =
     sql"""
-         |select p.pool_id, p.x_id, p.x_amount, ax.ticker, ax.decimals, p.y_id, p.y_amount, ay.ticker, ay.decimals, p.height
-         |from pools p
-         |left join assets ax on ax.id = p.x_id
-         |left join assets ay on ay.id = p.y_id
-         |where p.height < $currHeight - $depth
-         |and p.pool_id = $id
-         |order by p.height desc
-         |limit 1
+         |SELECT
+         |	p.pool_id,
+         |	p.x_id,
+         |	p.x_amount,
+         |	ax.ticker,
+         |	ax.decimals,
+         |	p.y_id,
+         |	p.y_amount,
+         |	ay.ticker,
+         |	ay.decimals,
+         |	p.height
+         |FROM
+         |	pools p
+         |	LEFT JOIN assets ax ON ax.id = p.x_id
+         |	LEFT JOIN assets ay ON ay.id = p.y_id
+         |WHERE
+         |	p.height < $currHeight - $depth
+         |	AND p.pool_id = $id
+         |ORDER BY
+         |	p.height DESC
+         |LIMIT 1
          """.stripMargin.query[PoolTrace]
 
   def getPoolTrace(id: PoolId, depth: Int, currHeight: Int): Query0[PoolTrace] =
     sql"""
-         |select p.pool_id, p.x_id, p.x_amount, ax.ticker, ax.decimals, p.y_id, p.y_amount, ay.ticker, ay.decimals, p.height
-         |from pools p
-         |left join assets ax on ax.id = p.x_id
-         |left join assets ay on ay.id = p.y_id
-         |where p.pool_id = $id
-         |and p.height >= $currHeight - $depth
+         |SELECT
+         |	p.pool_id,
+         |	p.x_id,
+         |	p.x_amount,
+         |	ax.ticker,
+         |	ax.decimals,
+         |	p.y_id,
+         |	p.y_amount,
+         |	ay.ticker,
+         |	ay.decimals,
+         |	p.height
+         |FROM
+         |	pools p
+         |	LEFT JOIN assets ax ON ax.id = p.x_id
+         |	LEFT JOIN assets ay ON ay.id = p.y_id
+         |WHERE
+         |	p.pool_id = $id
+         |	AND p.height >= $currHeight - $depth
          """.stripMargin.query[PoolTrace]
 
   def getAvgPoolSnapshot(id: PoolId, tw: TimeWindow, resolution: Int): Query0[AvgAssetAmounts] = {
     val fragment = mkTimestamp(tw, "b.timestamp")
     sql"""
-         |select avg(p.x_amount) as avg_x_amount, avg(p.y_amount) as avg_y_amount, avg(b.timestamp), ((p.height / $resolution)::integer) as k
-         |from pools p
-         |left join blocks b on b.height = p.height
-         |where pool_id = $id and $fragment
-         |group by k
-         |order by k
+         |SELECT
+         |	avg(p.x_amount) AS avg_x_amount,
+         |	avg(p.y_amount) AS avg_y_amount,
+         |	avg(b.timestamp),
+         |	((p.height / $resolution)::integer) AS k
+         |FROM
+         |	pools p
+         |	LEFT JOIN blocks b ON b.height = p.height
+         |WHERE
+         |	pool_id = $id
+         |	AND $fragment
+         |GROUP BY
+         |	k
+         |ORDER BY
+         |	k
          """.stripMargin.query[AvgAssetAmounts]
   }
 
@@ -161,10 +204,25 @@ final class AnalyticsSql(implicit lg: LogHandler) {
     val fragment  = mkTimestamp(tw, "sx.executed_transaction_timestamp")
     val fragment2 = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
-         |select s.min_quote_id, s.min_quote_amount, a.ticker, a.decimals,
-         |(select count(*) from swaps sx where quote_amount is not null and $fragment) as numTxs from swaps s
-         |left join assets a on a.id = s.min_quote_id
-         |where s.quote_amount is not null and $fragment2
+         |SELECT
+         |	s.min_quote_id,
+         |	s.min_quote_amount,
+         |	a.ticker,
+         |	a.decimals,
+         |	(
+         |		SELECT
+         |			count(*)
+         |		FROM
+         |			swaps sx
+         |		WHERE
+         |			quote_amount IS NOT NULL
+         |			AND $fragment) AS numTxs
+         |	FROM
+         |		swaps s
+         |	LEFT JOIN assets a ON a.id = s.min_quote_id
+         |WHERE
+         |	s.quote_amount IS NOT NULL
+         |	AND $fragment2
          """.stripMargin.query[SwapInfo]
   }
 
@@ -172,11 +230,30 @@ final class AnalyticsSql(implicit lg: LogHandler) {
     val fragment  = mkTimestamp(tw, "sx.executed_transaction_timestamp")
     val fragment2 = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
-         |select s.input_id_x, s.input_amount_x, ax.ticker, ax.decimals, s.input_id_y, s.input_amount_y, ay.ticker, ay.decimals,
-         |(select count(*) from deposits sx where output_amount_lp is not null and $fragment) as numTxs from deposits s
-         |left join assets ax on ax.id = s.input_id_x  
-         |left join assets ay on ay.id = s.input_id_y
-         |where output_amount_lp is not null and $fragment2
+         |SELECT
+         |	s.input_id_x,
+         |	s.input_amount_x,
+         |	ax.ticker,
+         |	ax.decimals,
+         |	s.input_id_y,
+         |	s.input_amount_y,
+         |	ay.ticker,
+         |	ay.decimals,
+         |	(
+         |		SELECT
+         |			count(*)
+         |		FROM
+         |			deposits sx
+         |		WHERE
+         |			output_amount_lp IS NOT NULL
+         |			AND $fragment) AS numTxs
+         |	FROM
+         |		deposits s
+         |	LEFT JOIN assets ax ON ax.id = s.input_id_x
+         |	LEFT JOIN assets ay ON ay.id = s.input_id_y
+         |WHERE
+         |	output_amount_lp IS NOT NULL
+         |	AND $fragment2
          """.stripMargin.query[DepositInfo]
   }
 
