@@ -10,4 +10,7 @@ final class AssetsSql(implicit lg: LogHandler) {
 
   def getAssetById(id: TokenId): Query0[AssetInfo] =
     sql"""select id, ticker, decimals from assets where id = $id""".stripMargin.query[AssetInfo]
+
+  def getAll: Query0[AssetInfo] =
+    sql"""select id, ticker, decimals from assets""".query
 }
