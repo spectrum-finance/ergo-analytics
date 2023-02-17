@@ -3,7 +3,7 @@ package fi.spectrum.api.db.sql
 import doobie.implicits._
 import doobie.util.query.Query0
 import doobie.{Fragment, LogHandler}
-import fi.spectrum.api.db.models.{PoolFeesSnapshotDB, PoolSnapshotDB, PoolVolumeSnapshotDB}
+import fi.spectrum.api.db.models.{PoolFeesSnapshotDB, PoolSnapshotDB, PoolTraceDB, PoolVolumeSnapshotDB}
 import fi.spectrum.api.db.models.amm._
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.core.domain.order.PoolId
@@ -132,67 +132,51 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          """.stripMargin.query[PoolFeesSnapshotDB]
   }
 
-  def getPrevPoolTrace(id: PoolId, depth: Int, currHeight: Int): Query0[PoolTrace] =
+  def getPrevPoolTrace(id: PoolId, depth: Int, currHeight: Int): Query0[PoolTraceDB] =
     sql"""
          |SELECT
          |	p.pool_id,
          |	p.x_id,
          |	p.x_amount,
-         |	ax.ticker,
-         |	ax.decimals,
          |	p.y_id,
          |	p.y_amount,
-         |	ay.ticker,
-         |	ay.decimals,
          |	p.height
          |FROM
          |	pools p
-         |	LEFT JOIN assets ax ON ax.id = p.x_id
-         |	LEFT JOIN assets ay ON ay.id = p.y_id
          |WHERE
          |	p.height < $currHeight - $depth
          |	AND p.pool_id = $id
          |ORDER BY
          |	p.height DESC
          |LIMIT 1
-         """.stripMargin.query[PoolTrace]
+         """.stripMargin.query[PoolTraceDB]
 
-  def getPoolTrace(id: PoolId, depth: Int, currHeight: Int): Query0[PoolTrace] =
+  def getPoolTrace(id: PoolId, depth: Int, currHeight: Int): Query0[PoolTraceDB] =
     sql"""
          |SELECT
          |	p.pool_id,
          |	p.x_id,
          |	p.x_amount,
-         |	ax.ticker,
-         |	ax.decimals,
          |	p.y_id,
          |	p.y_amount,
-         |	ay.ticker,
-         |	ay.decimals,
          |	p.height
          |FROM
          |	pools p
-         |	LEFT JOIN assets ax ON ax.id = p.x_id
-         |	LEFT JOIN assets ay ON ay.id = p.y_id
          |WHERE
          |	p.pool_id = $id
          |	AND p.height >= $currHeight - $depth
-         """.stripMargin.query[PoolTrace]
+         """.stripMargin.query[PoolTraceDB]
 
   def getAvgPoolSnapshot(id: PoolId, tw: TimeWindow, resolution: Int): Query0[AvgAssetAmounts] = {
-    val fragment = mkTimestamp(tw, "b.timestamp")
+    val fragment = mkTimestamp(tw, "p.timestamp")
     sql"""
          |SELECT
          |	avg(p.x_amount) AS avg_x_amount,
          |	avg(p.y_amount) AS avg_y_amount,
-         |	avg(b.timestamp),
+         |	avg(p.timestamp),
          |	((p.height / $resolution)::integer) AS k
-         |FROM
-         |	pools p
-         |	LEFT JOIN blocks b ON b.height = p.height
-         |WHERE
-         |	pool_id = $id
-         |	AND $fragment
+         |FROM pools p
+         |WHERE pool_id = $id AND $fragment
          |GROUP BY
          |	k
          |ORDER BY

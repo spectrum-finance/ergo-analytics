@@ -37,9 +37,12 @@ object BlocksProcess {
     lift: Lift[F, I],
     logs: Logs[I, F]
   ): I[BlocksProcess[S]] = logs.forService[BlocksProcess[S]].flatMap { implicit __ =>
-    network.getCurrentNetworkHeight.lift[I].map { height =>
-      new Live[F, S, C](height)
-    }
+    for {
+      _      <- snapshots.update.lift[I]
+      _      <- volumes24H.update.lift[I]
+      _      <- assets.update.lift[I]
+      height <- network.getCurrentNetworkHeight.lift[I]
+    } yield new Live[F, S, C](height)
   }
 
   final private class Live[
