@@ -17,6 +17,8 @@ import tofu.time.Clock
 
 trait Asset[F[_]] {
   def assetById(id: TokenId): F[Option[AssetInfo]]
+
+  def getAll: F[List[AssetInfo]]
 }
 
 object Asset {
@@ -41,12 +43,18 @@ object Asset {
 
     def assetById(id: TokenId): ConnectionIO[Option[AssetInfo]] =
       sql.getAssetById(id).option
+
+    def getAll: ConnectionIO[List[AssetInfo]] =
+      sql.getAll.to[List]
   }
 
   final class AssetsMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F]) extends Asset[Mid[F, *]] {
 
     def assetById(id: TokenId): Mid[F, Option[AssetInfo]] =
       processMetric(_, s"db.assets.by.id.$id")
+
+    def getAll: Mid[F, List[AssetInfo]] =
+      processMetric(_, s"db.assets.all")
   }
 
   final class Tracing[F[_]: FlatMap: Logging] extends Asset[Mid[F, *]] {
@@ -56,6 +64,13 @@ object Asset {
         _ <- trace"assetById(id=$id)"
         r <- _
         _ <- trace"assetById(id=$id) -> ${r.map(_.toString)}"
+      } yield r
+
+    def getAll: Mid[F, List[AssetInfo]] =
+      for {
+        _ <- trace"getAll()"
+        r <- _
+        _ <- trace"getAll() -> ${r.map(_.id)}"
       } yield r
   }
 }

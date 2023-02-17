@@ -46,9 +46,9 @@ object VerifiedTokens {
 
     def get: Mid[F, List[TokenId]] =
       for {
-        _ <- info"Get current verified tokens list"
+        _ <- trace"Get current verified tokens list"
         r <- _
-        _ <- info"Verified tokens list is: $r"
+        _ <- trace"Verified tokens list is: $r"
       } yield r
   }
 }
