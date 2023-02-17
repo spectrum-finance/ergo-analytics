@@ -3,6 +3,7 @@ package fi.spectrum.api.db.repositories
 import cats.tagless.syntax.functorK._
 import cats.{FlatMap, Functor, Monad}
 import doobie.ConnectionIO
+import fi.spectrum.api.db.models.{PoolFeesSnapshotDB, PoolSnapshotDB, PoolTraceDB, PoolVolumeSnapshotDB}
 import fi.spectrum.api.db.models.amm._
 import fi.spectrum.api.db.sql.AnalyticsSql
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
@@ -24,27 +25,27 @@ trait Pools[F[_]] {
 
   /** Get snapshots of all pools.
     */
-  def snapshots: F[List[PoolSnapshot]]
+  def snapshots: F[List[PoolSnapshotDB]]
 
   /** Get recent volumes by all pools.
     */
-  def volumes(window: TimeWindow): F[List[PoolVolumeSnapshot]]
+  def volumes(window: TimeWindow): F[List[PoolVolumeSnapshotDB]]
 
   /** Get volumes by a given pool.
     */
-  def volume(id: PoolId, window: TimeWindow): F[Option[PoolVolumeSnapshot]]
+  def volume(id: PoolId, window: TimeWindow): F[Option[PoolVolumeSnapshotDB]]
 
   /** Get fees by a given pool.
     */
-  def fees(id: PoolId, window: TimeWindow): F[Option[PoolFeesSnapshot]]
+  def fees(id: PoolId, window: TimeWindow): F[Option[PoolFeesSnapshotDB]]
 
   /** Get snapshots of a given pool within given depth.
     */
-  def trace(id: PoolId, depth: Int, currHeight: Int): F[List[PoolTrace]]
+  def trace(id: PoolId, depth: Int, currHeight: Int): F[List[PoolTraceDB]]
 
   /** Get most recent snapshot of a given pool below given depth.
     */
-  def prevTrace(id: PoolId, depth: Int, currHeight: Int): F[Option[PoolTrace]]
+  def prevTrace(id: PoolId, depth: Int, currHeight: Int): F[Option[PoolTraceDB]]
 
   /** Get average asset amounts in a given pool within given height window.
     */
@@ -74,22 +75,22 @@ object Pools {
     def getFirstPoolSwapTime(id: PoolId): ConnectionIO[Option[PoolInfo]] =
       sql.getFirstPoolSwapTime(id).option
 
-    def snapshots: ConnectionIO[List[PoolSnapshot]] =
+    def snapshots: ConnectionIO[List[PoolSnapshotDB]] =
       sql.getPoolSnapshots.to[List]
 
-    def volumes(window: TimeWindow): ConnectionIO[List[PoolVolumeSnapshot]] =
+    def volumes(window: TimeWindow): ConnectionIO[List[PoolVolumeSnapshotDB]] =
       sql.getPoolVolumes(window).to[List]
 
-    def volume(id: PoolId, window: TimeWindow): ConnectionIO[Option[PoolVolumeSnapshot]] =
+    def volume(id: PoolId, window: TimeWindow): ConnectionIO[Option[PoolVolumeSnapshotDB]] =
       sql.getPoolVolumes(id, window).option
 
-    def fees(id: PoolId, window: TimeWindow): ConnectionIO[Option[PoolFeesSnapshot]] =
+    def fees(id: PoolId, window: TimeWindow): ConnectionIO[Option[PoolFeesSnapshotDB]] =
       sql.getPoolFees(id, window).option
 
-    def trace(id: PoolId, depth: Int, currHeight: Int): ConnectionIO[List[PoolTrace]] =
+    def trace(id: PoolId, depth: Int, currHeight: Int): ConnectionIO[List[PoolTraceDB]] =
       sql.getPoolTrace(id, depth, currHeight).to[List]
 
-    def prevTrace(id: PoolId, depth: Int, currHeight: Int): ConnectionIO[Option[PoolTrace]] =
+    def prevTrace(id: PoolId, depth: Int, currHeight: Int): ConnectionIO[Option[PoolTraceDB]] =
       sql.getPrevPoolTrace(id, depth, currHeight).option
 
     def avgAmounts(id: PoolId, window: TimeWindow, resolution: Int): ConnectionIO[List[AvgAssetAmounts]] =
@@ -106,35 +107,35 @@ object Pools {
         _ <- trace"info(poolId=$poolId) -> ${r.size} info entities selected"
       } yield r
 
-    def volumes(window: TimeWindow): Mid[F, List[PoolVolumeSnapshot]] =
+    def volumes(window: TimeWindow): Mid[F, List[PoolVolumeSnapshotDB]] =
       for {
         _ <- trace"volumes(window=$window)"
         r <- _
         _ <- trace"volumes(window=$window) -> ${r.size} volume snapshots selected"
       } yield r
 
-    def volume(poolId: PoolId, window: TimeWindow): Mid[F, Option[PoolVolumeSnapshot]] =
+    def volume(poolId: PoolId, window: TimeWindow): Mid[F, Option[PoolVolumeSnapshotDB]] =
       for {
         _ <- trace"volume(poolId=$poolId, window=$window)"
         r <- _
         _ <- trace"volume(poolId=$poolId, window=$window) -> ${r.size} volume snapshots selected"
       } yield r
 
-    def fees(poolId: PoolId, window: TimeWindow): Mid[F, Option[PoolFeesSnapshot]] =
+    def fees(poolId: PoolId, window: TimeWindow): Mid[F, Option[PoolFeesSnapshotDB]] =
       for {
         _ <- trace"fees(poolId=$poolId, window=$window)"
         r <- _
         _ <- trace"fees(poolId=$poolId, window=$window) -> ${r.size} fees snapshots selected"
       } yield r
 
-    def trace(id: PoolId, depth: Int, currHeight: Int): Mid[F, List[PoolTrace]] =
+    def trace(id: PoolId, depth: Int, currHeight: Int): Mid[F, List[PoolTraceDB]] =
       for {
         _ <- trace"trace(poolId=$id, depth=$depth, currHeight=$currHeight)"
         r <- _
         _ <- trace"trace(poolId=$id, depth=$depth, currHeight=$currHeight) -> ${r.size} trace snapshots selected"
       } yield r
 
-    def prevTrace(id: PoolId, depth: Int, currHeight: Int): Mid[F, Option[PoolTrace]] =
+    def prevTrace(id: PoolId, depth: Int, currHeight: Int): Mid[F, Option[PoolTraceDB]] =
       for {
         _ <- trace"prevTrace(poolId=$id, depth=$depth, currHeight=$currHeight)"
         r <- _
@@ -148,7 +149,7 @@ object Pools {
         _ <- trace"avgAmounts(poolId=$id, window=$window, resolution=$resolution) -> ${r.size} trace snapshots selected"
       } yield r
 
-    def snapshots: Mid[F, List[PoolSnapshot]] =
+    def snapshots: Mid[F, List[PoolSnapshotDB]] =
       for {
         _ <- trace"snapshots()"
         r <- _
@@ -161,22 +162,22 @@ object Pools {
     def getFirstPoolSwapTime(id: PoolId): Mid[F, Option[PoolInfo]] =
       processMetric(_, s"db.pools.get.first.pool.swap.time.$id")
 
-    def snapshots: Mid[F, List[PoolSnapshot]] =
+    def snapshots: Mid[F, List[PoolSnapshotDB]] =
       processMetric(_, s"db.pools.snapshots")
 
-    def volumes(window: TimeWindow): Mid[F, List[PoolVolumeSnapshot]] =
+    def volumes(window: TimeWindow): Mid[F, List[PoolVolumeSnapshotDB]] =
       processMetric(_, s"db.pools.volumes")
 
-    def volume(id: PoolId, window: TimeWindow): Mid[F, Option[PoolVolumeSnapshot]] =
+    def volume(id: PoolId, window: TimeWindow): Mid[F, Option[PoolVolumeSnapshotDB]] =
       processMetric(_, s"db.pools.volume.$id")
 
-    def fees(id: PoolId, window: TimeWindow): Mid[F, Option[PoolFeesSnapshot]] =
+    def fees(id: PoolId, window: TimeWindow): Mid[F, Option[PoolFeesSnapshotDB]] =
       processMetric(_, s"db.pools.fees.$id")
 
-    def trace(id: PoolId, depth: Int, currHeight: Int): Mid[F, List[PoolTrace]] =
+    def trace(id: PoolId, depth: Int, currHeight: Int): Mid[F, List[PoolTraceDB]] =
       processMetric(_, s"db.pools.trace.$id")
 
-    def prevTrace(id: PoolId, depth: Int, currHeight: Int): Mid[F, Option[PoolTrace]] =
+    def prevTrace(id: PoolId, depth: Int, currHeight: Int): Mid[F, Option[PoolTraceDB]] =
       processMetric(_, s"db.pools.prev.trace.$id")
 
     def avgAmounts(id: PoolId, window: TimeWindow, resolution: Int): Mid[F, List[AvgAssetAmounts]] =
