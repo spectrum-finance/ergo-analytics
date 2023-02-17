@@ -54,9 +54,9 @@ object Volumes24H {
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Volumes24H[Mid[F, *]] {
-    def update: Mid[F, Unit] = info"It's time to update volumes!" >> _
+    def update: Mid[F, Unit] = trace"It's time to update volumes!" >> _
 
-    def get: Mid[F, List[PoolVolumeSnapshotDB]] = info"Get current volumes" >> _
+    def get: Mid[F, List[PoolVolumeSnapshotDB]] = trace"Get current volumes" >> _
   }
 
 }

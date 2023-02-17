@@ -49,6 +49,6 @@ object Assets {
   final private class Tracing[F[_]: Monad: Logging] extends Assets[Mid[F, *]] {
     def update: Mid[F, Unit] = info"It's time to update assets cache!" >> _
 
-    def get: Mid[F, List[AssetInfo]] = info"Get current assets" >> _
+    def get: Mid[F, List[AssetInfo]] = trace"Get current assets" >> _
   }
 }

@@ -477,16 +477,16 @@ object AmmStats {
 
     def getPoolsStats(window: TimeWindow): Mid[F, List[PoolStats]] =
       for {
-        _ <- info"getPoolsStats($window)"
+        _ <- trace"getPoolsStats($window)"
         r <- _
-        _ <- info"getPoolsStats($window) - $r"
+        _ <- trace"getPoolsStats($window) - $r"
       } yield r
 
     def convertToFiat(id: TokenId, amount: Long): Mid[F, Option[FiatEquiv]] =
       for {
-        _ <- info"convertToFiat($id, $amount)"
+        _ <- trace"convertToFiat($id, $amount)"
         r <- _
-        _ <- info"convertToFiat($id, $amount) - $r"
+        _ <- trace"convertToFiat($id, $amount) - $r"
       } yield r
 
     def getPoolsSummaryVerified: Mid[F, List[PoolSummary]] =
@@ -512,30 +512,30 @@ object AmmStats {
 
     def getPoolPriceChart(poolId: PoolId, window: TimeWindow, resolution: Int): Mid[F, List[PricePoint]] =
       for {
-        _ <- info"getPoolPriceChart($poolId, $window, $resolution)"
+        _ <- trace"getPoolPriceChart($poolId, $window, $resolution)"
         r <- _
-        _ <- info"getPoolPriceChart($poolId, $window, $resolution) - $r"
+        _ <- trace"getPoolPriceChart($poolId, $window, $resolution) - $r"
       } yield r
 
     def getSwapTransactions(window: TimeWindow): Mid[F, TransactionsInfo] =
       for {
-        _ <- info"getSwapTransactions($window)"
+        _ <- trace"getSwapTransactions($window)"
         r <- _
-        _ <- info"getSwapTransactions($window) - $r"
+        _ <- trace"getSwapTransactions($window) - $r"
       } yield r
 
     def getDepositTransactions(window: TimeWindow): Mid[F, TransactionsInfo] =
       for {
-        _ <- info"getDepositTransactions($window)"
+        _ <- trace"getDepositTransactions($window)"
         r <- _
-        _ <- info"getDepositTransactions($window) - $r"
+        _ <- trace"getDepositTransactions($window) - $r"
       } yield r
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
       for {
-        _ <- info"getMarkets($window)"
+        _ <- trace"getMarkets($window)"
         r <- _
-        _ <- info"getMarkets($window) - $r"
+        _ <- trace"getMarkets($window) - $r"
       } yield r
   }
 
