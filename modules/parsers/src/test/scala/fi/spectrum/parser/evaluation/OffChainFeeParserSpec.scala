@@ -12,6 +12,7 @@ import org.scalatest.propspec.AnyPropSpec
 class OffChainFeeParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   implicit def addressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(ErgoAddressEncoder.MainnetNetworkPrefix)
+  implicit val spf: TokenId = TokenId.unsafeFromString("")
 
   val orderParser = OrderParser.make
   val poolParser  = PoolParser.make
