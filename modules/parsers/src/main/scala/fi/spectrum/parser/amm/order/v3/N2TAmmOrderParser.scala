@@ -19,7 +19,7 @@ import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.N2T._
 import sigmastate.Values
 
-class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
+final class N2TAmmOrderParser(implicit spf: TokenId) extends AmmOrderParser[V3, N2T] {
 
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap] = {
     val template = ErgoTreeTemplate.fromBytes(tree.template)
@@ -30,17 +30,18 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
 
   private def swapSell(box: Output, tree: Values.ErgoTree): Option[Swap] =
     for {
-      poolId       <- tree.constants.parseBytea(11).map(PoolId.fromBytes)
-      maxMinerFee  <- tree.constants.parseLong(32)
-      baseAmount   <- tree.constants.parseLong(24).map(AssetAmount.native)
-      outId        <- tree.constants.parseBytea(13).map(TokenId.fromBytes)
-      minOutAmount <- tree.constants.parseLong(14)
+      baseAmount   <- tree.constants.parseLong(3).map(AssetAmount.native)
+      poolId       <- tree.constants.parseBytea(13).map(PoolId.fromBytes)
+      maxMinerFee  <- tree.constants.parseLong(31)
+      outId        <- tree.constants.parseBytea(15).map(TokenId.fromBytes)
+      minOutAmount <- tree.constants.parseLong(16)
       outAmount = AssetAmount(outId, minOutAmount)
-      dexFeePerTokenNum   <- tree.constants.parseLong(17)
-      dexFeePerTokenDenom <- tree.constants.parseLong(18)
-      redeemer            <- tree.constants.parseBytea(12).map(SErgoTree.fromBytes)
+      dexFeePerTokenDenom   <- tree.constants.parseLong(1)
+      dexFeePerTokenNumDiff <- tree.constants.parseLong(2)
+      dexFeePerTokenNum = dexFeePerTokenDenom - dexFeePerTokenNumDiff
+      redeemer     <- tree.constants.parseBytea(14).map(SErgoTree.fromBytes)
+      reserveExFee <- tree.constants.parseLong(11)
       params = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
-      reserveExFee <- tree.constants.parseLong(1)
     } yield SwapV3(
       box,
       poolId,
@@ -53,18 +54,17 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
 
   private def swapBuy(box: Output, tree: Values.ErgoTree): Option[Swap] =
     for {
-      poolId         <- tree.constants.parseBytea(13).map(PoolId.fromBytes)
-      maxMinerFee    <- tree.constants.parseLong(25)
-      spectrumId     <- tree.constants.parseBytea(1).map(TokenId.fromBytes)
-      inAmount       <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
-      minQuoteAmount <- tree.constants.parseLong(15)
+      poolId         <- tree.constants.parseBytea(11).map(PoolId.fromBytes)
+      maxMinerFee    <- tree.constants.parseLong(24)
+      inAmount       <- tree.constants.parseLong(1)
+      inAssetAmount  <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount)).map(_.withAmount(inAmount))
+      minQuoteAmount <- tree.constants.parseLong(13)
       outAmount = AssetAmount.native(minQuoteAmount)
-      dexFeePerTokenDenom   <- tree.constants.parseLong(10)
-      dexFeePerTokenNumDiff <- tree.constants.parseLong(9)
-      dexFeePerTokenNum = dexFeePerTokenDenom - dexFeePerTokenNumDiff
-      reserveExFee <- tree.constants.parseLong(8)
-      redeemer     <- tree.constants.parseBytea(14).map(SErgoTree.fromBytes)
-      baseAmount = if (spectrumId == inAmount.tokenId) inAmount - reserveExFee else inAmount
+      dexFeePerTokenDenom <- tree.constants.parseLong(8)
+      dexFeePerTokenNum   <- tree.constants.parseLong(9)
+      reserveExFee        <- tree.constants.parseLong(7)
+      redeemer            <- tree.constants.parseBytea(12).map(SErgoTree.fromBytes)
+      baseAmount = inAssetAmount
       params     = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV3(
       box,
@@ -81,14 +81,16 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositV3,
         for {
-          poolId      <- tree.constants.parseBytea(14).map(PoolId.fromBytes)
-          maxMinerFee <- tree.constants.parseLong(23)
-          dexFeeFromY <- tree.constants.parseBoolean(10)
-          inX         <- tree.constants.parseLong(1).map(AssetAmount.native)
-          inY         <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
-          dexFee      <- tree.constants.parseLong(11)
-          redeemer    <- tree.constants.parseBytea(15).map(SErgoTree.fromBytes)
-          params = AmmDepositParams(inX, if (dexFeeFromY) inY - dexFee else inY)
+          poolId         <- tree.constants.parseBytea(12).map(PoolId.fromBytes)
+          maxMinerFee    <- tree.constants.parseLong(21)
+          selfX          <- tree.constants.parseLong(1).map(AssetAmount.native)
+          selfYAmount    <- tree.constants.parseLong(9)
+          selfYBoxAmount <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
+          selfY = selfYBoxAmount.withAmount(selfYAmount)
+          dexFee <- if (selfY.tokenId == spf) (selfYBoxAmount.amount - selfY.amount).some
+                    else box.assets.find(_.tokenId == spf).map(_.amount)
+          redeemer <- tree.constants.parseBytea(13).map(SErgoTree.fromBytes)
+          params = AmmDepositParams(selfX, selfY)
         } yield AmmDepositV3(
           box,
           SPF(dexFee),
@@ -128,5 +130,5 @@ class N2TAmmOrderParser extends AmmOrderParser[V3, N2T] {
 }
 
 object N2TAmmOrderParser {
-  implicit def n2tV3: AmmOrderParser[V3, N2T] = new N2TAmmOrderParser
+  implicit def n2tV3(implicit spf: TokenId): AmmOrderParser[V3, N2T] = new N2TAmmOrderParser
 }

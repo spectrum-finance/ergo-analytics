@@ -8,7 +8,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import fi.spectrum.core.config.ProtocolConfig
 import fi.spectrum.core.db.PostgresTransactor
 import fi.spectrum.core.db.doobieLogging.makeEmbeddableHandler
-import fi.spectrum.core.domain.{BlockId, BoxId, TxId}
+import fi.spectrum.core.domain.{BlockId, BoxId, TokenId, TxId}
 import fi.spectrum.core.storage.OrdersStorage
 import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.graphite.{GraphiteClient, Metrics}
@@ -83,6 +83,7 @@ object Main extends IOApp {
       config <- ConfigBundle.load[F](configPathOpt).toResource
       implicit0(context: WithContext[F, ConfigBundle]) = config.makeContext[F]
       implicit0(e: ErgoAddressEncoder) <- ProtocolConfig.access[F].map(_.networkType.addressEncoder).toResource
+      implicit0(spf: TokenId) = config.spfTokenId
       transactor                       <- PostgresTransactor.make[F]("indexer")
       implicit0(xa: Txr.Continuational[F])        = Txr.continuational[F](transactor)
       implicit0(logsF: Logging.Make[F])           = Logging.Make.plain[F]
