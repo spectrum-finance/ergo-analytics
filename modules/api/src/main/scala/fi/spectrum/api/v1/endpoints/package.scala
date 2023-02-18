@@ -13,6 +13,8 @@ package object endpoints {
 
   implicit def schemaBigInt: Schema[BigInt] = Schema.schemaForBigDecimal.map(_.toBigIntExact)(BigDecimal(_))
 
+  val monthMillis = 2629746000L
+
   def paging: EndpointInput[Paging] =
     (query[Option[Int]]("offset").validateOption(Validator.min(0)) and
       query[Option[Int]]("limit").validateOption(Validator.min(1))
