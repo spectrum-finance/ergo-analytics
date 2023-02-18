@@ -70,7 +70,7 @@ object Producer {
     def produce: Pipe[F, Record[K, V], Unit] =
       _.map { case Record(k, v) =>
         ProducerRecords.one(ProducerRecord(conf.topicId.value, k, v))
-      }.evalMap(kafkaProducer.produce).mapAsync(conf.parallelism)(identity).drain
+      }.evalMap(kafkaProducer.produce).mapAsync(conf.parallelism)(identity).void
   }
 
 }

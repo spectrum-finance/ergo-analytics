@@ -22,12 +22,14 @@ import fi.spectrum.parser.amm.order.v3.N2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.v3.T2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.v3.{N2T => V3N2T, T2T => V3T2T}
 import fi.spectrum.parser.domain.AmmType
+import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 
 class AmmOrderParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   implicit val spf: TokenId = TokenId.unsafeFromString("")
+  implicit val e: ErgoAddressEncoder = new ErgoAddressEncoder(ErgoAddressEncoder.MainnetNetworkPrefix)
 
   val parser: AmmOrderParser[Version, AmmType] = AmmOrderParser.make
 

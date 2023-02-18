@@ -73,10 +73,12 @@ object OffChainFeeParser {
               def fee: Option[SPF] =
                 if (needCalculate) eval.flatMap(_.widen[SwapEvaluation]).flatMap { eval =>
                   Optional[Order, SwapParams].getOption(order.order).map { params =>
-                    SPF(BigInt(params.dexFeePerTokenNum) / params.dexFeePerTokenDenom * eval.output.amount)
+                    val fee = BigDecimal(params.dexFeePerTokenNum) / params.dexFeePerTokenDenom * eval.output.amount
+                    SPF(fee.toLong)
                   }
                 }
                 else s.some
+
               fee.map(OffChainFee(poolId, order.order.id, box.boxId, pk, _))
             case (Some(ERG(_)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>
               OffChainFee(poolId, order.order.id, box.boxId, pk, ERG(box.value)).some
