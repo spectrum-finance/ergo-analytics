@@ -1,5 +1,6 @@
 package fi.spectrum.parser
 
+import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order
 import fi.spectrum.core.domain.transaction.Output
@@ -36,10 +37,10 @@ trait OrderParser { self =>
 
 object OrderParser {
 
-  implicit def make: OrderParser = (box: Output) =>
+  implicit def make(implicit spf: TokenId): OrderParser = (box: Output) =>
     List[OrderParser](ammOrderParser, lockOrderParser, lmParser).reduceLeft(_ or _).parse(box)
 
-  private def ammOrderParser: OrderParser = {
+  private def ammOrderParser(implicit spf: TokenId): OrderParser = {
     val ammParser: AmmOrderParser[Version, AmmType] = AmmOrderParser.make
     (box: Output) => ammParser.order(box, ErgoTreeSerializer.default.deserialize(box.ergoTree))
   }

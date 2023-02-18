@@ -9,7 +9,7 @@ import dev.profunktor.redis4cats.RedisCommands
 import fi.spectrum.cache.redis.codecs._
 import fi.spectrum.cache.redis.mkRedis
 import fi.spectrum.core.config.ProtocolConfig
-import fi.spectrum.core.domain.{BoxId, TxId}
+import fi.spectrum.core.domain.{BoxId, TokenId, TxId}
 import fi.spectrum.core.storage.OrdersStorage
 import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.graphite.MetricsMiddleware.MetricsMiddleware
@@ -82,6 +82,7 @@ object Main extends IOApp {
       config <- ConfigBundle.load[F](configPathOpt).toResource
       implicit0(context: WithContext[F, ConfigBundle]) = config.makeContext[F]
       implicit0(e: ErgoAddressEncoder) <- ProtocolConfig.access[F].map(_.networkType.addressEncoder).toResource
+      implicit0(spf: TokenId)           = config.spfTokenId
       implicit0(logsF: Logging.Make[F]) = Logging.Make.plain[F]
       implicit0(logsFF: Logs[F, F])     = Logs.sync[F, F]
       implicit0(csC: CSConsumer[S, F]) =
@@ -92,8 +93,7 @@ object Main extends IOApp {
       implicit0(metricsF: Metrics[F])                  = Metrics.make[F]
       implicit0(storage: OrdersStorage[F])             = OrdersStorage.make[F]
       implicit0(ordersParser: ProcessedOrderParser[F]) = ProcessedOrderParser.make[F]
-//      _ <- storage.deletePool(BoxId("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109")).toResource
-      implicit0(poolsParser: PoolParser) = PoolParser.make
+      implicit0(poolsParser: PoolParser)               = PoolParser.make
       implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
       implicit0(redisCache: RedisCache[F])               <- RedisCache.make[F].toResource
       implicit0(mempool: Mempool[F])                     <- Mempool.make[F].toResource

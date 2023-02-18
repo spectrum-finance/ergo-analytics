@@ -4,6 +4,7 @@ import derevo.derive
 import derevo.pureconfig.pureconfigReader
 import fi.spectrum.cache.redis.RedisConfig
 import fi.spectrum.core.config.{ConfigBundleCompanion, ProtocolConfig}
+import fi.spectrum.core.domain.TokenId
 import fi.spectrum.graphite.GraphiteSettings
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import glass.macros.{ClassyPOptics, promote}
@@ -21,6 +22,7 @@ final case class ConfigBundle(
   graphite: GraphiteSettings,
   csConsumer: ConsumerConfig,
   mempoolConsumer: ConsumerConfig,
+  @promote spfTokenId: TokenId,
   http: HttpConfig,
   @promote mempool: MempoolConfig
 )
