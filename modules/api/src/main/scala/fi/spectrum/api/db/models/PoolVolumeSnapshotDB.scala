@@ -14,15 +14,15 @@ final case class PoolVolumeSnapshotDB(
   volumeByY: AssetAmount
 ) {
 
-  def toPoolVolumeSnapshot(assets: List[AssetInfo]): Option[PoolVolumeSnapshot] =
-    for {
-      x <- assets.find(_.id == volumeByX.tokenId)
-      y <- assets.find(_.id == volumeByY.tokenId)
-    } yield PoolVolumeSnapshot(
+  def toPoolVolumeSnapshot(assets: List[AssetInfo]): PoolVolumeSnapshot = {
+    val x = assets.find(_.id == volumeByX.tokenId)
+    val y = assets.find(_.id == volumeByY.tokenId)
+    PoolVolumeSnapshot(
       poolId,
-      FullAsset(volumeByX.tokenId, volumeByX.amount, x.ticker, x.decimals),
-      FullAsset(volumeByY.tokenId, volumeByY.amount, y.ticker, y.decimals)
+      FullAsset(volumeByX.tokenId, volumeByX.amount, x.flatMap(_.ticker), x.flatMap(_.decimals)),
+      FullAsset(volumeByY.tokenId, volumeByY.amount, y.flatMap(_.ticker), y.flatMap(_.decimals))
     )
+  }
 }
 
 object PoolVolumeSnapshotDB

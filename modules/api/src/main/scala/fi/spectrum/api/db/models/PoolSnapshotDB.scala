@@ -14,13 +14,13 @@ final case class PoolSnapshotDB(
   lockedY: AssetAmount
 ) {
 
-  def toPoolSnapshot(assets: List[AssetInfo]): Option[PoolSnapshot] =
-    for {
-      x <- assets.find(_.id == lockedX.tokenId)
-      y <- assets.find(_.id == lockedY.tokenId)
-    } yield PoolSnapshot(
+  def toPoolSnapshot(assets: List[AssetInfo]): PoolSnapshot = {
+    val x = assets.find(_.id == lockedX.tokenId)
+    val y = assets.find(_.id == lockedY.tokenId)
+    PoolSnapshot(
       id,
-      FullAsset(lockedX.tokenId, lockedX.amount, x.ticker, x.decimals),
-      FullAsset(lockedY.tokenId, lockedY.amount, y.ticker, y.decimals)
+      FullAsset(lockedX.tokenId, lockedX.amount, x.flatMap(_.ticker), x.flatMap(_.decimals)),
+      FullAsset(lockedY.tokenId, lockedY.amount, y.flatMap(_.ticker), y.flatMap(_.decimals))
     )
+  }
 }

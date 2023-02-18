@@ -8,7 +8,7 @@ import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed, Version}
 import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.OrderStatus.{Evaluated, Refunded, Registered}
-import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId}
+import fi.spectrum.core.domain.order.{Fee, OrderId, PoolId, Redeemer}
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
 import glass.Subset
@@ -75,6 +75,10 @@ object AmmDepositDB {
       val deposit     = processed.order
       val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmDepositEvaluation].getOption)
       val txInfo      = TxInfo(processed.state.txId, processed.state.timestamp)
+      val (tree, pk) = deposit.redeemer match {
+        case Redeemer.ErgoTreeRedeemer(value)  => (value.some, none)
+        case Redeemer.PublicKeyRedeemer(value) => (none, value.some)
+      }
       AmmDepositDB(
         deposit.id,
         deposit.poolId,
@@ -86,10 +90,10 @@ object AmmDepositDB {
         depositEval.map(_.actualX),
         depositEval.map(_.actualY),
         deposit.fee,
-        none,
+        pk,
         ProtocolVersion.init,
         deposit.version,
-        deposit.redeemer.value.some,
+        tree,
         if (processed.state.status.in(Registered)) txInfo.some else none,
         if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none

@@ -9,6 +9,7 @@ import tofu.logging.derivation.loggable
 
 object amm {
 
+  @derive(loggable)
   final case class PoolInfo(firstSwapTimestamp: Long)
 
   final case class SwapInfo(asset: FullAsset, numTxs: Int)

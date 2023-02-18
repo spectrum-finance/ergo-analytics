@@ -22,6 +22,7 @@ import fi.spectrum.parser.lm.order.LmOrderParser
 import fi.spectrum.parser.lm.order.v1.LmOrderParserV1.v1
 import fi.spectrum.parser.lock.LockOrderParser
 import fi.spectrum.parser.lock.v1.LockParser._
+import org.ergoplatform.ErgoAddressEncoder
 
 /** Parses any order no matter what version or type it has.
   */
@@ -37,10 +38,10 @@ trait OrderParser { self =>
 
 object OrderParser {
 
-  implicit def make(implicit spf: TokenId): OrderParser = (box: Output) =>
+  implicit def make(implicit spf: TokenId, e: ErgoAddressEncoder): OrderParser = (box: Output) =>
     List[OrderParser](ammOrderParser, lockOrderParser, lmParser).reduceLeft(_ or _).parse(box)
 
-  private def ammOrderParser(implicit spf: TokenId): OrderParser = {
+  private def ammOrderParser(implicit spf: TokenId, e: ErgoAddressEncoder): OrderParser = {
     val ammParser: AmmOrderParser[Version, AmmType] = AmmOrderParser.make
     (box: Output) => ammParser.order(box, ErgoTreeSerializer.default.deserialize(box.ergoTree))
   }

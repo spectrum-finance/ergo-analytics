@@ -6,6 +6,7 @@ import cats.effect.syntax.resource._
 import fi.spectrum.api.configs.ConfigBundle
 import fi.spectrum.api.db.repositories._
 import fi.spectrum.api.models.TraceId
+import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.{CryptoPriceSolver, FiatPriceSolver}
 import fi.spectrum.api.processes.{BlocksProcess, ErgPriceProcess, VerifiedTokensProcess}
 import fi.spectrum.api.services._
@@ -86,6 +87,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
       implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
       implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
+      implicit0(ammStatsMath: AmmStatsMath[F])           <- AmmStatsMath.make[I, F].toResource
       implicit0(asset: Asset[xa.DB])                     <- Asset.make[I, xa.DB].toResource
       implicit0(blocks: Blocks[xa.DB])                   <- Blocks.make[I, xa.DB].toResource
       implicit0(pools: Pools[xa.DB])                     <- Pools.make[I, xa.DB].toResource
@@ -110,9 +112,9 @@ object Main extends EnvApp[AppContext] {
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
       implicit0(errorsMiddleware: ErrorsMiddleware[F]) <- ErrorsMiddleware.make[I, F].toResource
-      implicit0(stats: AmmStats[F])        <- AmmStats.make[I, F, xa.DB].toResource
-      implicit0(mempool: MempoolApi[F])    <- MempoolApi.make[I, F, xa.DB].toResource
-      implicit0(historyApi: HistoryApi[F]) <- HistoryApi.make[I, F, xa.DB].toResource
+      implicit0(stats: AmmStats[F])                    <- AmmStats.make[I, F, xa.DB].toResource
+      implicit0(mempool: MempoolApi[F])                <- MempoolApi.make[I, F, xa.DB].toResource
+      implicit0(historyApi: HistoryApi[F])             <- HistoryApi.make[I, F, xa.DB].toResource
       serverProc = HttpServer.make[I, F](config.http, config.request)
     } yield List(
       ergProcess.run,

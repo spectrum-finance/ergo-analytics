@@ -8,7 +8,7 @@ import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed, Version}
 import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem
 import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem.{RedeemLegacyV1, RedeemV1, RedeemV3}
 import fi.spectrum.core.domain.order.OrderStatus.{Evaluated, Refunded, Registered}
-import fi.spectrum.core.domain.order.{Fee, Order, OrderId, PoolId}
+import fi.spectrum.core.domain.order.{Fee, Order, OrderId, PoolId, Redeemer}
 import fi.spectrum.indexer.classes.syntax._
 import fi.spectrum.indexer.classes.ToDB
 import glass.Subset
@@ -70,6 +70,10 @@ object AmmRedeemDB {
       val redeem     = processed.order
       val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmRedeemEvaluation].getOption)
       val txInfo     = TxInfo(processed.state.txId, processed.state.timestamp)
+      val (tree, pk) = redeem.redeemer match {
+        case Redeemer.ErgoTreeRedeemer(value) => (value.some, none)
+        case Redeemer.PublicKeyRedeemer(value) => (none, value.some)
+      }
       AmmRedeemDB(
         redeem.id,
         redeem.poolId,
@@ -79,10 +83,10 @@ object AmmRedeemDB {
         redeemEval.map(_.outputX),
         redeemEval.map(_.outputY),
         redeem.fee,
-        none,
+        pk,
         ProtocolVersion(1),
         redeem.version,
-        redeem.redeemer.value.some,
+        tree,
         if (processed.state.status.in(Registered)) txInfo.some else none,
         if (processed.state.status.in(Evaluated)) txInfo.some else none,
         if (processed.state.status.in(Refunded)) txInfo.some else none
