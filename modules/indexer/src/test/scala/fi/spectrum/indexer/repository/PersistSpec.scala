@@ -16,6 +16,7 @@ import fi.spectrum.core.domain.order.Order.Redeem.{AmmRedeem, LmRedeem}
 import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.OrderStatus.Registered
 import fi.spectrum.core.domain.pool.Pool.{AmmPool, LmPool}
+import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.db.models.LmPoolDB._
@@ -88,6 +89,23 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     }
 
     run.unsafeRunSync()
+  }
+
+  "AMM swap v3" should "work correct" in {
+    val register = parser.registered(v3SwapRegister.toTransaction, 0).unsafeRunSync().head
+
+    println(register)
+
+    val register1Expected =
+      implicitly[ToDB[Processed[Swap], SwapDB]].toDB(register.asInstanceOf[Processed[Swap]])
+    val res = repo.swaps.insert(register).trans.unsafeRunSync()
+    println(res)
+    val res2 = sql"select * from swaps where order_id=${register.order.id}"
+      .query[SwapDB]
+      .unique
+      .trans
+      .unsafeRunSync()
+    println(res2)
   }
 
   "AMM redeems persist" should "work correct" in {

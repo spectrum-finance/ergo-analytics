@@ -56,7 +56,7 @@ object Order {
         box: Output,
         fee: SPF,
         poolId: PoolId,
-        redeemer: ErgoTreeRedeemer,
+        redeemer: Redeemer,
         params: AmmDepositParams,
         maxMinerFee: Long,
         version: V3
@@ -137,7 +137,7 @@ object Order {
         box: Output,
         fee: SPF,
         poolId: PoolId,
-        redeemer: ErgoTreeRedeemer,
+        redeemer: Redeemer,
         params: RedeemParams,
         maxMinerFee: Long,
         version: V3
@@ -195,7 +195,7 @@ object Order {
     final case class SwapV3(
       box: Output,
       poolId: PoolId,
-      redeemer: ErgoTreeRedeemer,
+      redeemer: Redeemer,
       params: SwapParams,
       maxMinerFee: Long,
       reservedExFee: Long,

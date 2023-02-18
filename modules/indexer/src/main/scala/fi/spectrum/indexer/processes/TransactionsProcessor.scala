@@ -86,9 +86,11 @@ object TransactionsProcessor {
                      }
           } yield events
 
-          eval(run).flatMap { events =>
-            emits(events.map(event => Record("chain_sync", event))).thrush(producer.produce)
-          } >> eval(batch.toList.lastOption.traverse_(_.commit))
+          for {
+            events <- eval(run)
+            _      <- emits(events.map(event => Record("chain_sync", event))).thrush(producer.produce)
+            _      <- eval(batch.toList.lastOption.traverse_(_.commit))
+          } yield ()
         }
 
     }

@@ -1,6 +1,7 @@
 package fi.spectrum.parser.amm.order.v3
 
 import cats.syntax.option._
+import cats.syntax.either._
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Fee.SPF
@@ -8,18 +9,20 @@ import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit._
 import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem.RedeemV3
 import fi.spectrum.core.domain.order.Order.Swap.SwapV3
 import fi.spectrum.core.domain.order.Order._
-import fi.spectrum.core.domain.order.Redeemer.ErgoTreeRedeemer
+import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
 import fi.spectrum.core.domain.analytics.Version.V3
 import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
+import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.amm.order.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType.N2T
 import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.N2T._
+import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import sigmastate.Values
 
-final class N2TAmmOrderParser(implicit spf: TokenId) extends AmmOrderParser[V3, N2T] {
+final class N2TAmmOrderParser(implicit spf: TokenId, e: ErgoAddressEncoder) extends AmmOrderParser[V3, N2T] {
 
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap] = {
     val template = ErgoTreeTemplate.fromBytes(tree.template)
@@ -39,13 +42,13 @@ final class N2TAmmOrderParser(implicit spf: TokenId) extends AmmOrderParser[V3, 
       dexFeePerTokenDenom   <- tree.constants.parseLong(1)
       dexFeePerTokenNumDiff <- tree.constants.parseLong(2)
       dexFeePerTokenNum = dexFeePerTokenDenom - dexFeePerTokenNumDiff
-      redeemer     <- tree.constants.parseBytea(14).map(SErgoTree.fromBytes)
+      redeemer     <- tree.constants.parseBytea(14).map(SErgoTree.fromBytes).map(mapRedeemer)
       reserveExFee <- tree.constants.parseLong(11)
       params = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV3(
       box,
       poolId,
-      ErgoTreeRedeemer(redeemer),
+      redeemer,
       params,
       maxMinerFee,
       reserveExFee,
@@ -63,13 +66,13 @@ final class N2TAmmOrderParser(implicit spf: TokenId) extends AmmOrderParser[V3, 
       dexFeePerTokenDenom <- tree.constants.parseLong(8)
       dexFeePerTokenNum   <- tree.constants.parseLong(9)
       reserveExFee        <- tree.constants.parseLong(7)
-      redeemer            <- tree.constants.parseBytea(12).map(SErgoTree.fromBytes)
+      redeemer            <- tree.constants.parseBytea(12).map(SErgoTree.fromBytes).map(mapRedeemer)
       baseAmount = inAssetAmount
       params     = SwapParams(baseAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
     } yield SwapV3(
       box,
       poolId,
-      ErgoTreeRedeemer(redeemer),
+      redeemer,
       params,
       maxMinerFee,
       reserveExFee,
@@ -89,13 +92,13 @@ final class N2TAmmOrderParser(implicit spf: TokenId) extends AmmOrderParser[V3, 
           selfY = selfYBoxAmount.withAmount(selfYAmount)
           dexFee <- if (selfY.tokenId == spf) (selfYBoxAmount.amount - selfY.amount).some
                     else box.assets.find(_.tokenId == spf).map(_.amount)
-          redeemer <- tree.constants.parseBytea(13).map(SErgoTree.fromBytes)
+          redeemer <- tree.constants.parseBytea(13).map(SErgoTree.fromBytes).map(mapRedeemer)
           params = AmmDepositParams(selfX, selfY)
         } yield AmmDepositV3(
           box,
           SPF(dexFee),
           poolId,
-          ErgoTreeRedeemer(redeemer),
+          redeemer,
           params,
           maxMinerFee,
           Version.V3
@@ -113,13 +116,13 @@ final class N2TAmmOrderParser(implicit spf: TokenId) extends AmmOrderParser[V3, 
           maxMinerFee <- tree.constants.parseLong(16)
           inLP        <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           dexFee      <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
-          redeemer    <- tree.constants.parseBytea(12).map(SErgoTree.fromBytes)
+          redeemer    <- tree.constants.parseBytea(12).map(SErgoTree.fromBytes).map(mapRedeemer)
           params = RedeemParams(inLP)
         } yield RedeemV3(
           box,
           SPF(dexFee.amount),
           poolId,
-          ErgoTreeRedeemer(redeemer),
+          redeemer,
           params,
           maxMinerFee,
           Version.V3
@@ -127,8 +130,20 @@ final class N2TAmmOrderParser(implicit spf: TokenId) extends AmmOrderParser[V3, 
         none
       )
       .merge
+
+  private def mapRedeemer(redeemer: SErgoTree): Redeemer =
+    Either
+      .catchNonFatal {
+        e.fromProposition(ErgoTreeSerializer.default.deserialize(redeemer)).toOption.map {
+          case address: P2PKAddress => PublicKeyRedeemer(PubKey.fromBytes(address.pubkeyBytes))
+          case _                    => ErgoTreeRedeemer(redeemer)
+        }
+      }
+      .toOption
+      .flatten
+      .getOrElse(ErgoTreeRedeemer(redeemer))
 }
 
 object N2TAmmOrderParser {
-  implicit def n2tV3(implicit spf: TokenId): AmmOrderParser[V3, N2T] = new N2TAmmOrderParser
+  implicit def n2tV3(implicit spf: TokenId, e: ErgoAddressEncoder): AmmOrderParser[V3, N2T] = new N2TAmmOrderParser
 }
