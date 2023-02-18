@@ -106,10 +106,9 @@ object AmmStats {
 
     def platformStatsVerified(window: TimeWindow): F[PlatformStats] =
       for {
-        tw          <- resolveTimeWindow(window)
         validTokens <- tokens.get
         res <- calculatePlatformSummary(
-                 tw,
+                 window,
                  snapshot => validTokens.contains(snapshot.lockedX.id) && validTokens.contains(snapshot.lockedY.id)
                )
       } yield res
