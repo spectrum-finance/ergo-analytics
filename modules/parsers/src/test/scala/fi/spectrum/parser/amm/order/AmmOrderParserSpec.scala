@@ -1,6 +1,7 @@
 package fi.spectrum.parser.amm.order
 
 import cats.implicits.{catsSyntaxEq, toFunctorOps}
+import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order
 import fi.spectrum.core.protocol.ErgoTreeSerializer.default._
@@ -25,6 +26,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 
 class AmmOrderParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
+
+  implicit val spf: TokenId = TokenId.unsafeFromString("")
 
   val parser: AmmOrderParser[Version, AmmType] = AmmOrderParser.make
 

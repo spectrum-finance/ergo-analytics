@@ -3,6 +3,7 @@ package fi.spectrum.parser.evaluation
 import cats.syntax.option._
 import cats.{Applicative, Monad}
 import derevo.derive
+import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{LockEvaluation, SwapEvaluation}
 import fi.spectrum.core.domain.analytics.Processed._
 import fi.spectrum.core.domain.analytics.{Processed, Version}
@@ -45,7 +46,7 @@ sealed trait ProcessedOrderParser[F[_]] {
 
 object ProcessedOrderParser {
 
-  def make[F[_]: Monad](implicit e: ErgoAddressEncoder, logs: Logging.Make[F]): ProcessedOrderParser[F] =
+  def make[F[_]: Monad](implicit e: ErgoAddressEncoder, logs: Logging.Make[F], spf: TokenId): ProcessedOrderParser[F] =
     logs.forService[ProcessedOrderParser[F]].map { implicit __ =>
       implicit val parser: CompoundParser[Version] = implicitly[CompoundParser[Version]]
       new Tracing[F] attach new Live[F]

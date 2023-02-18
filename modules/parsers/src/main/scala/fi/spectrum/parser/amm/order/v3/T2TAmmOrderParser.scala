@@ -19,26 +19,27 @@ import fi.spectrum.parser.syntax._
 import fi.spectrum.parser.templates.T2T._
 import sigmastate.Values
 
-class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
+class T2TAmmOrderParser(implicit spf: TokenId) extends AmmOrderParser[V3, T2T] {
 
   def swap(box: Output, tree: Values.ErgoTree): Option[Swap] =
     Either
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == swapV3,
         for {
-          poolId        <- tree.constants.parseBytea(19).map(PoolId.fromBytes)
-          maxMinerFee   <- tree.constants.parseLong(32)
-          spectrumId    <- tree.constants.parseBytea(4).map(TokenId.fromBytes)
-          reservedExFee <- tree.constants.parseLong(2)
-          inAmount      <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
+          poolId        <- tree.constants.parseBytea(18).map(PoolId.fromBytes)
+          maxMinerFee   <- tree.constants.parseLong(33)
+          reservedExFee <- tree.constants.parseLong(12)
+          baseAmount    <- tree.constants.parseLong(3)
+          inAmount      <- box.assets.headOption.map(a => AssetAmount(a.tokenId, baseAmount))
           outId         <- tree.constants.parseBytea(1).map(TokenId.fromBytes)
-          minOutAmount  <- tree.constants.parseLong(21)
+          minOutAmount  <- tree.constants.parseLong(20)
           outAmount = AssetAmount(outId, minOutAmount)
-          dexFeePerTokenNum   <- tree.constants.parseLong(24)
-          dexFeePerTokenDenom <- tree.constants.parseLong(25)
-          redeemer            <- tree.constants.parseBytea(20).map(SErgoTree.fromBytes)
+          dexFeePerTokenDenom   <- tree.constants.parseLong(2)
+          dexFeePerTokenNumDiff <- tree.constants.parseLong(13)
+          dexFeePerTokenNum = dexFeePerTokenDenom - dexFeePerTokenNumDiff
+          redeemer <- tree.constants.parseBytea(19).map(SErgoTree.fromBytes)
           params = SwapParams(
-                     if (spectrumId == inAmount.tokenId) inAmount - reservedExFee else inAmount,
+                     inAmount,
                      outAmount,
                      dexFeePerTokenNum,
                      dexFeePerTokenDenom
@@ -61,18 +62,17 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == depositV3,
         for {
-          poolId      <- tree.constants.parseBytea(17).map(PoolId.fromBytes)
-          maxMinerFee <- tree.constants.parseLong(27)
-          dexFeeFromX <- tree.constants.parseBoolean(9)
-          dexFeeFromY <- tree.constants.parseBoolean(13)
+          poolId      <- tree.constants.parseBytea(13).map(PoolId.fromBytes)
+          maxMinerFee <- tree.constants.parseLong(24)
+          selfX       <- tree.constants.parseLong(8)
+          selfY       <- tree.constants.parseLong(10)
           inX         <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           inY         <- box.assets.lift(1).map(a => AssetAmount(a.tokenId, a.amount))
-          dexFee      <- tree.constants.parseLong(10)
-          redeemer    <- tree.constants.parseBytea(17).map(SErgoTree.fromBytes)
-          params = AmmDepositParams(
-                     if (dexFeeFromX) inX - dexFee else inX,
-                     if (dexFeeFromY) inY - dexFee else inY
-                   )
+          dexFee <- if (inX.tokenId == spf) (inX.amount - selfX).some
+                    else if (inY.tokenId == spf) (inY.amount - selfY).some
+                    else box.assets.find(_.tokenId == spf).map(_.amount)
+          redeemer <- tree.constants.parseBytea(14).map(SErgoTree.fromBytes)
+          params = AmmDepositParams(inX.withAmount(selfX), inY.withAmount(selfY))
         } yield AmmDepositV3(
           box,
           SPF(dexFee),
@@ -112,5 +112,5 @@ class T2TAmmOrderParser extends AmmOrderParser[V3, T2T] {
 }
 
 object T2TAmmOrderParser {
-  implicit def t2tV3: AmmOrderParser[V3, T2T] = new T2TAmmOrderParser
+  implicit def t2tV3(implicit spf: TokenId): AmmOrderParser[V3, T2T] = new T2TAmmOrderParser
 }

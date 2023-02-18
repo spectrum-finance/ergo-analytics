@@ -14,6 +14,7 @@ import org.scalatest.propspec.AnyPropSpec
 
 class ProcessedSpec extends AnyPropSpec with Matchers with CatsPlatform {
   implicit def addressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(ErgoAddressEncoder.MainnetNetworkPrefix)
+  implicit val spf: TokenId = TokenId.unsafeFromString("")
   val processedParser                             = ProcessedOrderParser.make[IO]
 
   property("Parse executed order") {

@@ -17,6 +17,7 @@ import fi.spectrum.parser.lm.order.v1.LM
 class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   implicit def addressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(ErgoAddressEncoder.MainnetNetworkPrefix)
+  implicit val spf: TokenId = TokenId.unsafeFromString("")
 
   val orderParser = OrderParser.make
   val poolParser  = PoolParser.make
