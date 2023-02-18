@@ -2,6 +2,7 @@ package fi.spectrum.parser.lm.compound.v1
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
+import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.CatsPlatform
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
@@ -12,7 +13,7 @@ import org.scalatest.propspec.AnyPropSpec
 
 class CompoundSpec extends AnyPropSpec with Matchers with CatsPlatform {
   implicit def addressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(ErgoAddressEncoder.MainnetNetworkPrefix)
-
+  implicit val spf: TokenId = TokenId.unsafeFromString("")
   val parser = CompoundParserV1.v1Compound
 
   property("Parse lm compound v1 contract") {
