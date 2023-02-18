@@ -122,7 +122,7 @@ object AmmStats {
 
     private def calculatePlatformSummary(window: TimeWindow, f: PoolSnapshot => Boolean): F[PlatformStats] =
       for {
-        tw            <- resolveTimeWindow(window)
+        tw        <- resolveTimeWindow(window)
         volumesDB <- pools.volumes(tw).trans
         assets    <- assets.get
         volumes = volumesDB.flatMap(_.toPoolVolumeSnapshot(assets))
@@ -262,31 +262,30 @@ object AmmStats {
       case None => OptionT.pure[F](Fees.empty(UsdUnits, window))
     }
 
-    def getPoolStats(poolId: PoolId, window: TimeWindow): F[Option[PoolStats]] = {
+    def getPoolStats(poolId: PoolId, window: TimeWindow): F[Option[PoolStats]] =
       resolveTimeWindow(window).flatMap { tw =>
         val queryPoolStats =
           (for {
-            info <- OptionT(pools.getFirstPoolSwapTime(poolId))
-            vol <- OptionT.liftF(pools.volume(poolId, tw))
+            info     <- OptionT(pools.getFirstPoolSwapTime(poolId))
+            vol      <- OptionT.liftF(pools.volume(poolId, tw))
             feesSnap <- OptionT.liftF(pools.fees(poolId, tw))
           } yield (info, vol, feesSnap)).value
         (for {
           (info, volDB, feesSnapDB) <- OptionT(queryPoolStats.trans)
-          poolSnapshotsDB <- OptionT.liftF(snapshots.get)
-          assets <- OptionT.liftF(assets.get)
-          vol = volDB.flatMap(_.toPoolVolumeSnapshot(assets))
+          poolSnapshotsDB           <- OptionT.liftF(snapshots.get)
+          assets                    <- OptionT.liftF(assets.get)
+          vol      = volDB.flatMap(_.toPoolVolumeSnapshot(assets))
           feesSnap = feesSnapDB.flatMap(_.toPoolFeesSnapshot(assets))
-          pools = poolSnapshotsDB.flatMap(_.toPoolSnapshot(assets))
-          pool <- OptionT.fromOption[F](pools.find(_.id == poolId))
+          pools    = poolSnapshotsDB.flatMap(_.toPoolSnapshot(assets))
+          pool    <- OptionT.fromOption[F](pools.find(_.id == poolId))
           lockedX <- OptionT(solver.convert(pool.lockedX, UsdUnits, pools))
           lockedY <- OptionT(solver.convert(pool.lockedY, UsdUnits, pools))
           tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
-          volume <- processPoolVolume(vol, tw, pools)
-          fees <- processPoolFee(feesSnap, tw, pools)
+          volume            <- processPoolVolume(vol, tw, pools)
+          fees              <- processPoolFee(feesSnap, tw, pools)
           yearlyFeesPercent <- OptionT.liftF(ammMath.feePercentProjection(tvl, fees, info, MillisInYear))
         } yield PoolStats(poolId, pool.lockedX, pool.lockedY, tvl, volume, fees, yearlyFeesPercent)).value
       }
-    }
 
     private def calculatePoolSlippagePercent(initState: PoolTrace, finalState: PoolTrace): BigDecimal = {
       val minPrice = RealPrice.calculate(
@@ -414,57 +413,58 @@ object AmmStats {
 
     def getMarkets(window: TimeWindow): F[List[AmmMarketSummary]] =
       resolveTimeWindow(window).flatMap { tw =>
-      pools
-        .volumes(tw)
-        .trans
-        .flatMap(volumes =>
-          snapshots.get
-            .flatMap { snapshotsDB =>
-              assets.get.map(r => snapshotsDB.flatMap(_.toPoolSnapshot(r)))
-            }
-            .map(volumes -> _)
-        )
-        .flatMap { case (volumesDB, snapshots) =>
-          assets.get.map { assets =>
-            val volumes = volumesDB.flatMap(_.toPoolVolumeSnapshot(assets))
-            snapshots.flatMap { snapshot =>
-              val currentOpt = volumes
-                .find(_.poolId == snapshot.id)
+        pools
+          .volumes(tw)
+          .trans
+          .flatMap(volumes =>
+            snapshots.get
+              .flatMap { snapshotsDB =>
+                assets.get.map(r => snapshotsDB.flatMap(_.toPoolSnapshot(r)))
+              }
+              .map(volumes -> _)
+          )
+          .flatMap { case (volumesDB, snapshots) =>
+            assets.get.map { assets =>
+              val volumes = volumesDB.flatMap(_.toPoolVolumeSnapshot(assets))
+              snapshots.flatMap { snapshot =>
+                val currentOpt = volumes
+                  .find(_.poolId == snapshot.id)
 
-              currentOpt.toList.map { vol =>
-                val tx = snapshot.lockedX
-                val ty = snapshot.lockedY
-                val vx = vol.volumeByX
-                val vy = vol.volumeByY
-                AmmMarketSummary(
-                  MarketId(tx.id, ty.id),
-                  tx.id,
-                  tx.ticker,
-                  ty.id,
-                  ty.ticker,
-                  RealPrice.calculate(tx.amount, tx.decimals, ty.amount, ty.decimals).setScale(6),
-                  CryptoVolume(
-                    BigDecimal(vx.amount),
-                    CryptoUnits(AssetClass(vx.id, vx.ticker, vx.decimals)),
-                    tw
-                  ),
-                  CryptoVolume(
-                    BigDecimal(vy.amount),
-                    CryptoUnits(AssetClass(vy.id, vy.ticker, vy.decimals)),
-                    tw
+                currentOpt.toList.map { vol =>
+                  val tx = snapshot.lockedX
+                  val ty = snapshot.lockedY
+                  val vx = vol.volumeByX
+                  val vy = vol.volumeByY
+                  AmmMarketSummary(
+                    MarketId(tx.id, ty.id),
+                    tx.id,
+                    tx.ticker,
+                    ty.id,
+                    ty.ticker,
+                    RealPrice.calculate(tx.amount, tx.decimals, ty.amount, ty.decimals).setScale(6),
+                    CryptoVolume(
+                      BigDecimal(vx.amount),
+                      CryptoUnits(AssetClass(vx.id, vx.ticker, vx.decimals)),
+                      tw
+                    ),
+                    CryptoVolume(
+                      BigDecimal(vy.amount),
+                      CryptoUnits(AssetClass(vy.id, vy.ticker, vy.decimals)),
+                      tw
+                    )
                   )
-                )
+                }
               }
             }
           }
       }
 
     private def resolveTimeWindow(tw: TimeWindow): F[TimeWindow] =
-      (tw.to, tw.from) match {
-        case (Some(ts), None) => TimeWindow(Some(ts), Some(ts + monthMillis * 3)).pure[F]
-        case (None, Some(ts)) => TimeWindow(Some(ts - monthMillis * 3), Some(ts)).pure[F]
-        case (None, None)     => millis.map(currTs => TimeWindow(Some(currTs - monthMillis * 3), Some(currTs)))
-        case _                => tw.pure[F]
+      (tw.from, tw.to) match {
+        case (Some(from), None) => TimeWindow(Some(from), Some(from + monthMillis * 3)).pure[F]
+        case (None, Some(to))   => TimeWindow(Some(to - monthMillis * 3), Some(to)).pure[F]
+        case (None, None)       => millis.map(currTs => TimeWindow(Some(currTs - monthMillis * 3), Some(currTs)))
+        case _                  => tw.pure[F]
       }
   }
 

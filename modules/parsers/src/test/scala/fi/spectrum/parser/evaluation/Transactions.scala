@@ -3040,4 +3040,1007 @@ object Transactions {
   )
     .toOption.get.toTransaction
 
+  val v3SwapRegister =
+    decode[TransactionTest](
+      """
+        |{
+        |    "id": "dadcae4d12d3291e4935cec9b4c0800c8bf8a603d8574cf2316e2ece0452a81d",
+        |    "blockId": "ce0d1031918995de14f026857a68782129420d7a152ce4028c967ffd2e83fc1b",
+        |    "inclusionHeight": 940090,
+        |    "timestamp": 1676367020559,
+        |    "index": 3,
+        |    "globalIndex": 4757362,
+        |    "numConfirmations": 3056,
+        |    "inputs": [
+        |        {
+        |            "boxId": "094f5c2ee29c11e4eeb3ccc98611f40d59b59decf561aebfe572add5abf5b76a",
+        |            "value": 460546995,
+        |            "index": 0,
+        |            "spendingProof": "3f7a0b7b90e68533180ba15cb19c81451b3ad53b87cdcf4e8f5c351886b143dc9bd724a646757cf57c6e25f5f99d7560a2ba53599c685690",
+        |            "outputBlockId": "5edd61793e349f1cf12a42d17f119e51570842deb0fe9f2267b56c149d0767bb",
+        |            "outputTransactionId": "e8f0542485fde07dfd46760d3ef282d7212f4aa60dab49bd176ebd823cb1ef18",
+        |            "outputIndex": 1,
+        |            "outputGlobalIndex": 26527575,
+        |            "outputCreatedAt": 939705,
+        |            "outputSettledAt": 939707,
+        |            "ergoTree": "0008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec",
+        |            "address": "9hp1xXVF8VXkYEHdgvTJK7XSEW1vckcKqWx8JTHsAwwGzHH9hxq",
+        |            "assets": [
+        |                {
+        |                    "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
+        |                    "index": 0,
+        |                    "amount": 78,
+        |                    "name": "SigRSV",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "01dce8a5632d19799950ff90bca3b5d0ca3ebfa8aaafd06f0cc6dd1e97150e7f",
+        |                    "index": 1,
+        |                    "amount": 261104,
+        |                    "name": "CYPX",
+        |                    "decimals": 4,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "00bd762484086cf560d3127eb53f0769d76244d9737636b2699d55c56cd470bf",
+        |                    "index": 2,
+        |                    "amount": 5999622,
+        |                    "name": "EPOS",
+        |                    "decimals": 4,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "ef802b475c06189fdbf844153cdc1d449a5ba87cce13d11bb47b5a539f27f12b",
+        |                    "index": 3,
+        |                    "amount": 2710561951615,
+        |                    "name": "WT_ERG",
+        |                    "decimals": 9,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "00738c0e3c4d89a1a2d5e71a20e4a00262340f289e58d9d866719564a933bad5",
+        |                    "index": 4,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "fec55d4d97689b11bcfaf0bf665952f7aeedf1d9691c6b59cc7865a43e7d38fc",
+        |                    "index": 5,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "3b6bb4f980285bd9dd0ff7984a5d99c1b29bb81e37148e13572ef41dbb4638c2",
+        |                    "index": 6,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "e7021bda9872a7eb2aa69dd704e6a997dae9d1b40d1ff7a50e426ef78c6f6f87",
+        |                    "index": 7,
+        |                    "amount": 37818893,
+        |                    "name": "Ergo_ErgoPOS_LP",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04",
+        |                    "index": 8,
+        |                    "amount": 71,
+        |                    "name": "SigUSD",
+        |                    "decimals": 2,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "1c51c3a53abfe87e6db9a03c649e8360f255ffc4bd34303d30fc7db23ae551db",
+        |                    "index": 9,
+        |                    "amount": 1781494,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "e4a1031e24410208afbcd359648b51f28c4418147e05be6810c3a075537edd85",
+        |                    "index": 10,
+        |                    "amount": 1,
+        |                    "name": "Test Spectrum Finance Test Unlock Vesting Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "f6bff4585a280b2569e2a2b8db2257bea04bf550df0ae6167997b24818ceb02b",
+        |                    "index": 11,
+        |                    "amount": 100000000000,
+        |                    "name": "Test Spectrum Finance Test Unlock whitelist token",
+        |                    "decimals": 6,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "aab6dc7ae120b0a45a85ff03916d305eb25214de51e5223e8f5dcd6a834488bb",
+        |                    "index": 12,
+        |                    "amount": 1,
+        |                    "name": "Test Spectrum Finance Test Unlock Vesting Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "b21377ae6fabbfbe008c9027589da19e4225e3192569e79ae70af0ec10fd5273",
+        |                    "index": 13,
+        |                    "amount": 1,
+        |                    "name": "Test Spectrum Finance Test Unlock Vesting Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "31c438a026bd8e2c90e604bc6f680f01887e09b851307c42bfd5a1fdae5be6bd",
+        |                    "index": 14,
+        |                    "amount": 1,
+        |                    "name": "Test Spectrum Finance Test Unlock Vesting Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "ae7af4a252179519c91b236add24913ba11fb5cc8722689e80472cd7828f2b02",
+        |                    "index": 15,
+        |                    "amount": 1,
+        |                    "name": "Test Spectrum Finance Test Unlock Vesting Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "109873d1b385069eac47a7703f6d92f122df436e8615fa779f24532b555bb68e",
+        |                    "index": 16,
+        |                    "amount": 8830521,
+        |                    "name": "tSPF",
+        |                    "decimals": 6,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "3fbaa8c7e5bd352eeff5ee99dca8caceb3495ec4a5bc51dafb61e1c605e8eb36",
+        |                    "index": 17,
+        |                    "amount": 1,
+        |                    "name": "Test Spectrum Finance Test Unlock Vesting Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "c8fd07ac08dfafb6e55e2df54de1c6ce05ca77310b4c9fccb262079511c8d9c0",
+        |                    "index": 18,
+        |                    "amount": 1,
+        |                    "name": "Test Spectrum Finance Test Unlock Vesting Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "928676dea56ad57096bb73953e551bb6b4b0cedfe65e0f32a2ebe5978cefaacb",
+        |                    "index": 19,
+        |                    "amount": 1000000000,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "beea40bf9ec7bd000a9eec4a9f19aaad6040ad6f5dd072be2c66e739860520ce",
+        |                    "index": 20,
+        |                    "amount": 1,
+        |                    "name": "ergopad Stake Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "f45c4f0d95ce1c64defa607d94717a9a30c00fdd44827504be20db19f4dce36f",
+        |                    "index": 21,
+        |                    "amount": 50000,
+        |                    "name": "TERG",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "2278724d4c1e69d497eb81d428e3261824312f2bc5b9ba3733f26afb27b52de4",
+        |                    "index": 22,
+        |                    "amount": 316227766,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "45f3a9798a4571c1566101b71efeecf3f57feb403689d25a23557c67d982bbe2",
+        |                    "index": 23,
+        |                    "amount": 316227766,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "c2d9f292506cbc93421ad88ec7edbede5642a1964adbcc5e16333cb8126b9b97",
+        |                    "index": 24,
+        |                    "amount": 1,
+        |                    "name": "ergopad Stake Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "5a34d53ca483924b9a6aa0c771f11888881b516a8d1a9cdc535d063fe26d065e",
+        |                    "index": 25,
+        |                    "amount": 56708287,
+        |                    "name": "LunaDog",
+        |                    "decimals": 8,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "46bd8c30598aa8fe6237722d5f32f56ad7aab43a3668dcc3cbde97d539e41e95",
+        |                    "index": 26,
+        |                    "amount": 810881524091,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "592e6d035c17ae80e0e94ef2de6e9ad7d04fa41a798ee05ce2a90d33461f0ed1",
+        |                    "index": 27,
+        |                    "amount": 316227766,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "246360521aed0dbc852bc38fcd068aafe4725fd4a17da15f723bade8276e017d",
+        |                    "index": 28,
+        |                    "amount": 316227766,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "c319c2671c6e67f2b0e0aa5b03d2f023cdf8abb654f3b47f0493b6a377bcabd1",
+        |                    "index": 29,
+        |                    "amount": 3162,
+        |                    "name": "Ergo_SigmaUSD_LP",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "e8b20745ee9d18817305f32eb21015831a48f02d40980de6e849f886dca7f807",
+        |                    "index": 30,
+        |                    "amount": 5422683,
+        |                    "name": "Flux",
+        |                    "decimals": 8,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "cddbf2a3e52a66e56d6e9a1b5f05502c5a6870f3e7a6142e4f4b044895244364",
+        |                    "index": 31,
+        |                    "amount": 100000000,
+        |                    "name": "Hello Community whitelist token",
+        |                    "decimals": 4,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "c93a7dbc2e08ca359074b0f2c66f0d0c62b3d1adb4497c6bd81cc0dd2890052d",
+        |                    "index": 32,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "240ec0fa648d1c5ec26ae9c9afd12e323347ba468b41dd37f5143a75053a6fef",
+        |                    "index": 33,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "1f6bc0b7c1b89a42ce8b80330d49bf4fb1cd06a85ec74d60c1d8e8e05a21a42d",
+        |                    "index": 34,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "498dd9e14a777f9a3b4a4669e292ae572feba186918e289dae2dd9fc89be9c40",
+        |                    "index": 35,
+        |                    "amount": 3162,
+        |                    "name": "Ergo_SigmaUSD_LP",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "7a6c3b36834663baaf82ae75c2c073e064215eb965a8cdb5e6d4269c960d3842",
+        |                    "index": 36,
+        |                    "amount": 1,
+        |                    "name": "$COMET Copper",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "cf8d83a2803b99f4fbb596b29014a1e6b1e31c7d0817f2767617f1f6b1438a1e",
+        |                    "index": 37,
+        |                    "amount": 75751,
+        |                    "name": "ERG_Ergopad_LP",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "3c8f660644c502e88eda26cc82b1e2093634c4f048c9e4033420501fbc5d2f1a",
+        |                    "index": 38,
+        |                    "amount": 316227766,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "98da76cecb772029cfec3d53727d5ff37d5875691825fbba743464af0c89ce45",
+        |                    "index": 39,
+        |                    "amount": 13940381,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "30974274078845f263b4f21787e33cc99e9ec19a17ad85a5bc6da2cca91c5a2e",
+        |                    "index": 40,
+        |                    "amount": 2120924823032,
+        |                    "name": "WT_ADA",
+        |                    "decimals": 8,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "007fd64d1ee54d78dd269c8930a38286caa28d3f29d27cadcb796418ab15c283",
+        |                    "index": 41,
+        |                    "amount": 7502,
+        |                    "name": "EXLE",
+        |                    "decimals": 4,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "3b9fae1b6151ee5986a1531518582e2f66a315452f96604739ea02646e3cee65",
+        |                    "index": 42,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "22ccd7c0ce393bd8637fdac8a0238807a4cbf9b7950732a8c37fdf3ae7929bc9",
+        |                    "index": 43,
+        |                    "amount": 17141898646024,
+        |                    "name": "Test Spectrum Finance Community Round whitelist token",
+        |                    "decimals": 6,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "17c21d0dcde99d552a6430c9d96fae3247d88bc484306333060b46e2af7e953f",
+        |                    "index": 44,
+        |                    "amount": 9223372036854774807,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "dca5ced7c814761c9d0a75509d884e46e971ffaaa5497f4bf9476f4f35cfeb56",
+        |                    "index": 45,
+        |                    "amount": 9223372036854774807,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "f35e7302e09925c36103e63c9fd25030d78ab173ab2840115cfb53d2571c8b0e",
+        |                    "index": 46,
+        |                    "amount": 20000000000000,
+        |                    "name": "Test Spectrum Finance Public Round whitelist token",
+        |                    "decimals": 6,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "5e3247418e2ac9c43819790287e554434cd35a74fad7682f2f8b0254fbdca072",
+        |                    "index": 47,
+        |                    "amount": 1000000000,
+        |                    "name": "OMG",
+        |                    "decimals": 6,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad489",
+        |                    "index": 48,
+        |                    "amount": 28477,
+        |                    "name": "Paideia",
+        |                    "decimals": 4,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "3bdbba60cbc6d78d6ed11fb7f64d7fd604898eb439dd833d003650bee3097b3c",
+        |                    "index": 49,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "9db3450951c37a5875ed493f19bfe03364fa4846cde63b1fee05dfaf59c837b1",
+        |                    "index": 50,
+        |                    "amount": 264394220,
+        |                    "name": "ERG_LunaDog_LP",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "f3b50913a649ece68b4c2ab345483820500e188a1098c2e259cd3eaf97065927",
+        |                    "index": 51,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "36aba4b4a97b65be491cf9f5ca57b5408b0da8d0194f30ec8330d1e8946161c1",
+        |                    "index": 52,
+        |                    "amount": 2,
+        |                    "name": "Erdoge",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "303f39026572bcb4060b51fafc93787a236bb243744babaa99fceb833d61e198",
+        |                    "index": 53,
+        |                    "amount": 132414,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "7ec36582b469066179fc105b3f0f4edc876cf3576a755de441f74a4da1a07a2a",
+        |                    "index": 54,
+        |                    "amount": 1,
+        |                    "name": "Test Spectrum Finance Test Unlock Vesting Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "da704a3e02307bad6fc1c7545bd9fc42e7fd6b97da7d0deb2dee760e4cc7be6d",
+        |                    "index": 55,
+        |                    "amount": 365148369,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "be92c018c6cf82cc7d56500b80c19fa5f5e5011c6a97e9ab50668ec8c61d3dc1",
+        |                    "index": 56,
+        |                    "amount": 1,
+        |                    "name": "Test Spectrum Finance Community Round Vesting Key",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "e249780a22e14279357103749102d0a7033e0459d10b7f277356522ae9df779c",
+        |                    "index": 57,
+        |                    "amount": 76829252,
+        |                    "name": "ERG_NETA_LP",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "4d46c7d7a0ec8dd89d90424fab0442354bca3793135e115a4c9de922fdd51daa",
+        |                    "index": 58,
+        |                    "amount": 632455532,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "27a9c163d2d9acef611e7354f5dee8aaedbf4dd82c3e819d6f6bf58b3c54acc2",
+        |                    "index": 59,
+        |                    "amount": 50000000,
+        |                    "name": "Hello Staker whitelist token",
+        |                    "decimals": 4,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "1f48fbe220d51cace0dbc9649bc29c929367191cbdfda4819250e9b53492111e",
+        |                    "index": 60,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "6a928dad5999caeaf08396f9a40c37b1b09ce2b972df457f4afacb61ff69009a",
+        |                    "index": 61,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "2f7070c00bc89fbbf190eae5069f8bc73216865452ed87a71f7ca3b385af2d29",
+        |                    "index": 62,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "bdfe633145d9e5e8232cd14ff0c40f7d278b81bf987915edbde4e67d28ab2a7a",
+        |                    "index": 63,
+        |                    "amount": 223606797,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "fbbaac7337d051c10fc3da0ccb864f4d32d40027551e1c3ea3ce361f39b91e40",
+        |                    "index": 64,
+        |                    "amount": 2119,
+        |                    "name": "kushti",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "19e5b066e46094f99c39564208995fc0544f7a452082e2aaa1b5b090a7f104b9",
+        |                    "index": 65,
+        |                    "amount": 9223372036854774807,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "d71693c49a84fbbecd4908c94813b46514b18b67a99952dc1e6e4791556de413",
+        |                    "index": 66,
+        |                    "amount": 40000,
+        |                    "name": "ergopad",
+        |                    "decimals": 2,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "a4d9964b4cca1b97d3d03047900a41b5de044d02a8357d0120cf2bc11c68cbdc",
+        |                    "index": 67,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "d60d1836dacc7603ec9095d735dcdb3efbe9a5ab348726c3ed115cf85f314917",
+        |                    "index": 68,
+        |                    "amount": 223606797,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "18c938e1924fc3eadc266e75ec02d81fe73b56e4e9f4e268dffffcb30387c42d",
+        |                    "index": 69,
+        |                    "amount": 30392,
+        |                    "name": "AHT",
+        |                    "decimals": 4,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "4d3a47d770d9f15111026d8a22e1f7d09d9465b1259db5c2279545c7bcee9870",
+        |                    "index": 70,
+        |                    "amount": 4285714000000,
+        |                    "name": "Test Spectrum Finance Staker Round whitelist token",
+        |                    "decimals": 6,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "8b6c0c3b2dacf3a4fa68aedd8e66e513552b575fd0d7a6fc8feab249b3ced1d4",
+        |                    "index": 71,
+        |                    "amount": 9223372036854775806,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "41cd36f005170db748c305ca721780fd092dc2d31b5a02ab2cdca80c447ecafc",
+        |                    "index": 72,
+        |                    "amount": 9223372036854775807,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "7c483c8460fc3afaa14d570e88068022039e61f9b32fa68295c08b4c5c035696",
+        |                    "index": 73,
+        |                    "amount": 182574184,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                },
+        |                {
+        |                    "tokenId": "cc2726a5bb4a2132c99bb69be6f1d9a8bf7b09ad43db51bb6544b3e7db450f1f",
+        |                    "index": 74,
+        |                    "amount": 3850199989,
+        |                    "name": "Eamd",
+        |                    "decimals": 6,
+        |                    "type": "EIP-004"
+        |                },
+        |                {
+        |                    "tokenId": "e0588d273c8183865cff31b3bfa766bc7b178e2362b45497b67e79662e3615b7",
+        |                    "index": 75,
+        |                    "amount": 54,
+        |                    "name": null,
+        |                    "decimals": null,
+        |                    "type": null
+        |                }
+        |            ],
+        |            "additionalRegisters": {}
+        |        }
+        |    ],
+        |    "dataInputs": [],
+        |    "outputs": [
+        |        {
+        |            "boxId": "ff05c9f4b4ed2d3ed531771572c0c509a1795296be942158cd502ee85f9a8aeb",
+        |            "transactionId": "dadcae4d12d3291e4935cec9b4c0800c8bf8a603d8574cf2316e2ece0452a81d",
+        |            "blockId": "ce0d1031918995de14f026857a68782129420d7a152ce4028c967ffd2e83fc1b",
+        |            "value": 310000,
+        |            "index": 0,
+        |            "globalIndex": 26541766,
+        |            "creationHeight": 940086,
+        |            "settlementHeight": 940090,
+        |            "ergoTree": "199c041a0400052c04c60f08cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec0404040604020524058080a0f6f4acdbe01b05e8d2e4e9cf5804000e201d5afc59838920bb5ef2a8f9d63825a55b1d48e269d7cecee335d637c3ff5f3f0e240008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec05cad0b20906010004000e20003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d001010502040404d00f0e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d802d601b2a4730000d6029c73017e730205eb027303d195ed92b1a4730493b1db630872017305d804d603db63087201d604b2a5730600d60599c17204c1a7d606997e7307069d9c7e7205067e7308067e730906ededededed938cb27203730a0001730b93c27204730c927205730d95917206730ed801d607b2db63087204730f00ed938c7207017310927e8c7207020672067311909c7ec17201067e7202069c7e9a72057312069a9c7e8cb2720373130002067e7314067e72020690b0ada5d90107639593c272077315c1720773167317d90107599a8c7207018c72070273187319",
+        |            "address": "4J8wkYtoeJ2gHH5jPzihSRcHcB5tgGFAEnL6kqJFeiAg3AcGcCbrqacccrU1rzJPfZLUyy7eBnbKUadAv7qnVboyYaJiaCc5FBTwMM7oH3RHDdC7qzsqDusXhoyWxFEM87G5bSS3Q5Y7F7bDfEQNcPevvH3CyoA6ZXK3Ba5uNzDifq66A4iKdAQ9zJKWBVR8d7DBbMVJmvkjk2LPAmNwbtNmBAuxoJY8EKiYidv8ETggU8tYYXeG5gkUEpeQ7bncy9UzTKm2ev9CMDN5FGtVNunZqpmhcnL1hTG8v2YPrvNKeevPg2uwiEYZ56cKSboL4BeVM9CEkQqxyhkYzYznSXshZHkXGXTwNNAH4on31BDEBn9xDTUHBhYUHRfb3yrW9SQTY7ncnhC89KTNQ6pLv5KSJHZYfBwA2sJnKrCHEKWHKNeNxPvnPSFcSkAJTJFb4o5yyhb7tDDdgmRG5p9q9sdqtjcCL7r1cEhreoQ8L166dnZ4xDUSRf8XRMWT9UUmuVdu9Kyds6ZanxoEeM4ncRmWf18TkkTZeyo54ydRMiUHrtVivb81Pnxdu7VyAZQQUXL6eBnWbd9yzrNFJBGNYLutik4SJ6rf3BfYq2FGbWhRoQ4Pw2GzFLda6TMF3Lh9KpQvsRUTwsr26Nj7gpM6ewQEY2uZCqufYMiqDoYhiBn2bp2KZbwmnZ7gx8JtMezy4PzKueNc4ZYWa6gFNeyPAALo9iDLLQQXpiPRYShF39kb",
+        |            "assets": [
+        |                {
+        |                    "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
+        |                    "index": 0,
+        |                    "amount": 40,
+        |                    "name": "SigRSV",
+        |                    "decimals": 0,
+        |                    "type": "EIP-004"
+        |                }
+        |            ],
+        |            "additionalRegisters": {},
+        |            "spentTransactionId": null,
+        |            "mainChain": true
+        |        },
+        |        {
+        |            "boxId": "f64d3c1ffd740c6b51cac511b5c63908b3dbbe8b3404c6aaccf59a310ccbcd93",
+        |            "transactionId": "dadcae4d12d3291e4935cec9b4c0800c8bf8a603d8574cf2316e2ece0452a81d",
+        |            "blockId": "ce0d1031918995de14f026857a68782129420d7a152ce4028c967ffd2e83fc1b",
+        |            "value": 2000000,
+        |            "index": 2,
+        |            "globalIndex": 26541768,
+        |            "creationHeight": 940086,
+        |            "settlementHeight": 940090,
+        |            "ergoTree": "1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304",
+        |            "address": "2iHkR7CWvD1R4j1yZg5bkeDRQavjAaVPeTDFGGLZduHyfWMuYpmhHocX8GJoaieTx78FntzJbCBVL6rf96ocJoZdmWBL2fci7NqWgAirppPQmZ7fN9V6z13Ay6brPriBKYqLp1bT2Fk4FkFLCfdPpe",
+        |            "assets": [],
+        |            "additionalRegisters": {},
+        |            "spentTransactionId": "248a3ccf5b425414adb1b8e563f2eb2c4609e27761ea67281ee44c90f7bc07d7",
+        |            "mainChain": true
+        |        }
+        |    ],
+        |    "size": 3670
+        |}
+        |""".stripMargin
+    ).toOption.get
+
+  val swapRegisterV3Tx = decode[TransactionTest](
+    """
+      |{
+      |    "id": "0c4648c2152036a2ff15aa9094fdea094e8fb6c9031904b4d6e8b590a75abda8",
+      |    "blockId": "4ea049c11f76c50a2b864472283743fa57ca677aef29981a8804493acca5e3ea",
+      |    "inclusionHeight": 940123,
+      |    "timestamp": 1676373510065,
+      |    "index": 3,
+      |    "globalIndex": 4757642,
+      |    "numConfirmations": 3032,
+      |    "inputs": [
+      |        {
+      |            "boxId": "47a0dea6b78fa730eca7e507734c94d9a577df489e918fd7a267b895d82d0c76",
+      |            "value": 248739495,
+      |            "index": 0,
+      |            "spendingProof": "474660b0dc35820b8cb84967759afe7be8f496b94d60a14eac627af18f1add4de82da369df0e454c203909a2deca328822e08efa74ecaf28",
+      |            "outputBlockId": "de0aacf16ae010854dddf2aa39895f7c87102f81a68861fcfbe40da492db19c9",
+      |            "outputTransactionId": "6223bf77ddebf4689d1a0cab809603805f6368bb71987c4bd5c4dc9b75b5d03a",
+      |            "outputIndex": 1,
+      |            "outputGlobalIndex": 26543146,
+      |            "outputCreatedAt": 940116,
+      |            "outputSettledAt": 940118,
+      |            "ergoTree": "0008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec",
+      |            "address": "9hp1xXVF8VXkYEHdgvTJK7XSEW1vckcKqWx8JTHsAwwGzHH9hxq",
+      |            "assets": [
+      |                {
+      |                    "tokenId": "00bd762484086cf560d3127eb53f0769d76244d9737636b2699d55c56cd470bf",
+      |                    "index": 0,
+      |                    "amount": 7999498,
+      |                    "name": "EPOS",
+      |                    "decimals": 4,
+      |                    "type": "EIP-004"
+      |                }
+      |            ],
+      |            "additionalRegisters": {}
+      |        }
+      |    ],
+      |    "dataInputs": [],
+      |    "outputs": [
+      |        {
+      |            "boxId": "7134a244040ce51f1cdd6e8244414473cee6ed6f69efe3cd7829748b56770623",
+      |            "transactionId": "0c4648c2152036a2ff15aa9094fdea094e8fb6c9031904b4d6e8b590a75abda8",
+      |            "blockId": "4ea049c11f76c50a2b864472283743fa57ca677aef29981a8804493acca5e3ea",
+      |            "value": 310000,
+      |            "index": 0,
+      |            "globalIndex": 26543227,
+      |            "creationHeight": 940121,
+      |            "settlementHeight": 940123,
+      |            "ergoTree": "199c041a0400052c04c60f08cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec0404040604020524058080a0f6f4acdbe01b05868e82dacf5804000e201d5afc59838920bb5ef2a8f9d63825a55b1d48e269d7cecee335d637c3ff5f3f0e240008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec05a0d2b20906010004000e20003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d001010502040404d00f0e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d802d601b2a4730000d6029c73017e730205eb027303d195ed92b1a4730493b1db630872017305d804d603db63087201d604b2a5730600d60599c17204c1a7d606997e7307069d9c7e7205067e7308067e730906ededededed938cb27203730a0001730b93c27204730c927205730d95917206730ed801d607b2db63087204730f00ed938c7207017310927e8c7207020672067311909c7ec17201067e7202069c7e9a72057312069a9c7e8cb2720373130002067e7314067e72020690b0ada5d90107639593c272077315c1720773167317d90107599a8c7207018c72070273187319",
+      |            "address": "4J8wkYtoeJ2gHH5jPzihSRcHcB5tgGFAEnL6kqJFeiAg3AcGcCbrqacccrU1rzJPfZLUyy7eBnbKUadAv7qnVboyYZFxKCbGTNg9N8ChGSTuk499nsA7ipKzgTxLbLwt9KjnJoXmqoFfBXFiiSWFWpw8rdnfpRoXZCGEbzmHvUWmwFMnMNrP6kGF769xooFTdWXnzA3YqKNdBr1wipvCFbYHzvW6pZukgRk8XNwby4Y51akY4EkSF85aWsTjhQThKrAXYCymGPAEDSbyrgyt8R3xpuBBXfvw2RXAFoj7tiXbetvMUx8wYc21aBdyTkZ3XMZc6rg4gRBS55uN9W3U85YjrKVQnSNR5MzuVinqBoHTh5CgC5AMCpVdH9LwWGoHzWMWacu5qrKJow95oG5Qs76sznCDdsmDJRtUCmAW7dGHevj33xXdHicdU4PxWTkenursT7Hk8NHwVwNMeUpnNqnty2RTZdys58U5HJ9ftsVhuuJ9PugUxSZTXQNbwEG7DhtK1oBynpvncp6fzkgf5BXjiXjr9FnDYsrbCZb6DtK9ydVFCSyWCkWBZrPdPsAjSadqeKKv2tgsy8g77NNTCwSuugosRWk3eCcnvPuEMiTE1S1wGS9F9Vib9isipMUngJkLNSGBMUGV1RkNVn6h3EKNqxAqtDpjPSd341vDsBsnbdqK3KnLszbJkSxJyw7Ktm5VFsbqtJcXf7wmchgMrq1MUYs7SiJwaGHmtcjr8o9b",
+      |            "assets": [
+      |                {
+      |                    "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
+      |                    "index": 0,
+      |                    "amount": 40,
+      |                    "name": "SigRSV",
+      |                    "decimals": 0,
+      |                    "type": "EIP-004"
+      |                }
+      |            ],
+      |            "additionalRegisters": {},
+      |            "spentTransactionId": "90c4848da58aa3b8ac6527fef8deb9844b66ea41ed42f85a3f5aa96493a0c61e",
+      |            "mainChain": true
+      |        },
+      |        {
+      |            "boxId": "76132535559635ce954b46ed43105ed7a3d6df25624531568e1f4bbe304339ee",
+      |            "transactionId": "0c4648c2152036a2ff15aa9094fdea094e8fb6c9031904b4d6e8b590a75abda8",
+      |            "blockId": "4ea049c11f76c50a2b864472283743fa57ca677aef29981a8804493acca5e3ea",
+      |            "value": 2000000,
+      |            "index": 2,
+      |            "globalIndex": 26543229,
+      |            "creationHeight": 940121,
+      |            "settlementHeight": 940123,
+      |            "ergoTree": "1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304",
+      |            "address": "2iHkR7CWvD1R4j1yZg5bkeDRQavjAaVPeTDFGGLZduHyfWMuYpmhHocX8GJoaieTx78FntzJbCBVL6rf96ocJoZdmWBL2fci7NqWgAirppPQmZ7fN9V6z13Ay6brPriBKYqLp1bT2Fk4FkFLCfdPpe",
+      |            "assets": [],
+      |            "additionalRegisters": {},
+      |            "spentTransactionId": "42fd17ed51f7077f8cb50a1511423fc57c9eb5c8ef017809ddbe3a999f56680b",
+      |            "mainChain": true
+      |        }
+      |    ],
+      |    "size": 3670
+      |}
+      |""".stripMargin
+  ).toOption.get.toTransaction
+
+  val evalV3SwapTx = decode[TransactionTest](
+    """
+      |{
+      |    "id": "90c4848da58aa3b8ac6527fef8deb9844b66ea41ed42f85a3f5aa96493a0c61e",
+      |    "blockId": "c4f9de234aedecba12c2dea1de37777213c036e23170c580fdbc524f324f1efe",
+      |    "inclusionHeight": 940125,
+      |    "timestamp": 1676374105726,
+      |    "index": 15,
+      |    "globalIndex": 4757671,
+      |    "numConfirmations": 3033,
+      |    "inputs": [
+      |        {
+      |            "boxId": "d12580731b32f5052a4901e1e80788f680f4dcfd44335d97f21f1958aef4e1db",
+      |            "value": 36699015199022,
+      |            "index": 0,
+      |            "spendingProof": "6eceedc6339e5fc1c8fddca2762119ee3dc68bcfc3d64a4cef292178025f710176731132d20e61ef0eefdae4f08973205581eba545e98903",
+      |            "outputBlockId": "ce0d1031918995de14f026857a68782129420d7a152ce4028c967ffd2e83fc1b",
+      |            "outputTransactionId": "d7b4b4083922004af09b6107e3c7063b90dd45c5b6e6da90758a16652ce47be5",
+      |            "outputIndex": 0,
+      |            "outputGlobalIndex": 26541774,
+      |            "outputCreatedAt": 940088,
+      |            "outputSettledAt": 940090,
+      |            "ergoTree": "1999030f0400040204020404040405feffffffffffffffff0105feffffffffffffffff01050004d00f040004000406050005000580dac409d819d601b2a5730000d602e4c6a70404d603db63087201d604db6308a7d605b27203730100d606b27204730200d607b27203730300d608b27204730400d6099973058c720602d60a999973068c7205027209d60bc17201d60cc1a7d60d99720b720cd60e91720d7307d60f8c720802d6107e720f06d6117e720d06d612998c720702720fd6137e720c06d6147308d6157e721206d6167e720a06d6177e720906d6189c72117217d6199c72157217d1ededededededed93c27201c2a793e4c672010404720293b27203730900b27204730a00938c7205018c720601938c7207018c72080193b17203730b9593720a730c95720e929c9c721072117e7202069c7ef07212069a9c72137e7214067e9c720d7e72020506929c9c721372157e7202069c7ef0720d069a9c72107e7214067e9c72127e7202050695ed720e917212730d907216a19d721872139d72197210ed9272189c721672139272199c7216721091720b730e",
+      |            "address": "5vSUZRZbdVbnk4sJWjg2uhL94VZWRg4iatK9VgMChufzUgdihgvhR8yWSUEJKszzV7Vmi6K8hCyKTNhUaiP8p5ko6YEU9yfHpjVuXdQ4i5p4cRCzch6ZiqWrNukYjv7Vs5jvBwqg5hcEJ8u1eerr537YLWUoxxi1M4vQxuaCihzPKMt8NDXP4WcbN6mfNxxLZeGBvsHVvVmina5THaECosCWozKJFBnscjhpr3AJsdaL8evXAvPfEjGhVMoTKXAb2ZGGRmR8g1eZshaHmgTg2imSiaoXU5eiF3HvBnDuawaCtt674ikZ3oZdekqswcVPGMwqqUKVsGY4QuFeQoGwRkMqEYTdV2UDMMsfrjrBYQYKUBFMwsQGMNBL1VoY78aotXzdeqJCBVKbQdD3ZZWvukhSe4xrz8tcF3PoxpysDLt89boMqZJtGEHTV9UBTBEac6sDyQP693qT3nKaErN8TCXrJBUmHPqKozAg9bwxTqMYkpmb9iVKLSoJxG7MjAj72SRbcqQfNCVTztSwN3cRxSrVtz4p87jNFbVtFzhPg7UqDwNFTaasySCqM",
+      |            "assets": [
+      |                {
+      |                    "tokenId": "1d5afc59838920bb5ef2a8f9d63825a55b1d48e269d7cecee335d637c3ff5f3f",
+      |                    "index": 0,
+      |                    "amount": 1,
+      |                    "name": null,
+      |                    "decimals": null,
+      |                    "type": null
+      |                },
+      |                {
+      |                    "tokenId": "fa6326a26334f5e933b96470b53b45083374f71912b0d7597f00c2c7ebeb5da6",
+      |                    "index": 1,
+      |                    "amount": 9223372012300513585,
+      |                    "name": null,
+      |                    "decimals": null,
+      |                    "type": null
+      |                },
+      |                {
+      |                    "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
+      |                    "index": 2,
+      |                    "amount": 79165561,
+      |                    "name": "SigRSV",
+      |                    "decimals": 0,
+      |                    "type": "EIP-004"
+      |                }
+      |            ],
+      |            "additionalRegisters": {
+      |                "R4": {
+      |                    "serializedValue": "04c60f",
+      |                    "sigmaType": "SInt",
+      |                    "renderedValue": "995"
+      |                }
+      |            }
+      |        },
+      |        {
+      |            "boxId": "7134a244040ce51f1cdd6e8244414473cee6ed6f69efe3cd7829748b56770623",
+      |            "value": 310000,
+      |            "index": 1,
+      |            "spendingProof": "6eceedc6339e5fc1c8fddca2762119ee3dc68bcfc3d64a4cef292178025f710176731132d20e61ef0eefdae4f08973205581eba545e98903",
+      |            "outputBlockId": "4ea049c11f76c50a2b864472283743fa57ca677aef29981a8804493acca5e3ea",
+      |            "outputTransactionId": "0c4648c2152036a2ff15aa9094fdea094e8fb6c9031904b4d6e8b590a75abda8",
+      |            "outputIndex": 0,
+      |            "outputGlobalIndex": 26543227,
+      |            "outputCreatedAt": 940121,
+      |            "outputSettledAt": 940123,
+      |            "ergoTree": "199c041a0400052c04c60f08cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec0404040604020524058080a0f6f4acdbe01b05868e82dacf5804000e201d5afc59838920bb5ef2a8f9d63825a55b1d48e269d7cecee335d637c3ff5f3f0e240008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec05a0d2b20906010004000e20003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d001010502040404d00f0e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d802d601b2a4730000d6029c73017e730205eb027303d195ed92b1a4730493b1db630872017305d804d603db63087201d604b2a5730600d60599c17204c1a7d606997e7307069d9c7e7205067e7308067e730906ededededed938cb27203730a0001730b93c27204730c927205730d95917206730ed801d607b2db63087204730f00ed938c7207017310927e8c7207020672067311909c7ec17201067e7202069c7e9a72057312069a9c7e8cb2720373130002067e7314067e72020690b0ada5d90107639593c272077315c1720773167317d90107599a8c7207018c72070273187319",
+      |            "address": "4J8wkYtoeJ2gHH5jPzihSRcHcB5tgGFAEnL6kqJFeiAg3AcGcCbrqacccrU1rzJPfZLUyy7eBnbKUadAv7qnVboyYZFxKCbGTNg9N8ChGSTuk499nsA7ipKzgTxLbLwt9KjnJoXmqoFfBXFiiSWFWpw8rdnfpRoXZCGEbzmHvUWmwFMnMNrP6kGF769xooFTdWXnzA3YqKNdBr1wipvCFbYHzvW6pZukgRk8XNwby4Y51akY4EkSF85aWsTjhQThKrAXYCymGPAEDSbyrgyt8R3xpuBBXfvw2RXAFoj7tiXbetvMUx8wYc21aBdyTkZ3XMZc6rg4gRBS55uN9W3U85YjrKVQnSNR5MzuVinqBoHTh5CgC5AMCpVdH9LwWGoHzWMWacu5qrKJow95oG5Qs76sznCDdsmDJRtUCmAW7dGHevj33xXdHicdU4PxWTkenursT7Hk8NHwVwNMeUpnNqnty2RTZdys58U5HJ9ftsVhuuJ9PugUxSZTXQNbwEG7DhtK1oBynpvncp6fzkgf5BXjiXjr9FnDYsrbCZb6DtK9ydVFCSyWCkWBZrPdPsAjSadqeKKv2tgsy8g77NNTCwSuugosRWk3eCcnvPuEMiTE1S1wGS9F9Vib9isipMUngJkLNSGBMUGV1RkNVn6h3EKNqxAqtDpjPSd341vDsBsnbdqK3KnLszbJkSxJyw7Ktm5VFsbqtJcXf7wmchgMrq1MUYs7SiJwaGHmtcjr8o9b",
+      |            "assets": [
+      |                {
+      |                    "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
+      |                    "index": 0,
+      |                    "amount": 40,
+      |                    "name": "SigRSV",
+      |                    "decimals": 0,
+      |                    "type": "EIP-004"
+      |                }
+      |            ],
+      |            "additionalRegisters": {}
+      |        },
+      |        {
+      |            "boxId": "ab1fe501ee88eb03bb65332cd0da759bc59c0267b72568f45b5778b4163bf1ee",
+      |            "value": 1642650905,
+      |            "index": 2,
+      |            "spendingProof": "6eceedc6339e5fc1c8fddca2762119ee3dc68bcfc3d64a4cef292178025f710176731132d20e61ef0eefdae4f08973205581eba545e98903",
+      |            "outputBlockId": "6b85a8f1a5391f088fe01ea7c80be61d8530cecce27eb611a8b871df48a610a2",
+      |            "outputTransactionId": "9efe4125bbba0b9a1229d5ca2049941a9b076fb77016c75eec5f8d742cda00d3",
+      |            "outputIndex": 0,
+      |            "outputGlobalIndex": 26356664,
+      |            "outputCreatedAt": 935704,
+      |            "outputSettledAt": 935707,
+      |            "ergoTree": "0008cd02ddbe95b7f88d47bd8c2db823cc5dd1be69a650556a44d4c15ac65e1d3e34324c",
+      |            "address": "9gCigPc9cZNRhKgbgdmTkVxo1ZKgw79G8DvLjCcYWAvEF3XRUKy",
+      |            "assets": [
+      |                {
+      |                    "tokenId": "ef802b475c06189fdbf844153cdc1d449a5ba87cce13d11bb47b5a539f27f12b",
+      |                    "index": 0,
+      |                    "amount": 14972739835804,
+      |                    "name": "WT_ERG",
+      |                    "decimals": 9,
+      |                    "type": "EIP-004"
+      |                }
+      |            ],
+      |            "additionalRegisters": {}
+      |        }
+      |    ],
+      |    "dataInputs": [],
+      |    "outputs": [
+      |        {
+      |            "boxId": "78e192088bd82bcafc24533f34c548c2482eb5bfb8af57cb6a877b4c28b87c86",
+      |            "transactionId": "90c4848da58aa3b8ac6527fef8deb9844b66ea41ed42f85a3f5aa96493a0c61e",
+      |            "blockId": "c4f9de234aedecba12c2dea1de37777213c036e23170c580fdbc524f324f1efe",
+      |            "value": 36699005051413,
+      |            "index": 0,
+      |            "globalIndex": 26543425,
+      |            "creationHeight": 940122,
+      |            "settlementHeight": 940125,
+      |            "ergoTree": "1999030f0400040204020404040405feffffffffffffffff0105feffffffffffffffff01050004d00f040004000406050005000580dac409d819d601b2a5730000d602e4c6a70404d603db63087201d604db6308a7d605b27203730100d606b27204730200d607b27203730300d608b27204730400d6099973058c720602d60a999973068c7205027209d60bc17201d60cc1a7d60d99720b720cd60e91720d7307d60f8c720802d6107e720f06d6117e720d06d612998c720702720fd6137e720c06d6147308d6157e721206d6167e720a06d6177e720906d6189c72117217d6199c72157217d1ededededededed93c27201c2a793e4c672010404720293b27203730900b27204730a00938c7205018c720601938c7207018c72080193b17203730b9593720a730c95720e929c9c721072117e7202069c7ef07212069a9c72137e7214067e9c720d7e72020506929c9c721372157e7202069c7ef0720d069a9c72107e7214067e9c72127e7202050695ed720e917212730d907216a19d721872139d72197210ed9272189c721672139272199c7216721091720b730e",
+      |            "address": "5vSUZRZbdVbnk4sJWjg2uhL94VZWRg4iatK9VgMChufzUgdihgvhR8yWSUEJKszzV7Vmi6K8hCyKTNhUaiP8p5ko6YEU9yfHpjVuXdQ4i5p4cRCzch6ZiqWrNukYjv7Vs5jvBwqg5hcEJ8u1eerr537YLWUoxxi1M4vQxuaCihzPKMt8NDXP4WcbN6mfNxxLZeGBvsHVvVmina5THaECosCWozKJFBnscjhpr3AJsdaL8evXAvPfEjGhVMoTKXAb2ZGGRmR8g1eZshaHmgTg2imSiaoXU5eiF3HvBnDuawaCtt674ikZ3oZdekqswcVPGMwqqUKVsGY4QuFeQoGwRkMqEYTdV2UDMMsfrjrBYQYKUBFMwsQGMNBL1VoY78aotXzdeqJCBVKbQdD3ZZWvukhSe4xrz8tcF3PoxpysDLt89boMqZJtGEHTV9UBTBEac6sDyQP693qT3nKaErN8TCXrJBUmHPqKozAg9bwxTqMYkpmb9iVKLSoJxG7MjAj72SRbcqQfNCVTztSwN3cRxSrVtz4p87jNFbVtFzhPg7UqDwNFTaasySCqM",
+      |            "assets": [
+      |                {
+      |                    "tokenId": "1d5afc59838920bb5ef2a8f9d63825a55b1d48e269d7cecee335d637c3ff5f3f",
+      |                    "index": 0,
+      |                    "amount": 1,
+      |                    "name": null,
+      |                    "decimals": null,
+      |                    "type": null
+      |                },
+      |                {
+      |                    "tokenId": "fa6326a26334f5e933b96470b53b45083374f71912b0d7597f00c2c7ebeb5da6",
+      |                    "index": 1,
+      |                    "amount": 9223372012300513585,
+      |                    "name": null,
+      |                    "decimals": null,
+      |                    "type": null
+      |                },
+      |                {
+      |                    "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
+      |                    "index": 2,
+      |                    "amount": 79165583,
+      |                    "name": "SigRSV",
+      |                    "decimals": 0,
+      |                    "type": "EIP-004"
+      |                }
+      |            ],
+      |            "additionalRegisters": {
+      |                "R4": {
+      |                    "serializedValue": "04c60f",
+      |                    "sigmaType": "SInt",
+      |                    "renderedValue": "995"
+      |                }
+      |            },
+      |            "spentTransactionId": "6954eff7fe9856f0072e044434728c37ce628c00d3e31a0feb241db8459a99e4",
+      |            "mainChain": true
+      |        },
+      |        {
+      |            "boxId": "2f6288ad86b02acb0d94a1db1d8e03f8608c2c191ff763053500ee2cc9a439e8",
+      |            "transactionId": "90c4848da58aa3b8ac6527fef8deb9844b66ea41ed42f85a3f5aa96493a0c61e",
+      |            "blockId": "c4f9de234aedecba12c2dea1de37777213c036e23170c580fdbc524f324f1efe",
+      |            "value": 10457609,
+      |            "index": 1,
+      |            "globalIndex": 26543426,
+      |            "creationHeight": 940122,
+      |            "settlementHeight": 940125,
+      |            "ergoTree": "0008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec",
+      |            "address": "9hp1xXVF8VXkYEHdgvTJK7XSEW1vckcKqWx8JTHsAwwGzHH9hxq",
+      |            "assets": [
+      |                {
+      |                    "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
+      |                    "index": 0,
+      |                    "amount": 3,
+      |                    "name": "SigRSV",
+      |                    "decimals": 0,
+      |                    "type": "EIP-004"
+      |                }
+      |            ],
+      |            "additionalRegisters": {},
+      |            "spentTransactionId": "a5fc3c4930bfe12f17d6543f8fe5e9f2450acd4f5e8517b1de5c5ce7acaa36e7",
+      |            "mainChain": true
+      |        },
+      |        {
+      |            "boxId": "722d9e4efef5bab3d4f24af5b53e1cdac1fb128194ac08393d2369d461b8dcfa",
+      |            "transactionId": "90c4848da58aa3b8ac6527fef8deb9844b66ea41ed42f85a3f5aa96493a0c61e",
+      |            "blockId": "c4f9de234aedecba12c2dea1de37777213c036e23170c580fdbc524f324f1efe",
+      |            "value": 1640650905,
+      |            "index": 2,
+      |            "globalIndex": 26543427,
+      |            "creationHeight": 940122,
+      |            "settlementHeight": 940125,
+      |            "ergoTree": "0008cd02ddbe95b7f88d47bd8c2db823cc5dd1be69a650556a44d4c15ac65e1d3e34324c",
+      |            "address": "9gCigPc9cZNRhKgbgdmTkVxo1ZKgw79G8DvLjCcYWAvEF3XRUKy",
+      |            "assets": [
+      |                {
+      |                    "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
+      |                    "index": 0,
+      |                    "amount": 15,
+      |                    "name": "SigRSV",
+      |                    "decimals": 0,
+      |                    "type": "EIP-004"
+      |                }
+      |            ],
+      |            "additionalRegisters": {},
+      |            "spentTransactionId": "108d3189535ce48e881ea18a7a19240974a19b9841da3070259cb8e5bfedde46",
+      |            "mainChain": true
+      |        },
+      |        {
+      |            "boxId": "fe45af9f566aa4e42061603af56fbabcb64fd157cf502ad38647168c7b0f0eab",
+      |            "transactionId": "90c4848da58aa3b8ac6527fef8deb9844b66ea41ed42f85a3f5aa96493a0c61e",
+      |            "blockId": "c4f9de234aedecba12c2dea1de37777213c036e23170c580fdbc524f324f1efe",
+      |            "value": 2000000,
+      |            "index": 3,
+      |            "globalIndex": 26543428,
+      |            "creationHeight": 940122,
+      |            "settlementHeight": 940125,
+      |            "ergoTree": "1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304",
+      |            "address": "2iHkR7CWvD1R4j1yZg5bkeDRQavjAaVPeTDFGGLZduHyfWMuYpmhHocX8GJoaieTx78FntzJbCBVL6rf96ocJoZdmWBL2fci7NqWgAirppPQmZ7fN9V6z13Ay6brPriBKYqLp1bT2Fk4FkFLCfdPpe",
+      |            "assets": [],
+      |            "additionalRegisters": {},
+      |            "spentTransactionId": "f1f31b038c09e6cfb6e4f918f2b9658786f8b8dca1078600c0265ea970c93907",
+      |            "mainChain": true
+      |        }
+      |    ],
+      |    "size": 1022
+      |}
+      |""".stripMargin
+  ).toOption.get.toTransaction
+
 }
