@@ -5,6 +5,7 @@ import cats.effect.Clock
 import derevo.derive
 import fi.spectrum.api.db.models.amm.PoolInfo
 import fi.spectrum.api.domain.{FeePercentProjection, Fees, TotalValueLocked}
+import fi.spectrum.core.domain.order.PoolId
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
 import tofu.logging.{Logging, Logs}
@@ -19,6 +20,7 @@ import scala.math.BigDecimal.RoundingMode
 trait AmmStatsMath[F[_]] {
 
   def feePercentProjection(
+    poolId: PoolId,
     tvl: TotalValueLocked,
     fees: Fees,
     poolInfo: PoolInfo,
@@ -36,6 +38,7 @@ object AmmStatsMath {
   final class Live[F[_]: Monad: Clock] extends AmmStatsMath[F] {
 
     def feePercentProjection(
+      poolId: PoolId,
       tvl: TotalValueLocked,
       fees: Fees,
       poolInfo: PoolInfo,
@@ -63,16 +66,18 @@ object AmmStatsMath {
   final class Tracing[F[_]: Monad: Logging] extends AmmStatsMath[Mid[F, *]] {
 
     def feePercentProjection(
+      poolId: PoolId,
       tvl: TotalValueLocked,
       fees: Fees,
       poolInfo: PoolInfo,
       projectionPeriod: FiniteDuration
     ): Mid[F, FeePercentProjection] =
       for {
-        _ <- trace"feePercentProjection(tvl=$tvl,fees=$fees,poolInfo=$poolInfo,projectionPeriod=$projectionPeriod)"
+        _ <-
+          trace"feePercentProjection(poolId=$poolId,tvl=$tvl,fees=$fees,poolInfo=$poolInfo,projectionPeriod=$projectionPeriod)"
         r <- _
         _ <-
-          trace"feePercentProjection(tvl=$tvl,fees=$fees,poolInfo=$poolInfo,projectionPeriod=$projectionPeriod) -> $r"
+          trace"feePercentProjection(poolId=$poolId,tvl=$tvl,fees=$fees,poolInfo=$poolInfo,projectionPeriod=$projectionPeriod) -> $r"
       } yield r
   }
 }
