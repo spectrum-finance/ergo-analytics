@@ -10,6 +10,7 @@ import org.scalatest.matchers.should
 import org.scalatest.propspec.AnyPropSpec
 import cats.syntax.option._
 import fi.spectrum.api.db.models.amm.PoolInfo
+import fi.spectrum.core.domain.order.PoolId
 import tofu.logging.Logs
 
 import scala.concurrent.duration.DurationInt
@@ -42,6 +43,7 @@ class AmmStatsMathSpec extends AnyPropSpec with should.Matchers  {
     val math = AmmStatsMath.make[IO, IO].unsafeRunSync()
 
     val res = math.feePercentProjection(
+      PoolId.unsafeFromString(""),
       TotalValueLocked(BigDecimal(41671250),FiatUnits(Currency(CurrencyId("USD"), 2))),
       Fees(BigDecimal(492),  FiatUnits(Currency(CurrencyId("USD"), 2)), tw),
       PoolInfo(1630335881195L),
