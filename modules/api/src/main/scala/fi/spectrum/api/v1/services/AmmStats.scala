@@ -231,7 +231,7 @@ object AmmStats {
         tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
         volume            <- processPoolVolume(vol, window, poolSnapshots)
         fees              <- processPoolFee(feesSnap, window, poolSnapshots)
-        yearlyFeesPercent <- OptionT.liftF(ammMath.feePercentProjection(tvl, fees, info, MillisInYear))
+        yearlyFeesPercent <- OptionT.liftF(ammMath.feePercentProjection(poolId, tvl, fees, info, MillisInYear))
       } yield PoolStats(poolId, pool.lockedX, pool.lockedY, tvl, volume, fees, yearlyFeesPercent)).value
     }
 
@@ -283,7 +283,7 @@ object AmmStats {
           tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
           volume            <- processPoolVolume(vol, tw, pools)
           fees              <- processPoolFee(feesSnap, tw, pools)
-          yearlyFeesPercent <- OptionT.liftF(ammMath.feePercentProjection(tvl, fees, info, MillisInYear))
+          yearlyFeesPercent <- OptionT.liftF(ammMath.feePercentProjection(poolId, tvl, fees, info, MillisInYear))
         } yield PoolStats(poolId, pool.lockedX, pool.lockedY, tvl, volume, fees, yearlyFeesPercent)).value
       }
 
