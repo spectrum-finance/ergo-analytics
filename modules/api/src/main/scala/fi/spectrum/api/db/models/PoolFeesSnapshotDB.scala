@@ -11,13 +11,13 @@ final case class PoolFeesSnapshotDB(
   feesByY: AssetAmount
 ) {
 
-  def toPoolFeesSnapshot(assets: List[AssetInfo]): Option[PoolFeesSnapshot] =
-    for {
-      x <- assets.find(_.id == feesByX.tokenId)
-      y <- assets.find(_.id == feesByY.tokenId)
-    } yield PoolFeesSnapshot(
+  def toPoolFeesSnapshot(assets: List[AssetInfo]): PoolFeesSnapshot = {
+    val x = assets.find(_.id == feesByX.tokenId)
+    val y = assets.find(_.id == feesByY.tokenId)
+    PoolFeesSnapshot(
       poolId,
-      FullAsset(feesByX.tokenId, feesByX.amount, x.ticker, x.decimals),
-      FullAsset(feesByY.tokenId, feesByY.amount, y.ticker, y.decimals)
+      FullAsset(feesByX.tokenId, feesByX.amount, x.flatMap(_.ticker), x.flatMap(_.decimals)),
+      FullAsset(feesByY.tokenId, feesByY.amount, y.flatMap(_.ticker), y.flatMap(_.decimals))
     )
+  }
 }
