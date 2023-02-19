@@ -25,10 +25,12 @@ object Metrics {
     logs.forService[Metrics[F]].map { implicit log =>
       new Errors[F] attach new Metrics[F] {
         def sendTs(key: String, value: Double): F[Unit] =
-          client.send(GraphitePoint.GraphitePointTs(key, value))
+          Monad[F].unit
+//          client.send(GraphitePoint.GraphitePointTs(key, value))
 
         def sendCount(key: String, value: Double): F[Unit] =
-          client.send(GraphitePoint.GraphitePointCount(key, value))
+          Monad[F].unit
+//          client.send(GraphitePoint.GraphitePointCount(key, value))
       }
     }
 
