@@ -3,45 +3,29 @@ package fi.spectrum.api.db.sql
 import doobie.implicits._
 import doobie.util.query.Query0
 import doobie.{Fragment, LogHandler}
-import fi.spectrum.api.db.models.{PoolFeesSnapshotDB, PoolSnapshotDB, PoolTraceDB, PoolVolumeSnapshotDB}
+import fi.spectrum.api.db.models.{PoolFeesSnapshotDB, PoolInfoDB, PoolSnapshotDB, PoolTraceDB, PoolVolumeSnapshotDB}
 import fi.spectrum.api.db.models.amm._
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.core.domain.order.PoolId
 
 final class AnalyticsSql(implicit lg: LogHandler) {
 
-  def getFirstPoolSwapTime(id: PoolId): Query0[PoolInfo] =
+  def getFirstPoolSwapTime(id: PoolId): Query0[PoolInfoDB] =
     sql"""
-         |SELECT
-         |	executed_transaction_timestamp
-         |FROM
-         |	swaps
-         |WHERE
-         |	pool_id = $id
-         |	AND executed_transaction_timestamp IS NOT NULL
-         |ORDER BY
-         |	executed_transaction_timestamp ASC
-         |LIMIT 1;
+         |SELECT min(executed_transaction_timestamp)
+         |FROM swaps
+         |WHERE pool_id = $id AND executed_transaction_timestamp IS NOT NULL;
        """.stripMargin.query
 
   def getPoolSnapshots: Query0[PoolSnapshotDB] =
     sql"""
-         |SELECT x.pool_id, x.x_id, x.x_amount, x.y_id, x.y_amount
-         |FROM (
-         |	SELECT p.pool_id, p.x_id, p.x_amount, p.y_id, p.y_amount, (p.x_amount::decimal) * p.y_amount AS lq
-         |	FROM
-         |		pools p
+         |SELECT p1.pool_id, p1.x_id, p1.x_amount, p1.y_id, p1.y_amount, p1.fee_num
+         |FROM
+         |	pools p1
          |	LEFT JOIN (
-         |		SELECT pool_id, max(height) AS height
-         |		FROM
-         |			pools
-         |		GROUP BY
-         |			pool_id) AS px ON p.pool_id = px.pool_id
-         |		AND p.height = px.height
-         |	WHERE
-         |		px.height = p.height
-         |	ORDER BY
-         |		lq DESC) AS x;
+         |		SELECT max(height) AS height, pool_id FROM pools GROUP BY pool_id
+		 |  ) AS p2 ON p2.height = p1.height AND p2.pool_id = p1.pool_id
+         |WHERE p2.height = p1.height AND p2.pool_id = p1.pool_id;
          """.stripMargin.query[PoolSnapshotDB]
 
   def mkTimestamp(window: TimeWindow, key: String): Fragment =
@@ -63,8 +47,8 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |	LEFT JOIN (
          |		SELECT
          |			s.pool_id,
-         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
-         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
+         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS tx,
+         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS ty
          |		FROM
          |			swaps s
          |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id and $fragment
@@ -89,8 +73,8 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |	LEFT JOIN (
          |		SELECT
          |			s.pool_id,
-         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
-         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
+         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS tx,
+         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS ty
          |		FROM
          |			swaps s
          |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id
@@ -103,33 +87,16 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          """.stripMargin.query[PoolVolumeSnapshotDB]
   }
 
-  def getPoolFees(poolId: PoolId, tw: TimeWindow): Query0[PoolFeesSnapshotDB] = {
-    val fragment = mkTimestamp(tw, "s.executed_transaction_timestamp")
+  def getPoolFees(pool: PoolSnapshot, tw: TimeWindow): Query0[PoolFeesSnapshotDB] = {
+    val fragment = mkTimestamp(tw, "executed_transaction_timestamp")
+
     sql"""
-         |SELECT DISTINCT ON (p.pool_id)
-         |	p.pool_id,
-         |	p.x_id,
-         |	sx.tx,
-         |	p.y_id,
-         |	sx.ty
-         |FROM
-         |	pools p
-         |	LEFT JOIN (
-         |		SELECT
-         |			s.pool_id,
-         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount::decimal * (1000 - p.fee_num) / 1000 ELSE 0 END) AS bigint) AS tx,
-         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount::decimal * (1000 - p.fee_num) / 1000 ELSE 0 END) AS bigint) AS ty
-         |		FROM
-         |			swaps s
-         |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id
-         |		WHERE
-         |			p.pool_id = $poolId
-         |			AND $fragment
-         |		GROUP BY
-         |			s.pool_id) AS sx ON sx.pool_id = p.pool_id
-         |WHERE
-         |	sx.pool_id IS NOT NULL
-         """.stripMargin.query[PoolFeesSnapshotDB]
+         |SELECT
+         |	COALESCE(cast(sum(CASE WHEN (base_id = ${pool.lockedY.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint), 0) AS tx,
+         |	COALESCE(cast(sum(CASE WHEN (base_id = ${pool.lockedX.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint), 0) AS ty
+         |FROM swaps
+         |WHERE pool_id = ${pool.id} and $fragment
+       """.stripMargin.query[PoolFeesSnapshotDB]
   }
 
   def getPrevPoolTrace(id: PoolId, depth: Int, currHeight: Int): Query0[PoolTraceDB] =

@@ -27,7 +27,7 @@ object CryptoUnits {
   implicit val schema: Schema[CryptoUnits] = Schema.derived
 }
 
-@derive(encoder, decoder, loggable)
+@derive(encoder, decoder)
 final case class FiatUnits(currency: Currency) extends ValueUnits[Currency]
 
 object FiatUnits {

@@ -3,8 +3,8 @@ package fi.spectrum.api.db.repositories
 import cats.tagless.syntax.functorK._
 import cats.{FlatMap, Functor, Monad}
 import doobie.ConnectionIO
-import fi.spectrum.api.db.models.{PoolFeesSnapshotDB, PoolSnapshotDB, PoolTraceDB, PoolVolumeSnapshotDB}
 import fi.spectrum.api.db.models.amm._
+import fi.spectrum.api.db.models.{PoolSnapshotDB, PoolTraceDB, PoolVolumeSnapshotDB}
 import fi.spectrum.api.db.sql.AnalyticsSql
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.core.domain.order.PoolId
@@ -13,6 +13,7 @@ import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler
 import tofu.higherKind.{Mid, RepresentableK}
 import tofu.logging.{Logging, Logs}
+import tofu.syntax.foption._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.time.Clock
@@ -37,7 +38,7 @@ trait Pools[F[_]] {
 
   /** Get fees by a given pool.
     */
-  def fees(id: PoolId, window: TimeWindow): F[Option[PoolFeesSnapshotDB]]
+  def fees(id: PoolSnapshot, window: TimeWindow): F[Option[PoolFeesSnapshot]]
 
   /** Get snapshots of a given pool within given depth.
     */
@@ -73,7 +74,7 @@ object Pools {
   final class Live(sql: AnalyticsSql) extends Pools[ConnectionIO] {
 
     def getFirstPoolSwapTime(id: PoolId): ConnectionIO[Option[PoolInfo]] =
-      sql.getFirstPoolSwapTime(id).option
+      sql.getFirstPoolSwapTime(id).option.flatMapIn(_.firstSwapTimestamp.map(r => PoolInfo(r)))
 
     def snapshots: ConnectionIO[List[PoolSnapshotDB]] =
       sql.getPoolSnapshots.to[List]
@@ -84,8 +85,8 @@ object Pools {
     def volume(id: PoolId, window: TimeWindow): ConnectionIO[Option[PoolVolumeSnapshotDB]] =
       sql.getPoolVolumes(id, window).option
 
-    def fees(id: PoolId, window: TimeWindow): ConnectionIO[Option[PoolFeesSnapshotDB]] =
-      sql.getPoolFees(id, window).option
+    def fees(pool: PoolSnapshot, window: TimeWindow): ConnectionIO[Option[PoolFeesSnapshot]] =
+      sql.getPoolFees(pool, window).option.mapIn(_.tooPoolFeesSnapshot(pool))
 
     def trace(id: PoolId, depth: Int, currHeight: Int): ConnectionIO[List[PoolTraceDB]] =
       sql.getPoolTrace(id, depth, currHeight).to[List]
@@ -121,11 +122,11 @@ object Pools {
         _ <- trace"volume(poolId=$poolId, window=$window) -> ${r.size} volume snapshots selected"
       } yield r
 
-    def fees(poolId: PoolId, window: TimeWindow): Mid[F, Option[PoolFeesSnapshotDB]] =
+    def fees(pool: PoolSnapshot, window: TimeWindow): Mid[F, Option[PoolFeesSnapshot]] =
       for {
-        _ <- trace"fees(poolId=$poolId, window=$window)"
+        _ <- trace"fees(poolId=${pool.id}, window=$window)"
         r <- _
-        _ <- trace"fees(poolId=$poolId, window=$window) -> ${r.size} fees snapshots selected"
+        _ <- trace"fees(poolId=${pool.id}, window=$window) -> ${r.size} fees snapshots selected"
       } yield r
 
     def trace(id: PoolId, depth: Int, currHeight: Int): Mid[F, List[PoolTraceDB]] =
@@ -171,7 +172,7 @@ object Pools {
     def volume(id: PoolId, window: TimeWindow): Mid[F, Option[PoolVolumeSnapshotDB]] =
       processMetric(_, s"db.pools.volume.$id")
 
-    def fees(id: PoolId, window: TimeWindow): Mid[F, Option[PoolFeesSnapshotDB]] =
+    def fees(id: PoolSnapshot, window: TimeWindow): Mid[F, Option[PoolFeesSnapshot]] =
       processMetric(_, s"db.pools.fees.$id")
 
     def trace(id: PoolId, depth: Int, currHeight: Int): Mid[F, List[PoolTraceDB]] =

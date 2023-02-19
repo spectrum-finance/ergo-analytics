@@ -16,6 +16,8 @@ final case class FullAsset(
 ) {
   def evalDecimals: Int      = decimals getOrElse 0
   def assetClass: AssetClass = AssetClass(id, ticker, decimals)
+
+  def withAmount(newAmount: Long): FullAsset = this.copy(amount = newAmount)
 }
 
 object FullAsset {
