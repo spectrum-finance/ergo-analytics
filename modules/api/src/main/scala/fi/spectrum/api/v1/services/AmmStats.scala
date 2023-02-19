@@ -459,13 +459,15 @@ object AmmStats {
           }
       }
 
-    private def resolveTimeWindow(tw: TimeWindow): F[TimeWindow] =
-      (tw.from, tw.to) match {
-        case (Some(from), None) => TimeWindow(Some(from), Some(from + monthMillis * 3)).pure[F]
-        case (None, Some(to))   => TimeWindow(Some(to - monthMillis * 3), Some(to)).pure[F]
-        case (None, None)       => millis.map(currTs => TimeWindow(Some(currTs - monthMillis * 3), Some(currTs)))
-        case _                  => tw.pure[F]
-      }
+    private def resolveTimeWindow(tw: TimeWindow): F[TimeWindow] = {
+      tw.pure[F]
+//      (tw.from, tw.to) match {
+//        case (Some(from), None) => TimeWindow(Some(from), Some(from + monthMillis * 3)).pure[F]
+//        case (None, Some(to))   => TimeWindow(Some(to - monthMillis * 3), Some(to)).pure[F]
+//        case (None, None)       => millis.map(currTs => TimeWindow(Some(currTs - monthMillis * 3), Some(currTs)))
+//        case _                  => tw.pure[F]
+//      }
+    }
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends AmmStats[Mid[F, *]] {
