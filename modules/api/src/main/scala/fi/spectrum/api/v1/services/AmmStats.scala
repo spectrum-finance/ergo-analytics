@@ -459,14 +459,16 @@ object AmmStats {
           }
       }
 
-    private def resolveTimeWindow(tw: TimeWindow): F[TimeWindow] = {
-      tw.pure[F]
-//      (tw.from, tw.to) match {
-//        case (Some(from), None) => TimeWindow(Some(from), Some(from + monthMillis * 3)).pure[F]
-//        case (None, Some(to))   => TimeWindow(Some(to - monthMillis * 3), Some(to)).pure[F]
-//        case (None, None)       => millis.map(currTs => TimeWindow(Some(currTs - monthMillis * 3), Some(currTs)))
-//        case _                  => tw.pure[F]
-//      }
+    private def resolveTimeWindow(tw: TimeWindow): F[TimeWindow] = millis.map { now =>
+      (tw.from, tw.to) match {
+        case (Some(from), None) =>
+          val maybeTo = from + monthMillis * 3
+          val to      = if (maybeTo > now) now else maybeTo
+          TimeWindow(Some(from), Some(to))
+        case (None, Some(to)) => TimeWindow(Some(to - monthMillis * 3), Some(to))
+        case (None, None)     => TimeWindow(Some(now - monthMillis * 3), Some(now))
+        case _                => tw
+      }
     }
   }
 

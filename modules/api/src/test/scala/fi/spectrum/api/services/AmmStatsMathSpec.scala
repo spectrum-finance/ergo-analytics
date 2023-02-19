@@ -45,9 +45,17 @@ class AmmStatsMathSpec extends AnyPropSpec with should.Matchers  {
   //  projectionPeriod=365 days
   //)
 
+  //feePercentProjection(
+  //  poolId=9916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec,
+  //  tvl=TotalValueLocked{value=41972768,units=FiatUnits{currency=Currency{id=USD,decimals=2}}},
+  //  fees=Fees{value=496,units=FiatUnits{currency=Currency{id=USD,decimals=2}},window=TimeWindow{from=1676733878079,to=<none>}},
+  //  poolInfo=PoolInfo{firstSwapTimestamp=1630335881195},
+  //  projectionPeriod=365 days
+  //)
+
   property("Get ERG/USD rate") {
     implicit val logs: Logs[IO, IO] = Logs.sync[IO, IO]
-    val tw = TimeWindow(1676730323161L.some,1684619561161L.some)
+    val tw = TimeWindow(1676730323161L.some,none)
     val math = AmmStatsMath.make[IO, IO].unsafeRunSync()
 
     val res = math.feePercentProjection(
