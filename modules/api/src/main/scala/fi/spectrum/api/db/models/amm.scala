@@ -26,6 +26,7 @@ object amm {
   @derive(loggable)
   final case class PoolSnapshot(
     id: PoolId,
+    fee: Int,
     lockedX: FullAsset,
     lockedY: FullAsset
   )

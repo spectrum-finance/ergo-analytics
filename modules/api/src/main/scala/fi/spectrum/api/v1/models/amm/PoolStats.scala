@@ -10,7 +10,7 @@ import fi.spectrum.api.models.FullAsset
 import sttp.tapir.Schema
 import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder, loggable)
+@derive(encoder, decoder)
 final case class PoolStats(
   id: PoolId,
   lockedX: FullAsset,
