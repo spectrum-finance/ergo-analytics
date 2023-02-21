@@ -13,4 +13,4 @@ ENV ENV_CONFIG "conf/api.conf"
 
 ENV RUN_JAR "/usr/api-assembly-0.1.0.jar"
 
-ENTRYPOINT java -agentpath:/usr/local/YourKit-JavaProfiler-2022.3/bin/linux-x86-64/libyjpagent.so=port=10001,listen=all  -Xms1G -Xmx2G -Dlogback.configurationFile=${LOG_CONFIG} -jar ${RUN_JAR} ${ENV_CONFIG}
+ENTRYPOINT java -agentpath:/usr/local/YourKit-JavaProfiler-2022.3/bin/linux-x86-64/libyjpagent.so=port=10001,listen=all  -Xms2G -Xmx4G -Dlogback.configurationFile=${LOG_CONFIG} -jar ${RUN_JAR} ${ENV_CONFIG}
