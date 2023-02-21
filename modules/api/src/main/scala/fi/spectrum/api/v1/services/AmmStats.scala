@@ -167,6 +167,7 @@ object AmmStats {
         volume = Volume(volumeByX.map(_.value).sum + volumeByY.map(_.value).sum, UsdUnits, tw)
         finish13 <- millis
         _        <- info"Volume(volumeByX.map(_.value).sum + volumeByY.map(_.value).sum, UsdUnits, tw): ${finish13 - finish12}"
+        _        <- info"Total PlatformStats: ${finish13 - start1}"
       } yield PlatformStats(tvl, volume)
 
     def getPoolsSummary: F[List[PoolSummary]] = calculatePoolsSummary(_ => true)
@@ -254,16 +255,38 @@ object AmmStats {
         } yield (info, feesSnap, vol)).value
 
       (for {
+        start                     <- OptionT.liftF(millis)
         (info, feesSnapDB, volDB) <- OptionT(poolData.trans)
+        finish1                   <- OptionT.liftF(millis)
+        _                         <- OptionT.liftF(info"getPoolSummary1: ${finish1 - start}")
         assets                    <- OptionT.liftF(assets.get)
-        vol      = volDB.map(_.toPoolVolumeSnapshot(assets))
+        finish2                   <- OptionT.liftF(millis)
+        _                         <- OptionT.liftF(info"getPoolSummary2: ${finish2 - finish1}")
+        vol = volDB.map(_.toPoolVolumeSnapshot(assets))
+        finish3 <- OptionT.liftF(millis)
+        _       <- OptionT.liftF(info"getPoolSummary3: ${finish3 - finish2}")
         feesSnap = feesSnapDB.map(_.toPoolFeesSnapshot(assets))
+        finish4 <- OptionT.liftF(millis)
+        _       <- OptionT.liftF(info"getPoolSummary4: ${finish4 - finish3}")
         lockedX <- OptionT(solver.convert(pool.lockedX, UsdUnits, poolSnapshots))
+        finish5 <- OptionT.liftF(millis)
+        _       <- OptionT.liftF(info"getPoolSummary5: ${finish5 - finish4}")
         lockedY <- OptionT(solver.convert(pool.lockedY, UsdUnits, poolSnapshots))
+        finish6 <- OptionT.liftF(millis)
+        _       <- OptionT.liftF(info"getPoolSummary6: ${finish6 - finish5}")
         tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
+        finish7           <- OptionT.liftF(millis)
+        _                 <- OptionT.liftF(info"getPoolSummary7: ${finish7 - finish6}")
         volume            <- processPoolVolume(vol, window, poolSnapshots)
+        finish8           <- OptionT.liftF(millis)
+        _                 <- OptionT.liftF(info"getPoolSummary8: ${finish8 - finish7}")
         fees              <- processPoolFee(feesSnap, window, poolSnapshots)
+        finish9           <- OptionT.liftF(millis)
+        _                 <- OptionT.liftF(info"getPoolSummary9: ${finish9 - finish8}")
         yearlyFeesPercent <- OptionT.liftF(ammMath.feePercentProjection(poolId, tvl, fees, info, MillisInYear))
+        finish10          <- OptionT.liftF(millis)
+        _                 <- OptionT.liftF(info"getPoolSummary10: ${finish10 - finish9}")
+        _                 <- OptionT.liftF(info"getPoolSummary11: ${finish10 - start}")
       } yield PoolStats(poolId, pool.lockedX, pool.lockedY, tvl, volume, fees, yearlyFeesPercent)).value
     }
 
