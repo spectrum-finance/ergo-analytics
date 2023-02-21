@@ -529,8 +529,9 @@ object AmmStats {
 
     def getPoolsStats(window: TimeWindow): Mid[F, List[PoolStats]] =
       for {
-        _ <- trace"getPoolsStats($window)"
+        _ <- info"getPoolsStats($window)"
         r <- _
+        _ <- info"getPoolsStats($window)"
         _ <- trace"getPoolsStats($window) - $r"
       } yield r
 
@@ -564,8 +565,9 @@ object AmmStats {
 
     def getPoolPriceChart(poolId: PoolId, window: TimeWindow, resolution: Int): Mid[F, List[PricePoint]] =
       for {
-        _ <- trace"getPoolPriceChart($poolId, $window, $resolution)"
+        _ <- info"getPoolPriceChart($poolId, $window, $resolution)"
         r <- _
+        _ <- info"getPoolPriceChart($poolId, $window, $resolution)"
         _ <- trace"getPoolPriceChart($poolId, $window, $resolution) - $r"
       } yield r
 
@@ -585,8 +587,9 @@ object AmmStats {
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
       for {
-        _ <- trace"getMarkets($window)"
+        _ <- info"getMarkets($window)"
         r <- _
+        _ <- info"getMarkets($window)"
         _ <- trace"getMarkets($window) - $r"
       } yield r
   }
