@@ -85,7 +85,7 @@ object AmmStats {
   ): I[AmmStats[F]] =
     logs.forService[AmmStats[F]].map(implicit __ => new AmmMetrics[F] attach (new Tracing[F] attach new Live[F, D]))
 
-  final class Live[F[_]: Monad: Clock: Parallel, D[_]: Monad](implicit
+  final class Live[F[_]: Monad: Clock: Parallel: Logging, D[_]: Monad](implicit
     txr: Txr[F, D],
     pools: Pools[D],
     orders: Orders[D],
@@ -122,19 +122,51 @@ object AmmStats {
 
     private def calculatePlatformSummary(window: TimeWindow, f: PoolSnapshot => Boolean): F[PlatformStats] =
       for {
+        start1    <- millis
         tw        <- resolveTimeWindow(window)
+        finish1   <- millis
+        _         <- info"resolveTimeWindow(window): ${finish1 - start1}"
         volumesDB <- pools.volumes(tw).trans
+        finish2   <- millis
+        _         <- info"pools.volumes(tw).trans: ${finish2 - finish1}"
         assets    <- assets.get
+        finish3   <- millis
+        _         <- info"assets.get: ${finish3 - finish2}"
         volumes = volumesDB.map(_.toPoolVolumeSnapshot(assets))
+        finish4         <- millis
+        _               <- info"volumes: ${finish4 - finish3}"
         poolSnapshotsDB <- snapshots.get
+        finish5         <- millis
+        _               <- info"snapshots.get: ${finish5 - finish4}"
         poolSnapshots = poolSnapshotsDB.map(_.toPoolSnapshot(assets))
-        filtered      = poolSnapshots.filter(f)
+        finish6 <- millis
+        _       <- info"poolSnapshotsDB.map(_.toPoolSnapshot(assets)): ${finish6 - finish5}"
+        filtered = poolSnapshots.filter(f)
+        finish7 <- millis
+        _       <- info"poolSnapshots.filter(f): ${finish7 - finish6}"
         lockedX <- filtered.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, poolSnapshots).map(_.toList))
+        finish8 <- millis
+        _ <-
+          info"filtered.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, poolSnapshots).map(_.toList)): ${finish8 - finish7}"
         lockedY <- filtered.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, poolSnapshots).map(_.toList))
+        finish9 <- millis
+        _ <-
+          info"filtered.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, poolSnapshots).map(_.toList)): ${finish9 - finish8}"
         tvl = TotalValueLocked(lockedX.map(_.value).sum + lockedY.map(_.value).sum, UsdUnits)
+        finish10 <- millis
+        _ <-
+          info"TotalValueLocked(lockedX.map(_.value).sum + lockedY.map(_.value).sum, UsdUnits): ${finish10 - finish9}"
         volumeByX <- volumes.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, poolSnapshots).map(_.toList))
+        finish11  <- millis
+        _ <-
+          info"volumes.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, poolSnapshots).map(_.toList)): ${finish11 - finish10}"
         volumeByY <- volumes.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, poolSnapshots).map(_.toList))
+        finish12  <- millis
+        _ <-
+          info"volumes.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, poolSnapshots).map(_.toList)): ${finish12 - finish11}"
         volume = Volume(volumeByX.map(_.value).sum + volumeByY.map(_.value).sum, UsdUnits, tw)
+        finish13 <- millis
+        _        <- info"Volume(volumeByX.map(_.value).sum + volumeByY.map(_.value).sum, UsdUnits, tw): ${finish13 - finish12}"
       } yield PlatformStats(tvl, volume)
 
     def getPoolsSummary: F[List[PoolSummary]] = calculatePoolsSummary(_ => true)
