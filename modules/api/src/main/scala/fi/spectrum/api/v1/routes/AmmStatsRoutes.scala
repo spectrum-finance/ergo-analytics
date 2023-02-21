@@ -31,21 +31,16 @@ final class AmmStatsRoutes[
     getPoolsSummaryR <+>
     getAvgPoolSlippageR <+>
     getPoolPriceChartR <+>
-    getSwapTxsR <+>
-    getDepositTxsR <+>
     getPoolLocksR <+>
-    convertToFiatR <+>
     getAmmMarketsR
 
   def platformStatsVerifiedR: HttpRoutes[F] =
     interpreter
-      .toRoutes(
-        platformStatsVerifiedE.serverLogic(stats.platformStatsVerified(_).adaptThrowable.value)
-      )
+      .toRoutes(platformStatsVerified24hE.serverLogic(_ => stats.platformStatsVerified24h.adaptThrowable.value))
 
   def platformStatsR: HttpRoutes[F] =
     interpreter
-      .toRoutes(platformStatsE.serverLogic(stats.platformStats(_).adaptThrowable.value))
+      .toRoutes(platformStats24hE.serverLogic(_ => stats.platformStats24h.adaptThrowable.value))
 
   def getPoolStatsR: HttpRoutes[F] =
     interpreter
@@ -55,7 +50,7 @@ final class AmmStatsRoutes[
 
   def getPoolsStatsR: HttpRoutes[F] =
     interpreter
-      .toRoutes(getPoolsStatsE.serverLogic(stats.getPoolsStats(_).adaptThrowable.value))
+      .toRoutes(getPoolsStats24hE.serverLogic(_ => stats.getPoolsStats24h.adaptThrowable.value))
 
   def getPoolsSummaryVerifiedR: HttpRoutes[F] = interpreter.toRoutes(getPoolsSummaryVerifiedE.serverLogic { _ =>
     stats.getPoolsSummaryVerified.adaptThrowable.value
@@ -75,18 +70,8 @@ final class AmmStatsRoutes[
       stats.getPoolPriceChart(poolId, window, res).adaptThrowable.value
   })
 
-  def getSwapTxsR: HttpRoutes[F] =
-    interpreter.toRoutes(getSwapTxsE.serverLogic(tw => stats.getSwapTransactions(tw).adaptThrowable.value))
-
-  def getDepositTxsR: HttpRoutes[F] =
-    interpreter.toRoutes(getDepositTxsE.serverLogic(tw => stats.getDepositTransactions(tw).adaptThrowable.value))
-
   def getPoolLocksR: HttpRoutes[F] = interpreter.toRoutes(getPoolLocksE.serverLogic { case (poolId, leastDeadline) =>
     locks.byPool(poolId, leastDeadline).adaptThrowable.value
-  })
-
-  def convertToFiatR: HttpRoutes[F] = interpreter.toRoutes(convertToFiatE.serverLogic { req =>
-    stats.convertToFiat(req.tokenId, req.amount).adaptThrowable.orNotFound(s"Token{id=${req.tokenId}}").value
   })
 
   def getAmmMarketsR: HttpRoutes[F] = interpreter.toRoutes(getAmmMarketsE.serverLogic { tw =>

@@ -4,7 +4,7 @@ import fi.spectrum.api.configs.RequestConfig
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.locks.LiquidityLockInfo
-import fi.spectrum.common.http.{HttpError, baseEndpoint}
+import fi.spectrum.common.http.{baseEndpoint, HttpError}
 import fi.spectrum.core.domain.order.PoolId
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
@@ -15,38 +15,33 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
   val Group      = "ammStats"
 
   def endpoints: List[Endpoint[_, _, _, _, _]] = List(
-    platformStatsVerifiedE,
-    platformStatsE,
+    platformStatsVerified24hE,
+    platformStats24hE,
     getPoolStatsE,
-    getPoolsStatsE,
+    getPoolsStats24hE,
     getPoolsSummaryVerifiedE,
     getPoolsSummaryE,
     getAvgPoolSlippageE,
     getPoolPriceChartE,
     getAmmMarketsE,
-    getSwapTxsE,
-    getDepositTxsE,
-    getPoolLocksE,
-    convertToFiatE
+    getPoolLocksE
   )
 
-  def platformStatsVerifiedE: Endpoint[Unit, TimeWindow, HttpError, PlatformStats, Any] =
+  def platformStatsVerified24hE: Endpoint[Unit, Unit, HttpError, PlatformStats, Any] =
     baseEndpoint.get
-      .in(PathPrefix / "platform" / "stats")
-      .in(timeWindow)
+      .in(PathPrefix / "platform" / "stats" / "verified")
       .out(jsonBody[PlatformStats])
       .tag(Group)
       .name("TVL/Volume statistic for verified tokens only")
-      .description("Provides TVL and Volume in requested time window for verified tokens only")
+      .description("Provides TVL and Volume for last 24h for verified tokens only")
 
-  def platformStatsE: Endpoint[Unit, TimeWindow, HttpError, PlatformStats, Any] =
+  def platformStats24hE: Endpoint[Unit, Unit, HttpError, PlatformStats, Any] =
     baseEndpoint.get
-      .in(PathPrefix / "platform" / "stats" / "all")
-      .in(timeWindow)
+      .in(PathPrefix / "platform" / "stats")
       .out(jsonBody[PlatformStats])
       .tag(Group)
       .name("TVL/Volume statistic for all tokens only")
-      .description("Provides TVL and Volume in requested time window for all tokens")
+      .description("Provides TVL and Volume for last 24h for all tokens")
 
   def getPoolStatsE: Endpoint[Unit, (PoolId, TimeWindow), HttpError, PoolStats, Any] =
     baseEndpoint.get
@@ -57,14 +52,13 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .name("Pool statistics")
       .description("Provides pool's statistic e.g. TVL, volume, fees, x, y, etc.")
 
-  def getPoolsStatsE: Endpoint[Unit, TimeWindow, HttpError, List[PoolStats], Any] =
+  def getPoolsStats24hE: Endpoint[Unit, Unit, HttpError, List[PoolStats], Any] =
     baseEndpoint.get
       .in(PathPrefix / "pools" / "stats")
-      .in(timeWindow)
       .out(jsonBody[List[PoolStats]])
       .tag(Group)
       .name("Pools statistics")
-      .description("Provides pool's statistic of every known pool")
+      .description("Provides pool's statistic of every known pool for last 24h")
 
   def getPoolsSummaryVerifiedE: Endpoint[Unit, Unit, HttpError, List[PoolSummary], Any] =
     baseEndpoint.get
@@ -110,24 +104,6 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .name("All pools stats")
       .description("Get statistics on all pools")
 
-  def getSwapTxsE: Endpoint[Unit, TimeWindow, HttpError, TransactionsInfo, Any] =
-    baseEndpoint.get
-      .in(PathPrefix / "swaps")
-      .in(timeWindow(conf.maxTimeWindow))
-      .out(jsonBody[TransactionsInfo])
-      .tag(Group)
-      .name("Swap txs")
-      .description("Get swap txs info")
-
-  def getDepositTxsE: Endpoint[Unit, TimeWindow, HttpError, TransactionsInfo, Any] =
-    baseEndpoint.get
-      .in(PathPrefix / "deposits")
-      .in(timeWindow(conf.maxTimeWindow))
-      .out(jsonBody[TransactionsInfo])
-      .tag(Group)
-      .name("Deposit txs")
-      .description("Get deposit txs info")
-
   def getPoolLocksE: Endpoint[Unit, (PoolId, Int), HttpError, List[LiquidityLockInfo], Any] =
     baseEndpoint.get
       .in(PathPrefix / "pool" / path[PoolId].description("Asset reference") / "locks")
@@ -136,13 +112,4 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
       .tag(Group)
       .name("Pool locks")
       .description("Get liquidity locks for the pool with the given ID")
-
-  def convertToFiatE: Endpoint[Unit, ConvertionRequest, HttpError, FiatEquiv, Any] =
-    baseEndpoint.post
-      .in(PathPrefix / "convert")
-      .in(jsonBody[ConvertionRequest])
-      .out(jsonBody[FiatEquiv])
-      .tag(Group)
-      .name("Crypto/Fiat conversion")
-      .description("Convert crypto units to fiat")
 }

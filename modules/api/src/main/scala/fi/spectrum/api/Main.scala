@@ -3,6 +3,7 @@ package fi.spectrum.api
 import cats.effect.Resource
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
+import doobie.ConnectionIO
 import fi.spectrum.api.configs.ConfigBundle
 import fi.spectrum.api.db.repositories._
 import fi.spectrum.api.models.TraceId
@@ -81,17 +82,16 @@ object Main extends EnvApp[AppContext] {
       implicit0(elh: EmbeddableLogHandler[xa.DB]) = makeEmbeddableHandler[F, xa.DB]("api-db")
       implicit0(graphiteD: GraphiteClient[xa.DB]) <- GraphiteClient.make[F, xa.DB](config.graphite).mapK(iso.tof)
       implicit0(graphiteF: GraphiteClient[F])     <- GraphiteClient.make[F, F](config.graphite).mapK(iso.tof)
-      implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
-      implicit0(metricsF: Metrics[F])          = Metrics.make[F]
+      implicit0(metricsD: Metrics[xa.DB]) = Metrics.make[xa.DB]
+      implicit0(metricsF: Metrics[F])     = Metrics.make[F]
       implicit0(blocksC: BlocksConsumer[S, F]) = makeConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
-      implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
-      implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
+      implicit0(logs: Logs[I, xa.DB]) = Logs.sync[I, xa.DB]
+      implicit0(logs2: Logs[I, F])    = Logs.withContext[I, F]
       implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
       implicit0(ammStatsMath: AmmStatsMath[F])           <- AmmStatsMath.make[I, F].toResource
       implicit0(asset: Asset[xa.DB])                     <- Asset.make[I, xa.DB].toResource
       implicit0(blocks: Blocks[xa.DB])                   <- Blocks.make[I, xa.DB].toResource
       implicit0(pools: Pools[xa.DB])                     <- Pools.make[I, xa.DB].toResource
-      implicit0(orders: Orders[xa.DB])                   <- Orders.make[I, xa.DB].toResource
       implicit0(locks: Locks[xa.DB])                     <- Locks.make[I, xa.DB].toResource
       implicit0(history: History[xa.DB])                 <- History.make[I, xa.DB].toResource
       implicit0(redis: Plain[F])                         <- mkRedis[Array[Byte], Array[Byte], F].mapK(iso.tof)
@@ -105,9 +105,11 @@ object Main extends EnvApp[AppContext] {
       implicit0(ergProcess: ErgPriceProcess[S])          <- ErgPriceProcess.make[I, F, S].toResource
       implicit0(tokens: VerifiedTokens[F])               <- VerifiedTokens.make[I, F].toResource
       implicit0(tokensProcess: VerifiedTokensProcess[S]) <- VerifiedTokensProcess.make[I, F, S].toResource
-      implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S, Chunk].toResource
       implicit0(cryptoSolver: CryptoPriceSolver[F])      <- CryptoPriceSolver.make[I, F].toResource
       implicit0(fiatSolver: FiatPriceSolver[F])          <- FiatPriceSolver.make[I, F].toResource
+      implicit0(fees24H: Fees24H[F])                     <- Fees24H.make[I, F, xa.DB].toResource
+      implicit0(poolsStats: PoolsStats24H[F])            <- PoolsStats24H.make[I, F, xa.DB].toResource
+      implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S, Chunk].toResource
       implicit0(locks: LqLocks[F])                       = LqLocks.make[F, xa.DB]
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
