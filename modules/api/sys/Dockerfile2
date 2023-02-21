@@ -1,4 +1,6 @@
-FROM openjdk:11-jre-slim
+FROM ubuntu:latest
+
+RUN sudo apt-get install openjdk-11-jdk
 
 RUN  apt-get update \
   && apt-get install -y wget \
