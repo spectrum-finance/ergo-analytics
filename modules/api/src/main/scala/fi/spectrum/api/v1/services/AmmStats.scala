@@ -144,11 +144,11 @@ object AmmStats {
         filtered = poolSnapshots.filter(f)
         finish7 <- millis
         _       <- info"poolSnapshots.filter(f): ${finish7 - finish6}"
-        lockedX <- filtered.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, poolSnapshots).map(_.toList))
+        lockedX <- filtered.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, filtered).map(_.toList))
         finish8 <- millis
         _ <-
           info"filtered.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, poolSnapshots).map(_.toList)): ${finish8 - finish7}"
-        lockedY <- filtered.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, poolSnapshots).map(_.toList))
+        lockedY <- filtered.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, filtered).map(_.toList))
         finish9 <- millis
         _ <-
           info"filtered.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, poolSnapshots).map(_.toList)): ${finish9 - finish8}"
@@ -156,11 +156,11 @@ object AmmStats {
         finish10 <- millis
         _ <-
           info"TotalValueLocked(lockedX.map(_.value).sum + lockedY.map(_.value).sum, UsdUnits): ${finish10 - finish9}"
-        volumeByX <- volumes.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, poolSnapshots).map(_.toList))
+        volumeByX <- volumes.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, filtered).map(_.toList))
         finish11  <- millis
         _ <-
           info"volumes.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, poolSnapshots).map(_.toList)): ${finish11 - finish10}"
-        volumeByY <- volumes.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, poolSnapshots).map(_.toList))
+        volumeByY <- volumes.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, filtered).map(_.toList))
         finish12  <- millis
         _ <-
           info"volumes.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, poolSnapshots).map(_.toList)): ${finish12 - finish11}"
@@ -234,7 +234,7 @@ object AmmStats {
           assets.get.flatMap { assets =>
             val snapshots = snapshotsDB.map(_.toPoolSnapshot(assets))
             snapshots
-              .parTraverse(pool => getPoolSummary(pool, tw, snapshots))
+              .parTraverse(pool => getPoolSummary(pool, tw, snapshots, assets))
               .map(_.flatten)
           }
         }
@@ -243,7 +243,8 @@ object AmmStats {
     private def getPoolSummary(
       pool: PoolSnapshot,
       window: TimeWindow,
-      poolSnapshots: List[PoolSnapshot]
+      poolSnapshots: List[PoolSnapshot],
+      assets: List[AssetInfo]
     ): F[Option[PoolStats]] = {
       val poolId = pool.id
 
@@ -257,11 +258,8 @@ object AmmStats {
       (for {
         start                     <- OptionT.liftF(millis)
         (info, feesSnapDB, volDB) <- OptionT(poolData.trans)
-        finish1                   <- OptionT.liftF(millis)
-        _                         <- OptionT.liftF(info"getPoolSummary1: ${finish1 - start}")
-        assets                    <- OptionT.liftF(assets.get)
         finish2                   <- OptionT.liftF(millis)
-        _                         <- OptionT.liftF(info"getPoolSummary2: ${finish2 - finish1}")
+        _                         <- OptionT.liftF(info"getPoolSummary2: ${finish2 - start}")
         vol = volDB.map(_.toPoolVolumeSnapshot(assets))
         finish3 <- OptionT.liftF(millis)
         _       <- OptionT.liftF(info"getPoolSummary3: ${finish3 - finish2}")
