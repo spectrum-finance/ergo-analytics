@@ -3,14 +3,14 @@ package fi.spectrum.api.db.sql
 import doobie.implicits._
 import doobie.util.query.Query0
 import doobie.{Fragment, LogHandler}
-import fi.spectrum.api.db.models.{PoolFeesSnapshotDB, PoolSnapshotDB, PoolTraceDB, PoolVolumeSnapshotDB}
+import fi.spectrum.api.db.models.{PoolFeesSnapshotDB, PoolInfoDB, PoolSnapshotDB, PoolTraceDB, PoolVolumeSnapshotDB}
 import fi.spectrum.api.db.models.amm._
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.core.domain.order.PoolId
 
 final class AnalyticsSql(implicit lg: LogHandler) {
 
-  def getFirstPoolSwapTime(id: PoolId): Query0[Long] =
+  def getFirstPoolSwapTime(id: PoolId): Query0[PoolInfoDB] =
     sql"""
          |SELECT min(executed_transaction_timestamp)
          |FROM swaps
