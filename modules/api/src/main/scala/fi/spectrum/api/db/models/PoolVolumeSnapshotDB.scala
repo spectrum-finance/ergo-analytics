@@ -1,7 +1,7 @@
 package fi.spectrum.api.db.models
 
 import derevo.derive
-import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
+import fi.spectrum.api.db.models.amm.{AssetInfo, PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.models.FullAsset
 import fi.spectrum.core.domain.AssetAmount
 import fi.spectrum.core.domain.order.PoolId
@@ -21,6 +21,16 @@ final case class PoolVolumeSnapshotDB(
       poolId,
       FullAsset(volumeByX.tokenId, volumeByX.amount, x.flatMap(_.lockedX.ticker), x.flatMap(_.lockedX.decimals)),
       FullAsset(volumeByY.tokenId, volumeByY.amount, y.flatMap(_.lockedY.ticker), y.flatMap(_.lockedY.decimals))
+    )
+  }
+
+  def toPoolVolumeSnapshot2(assets: List[AssetInfo]): PoolVolumeSnapshot = {
+    val x = assets.find(_.id == volumeByX.tokenId)
+    val y = assets.find(_.id == volumeByY.tokenId)
+    PoolVolumeSnapshot(
+      poolId,
+      FullAsset(volumeByX.tokenId, volumeByX.amount, x.flatMap(_.ticker), x.flatMap(_.decimals)),
+      FullAsset(volumeByY.tokenId, volumeByY.amount, y.flatMap(_.ticker), y.flatMap(_.decimals))
     )
   }
 }

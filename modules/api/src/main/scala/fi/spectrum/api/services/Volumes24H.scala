@@ -47,7 +47,7 @@ object Volumes24H {
     def update(assets: List[AssetInfo]): F[Unit] = for {
       timestamp <- millis
       volumes   <- pools.volumes(TimeWindow(Some(timestamp - day), Some(timestamp))).trans
-      _         <- cache.set(volumes.map(_.toPoolVolumeSnapshot(assets)))
+      _         <- cache.set(volumes.map(_.toPoolVolumeSnapshot2(assets)))
     } yield ()
 
     def get: F[List[PoolVolumeSnapshot]] = cache.get
