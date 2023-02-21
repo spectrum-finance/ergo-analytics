@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 
-RUN apt-get update -Y && apt-get install openjdk-11-jdk
+RUN apt-get update && apt-get install -y openjdk-11-jdk
 
 RUN  apt-get update \
   && apt-get install -y wget \
