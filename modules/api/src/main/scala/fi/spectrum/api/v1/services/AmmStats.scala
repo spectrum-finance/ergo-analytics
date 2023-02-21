@@ -554,16 +554,16 @@ object AmmStats {
 
     def getSwapTransactions(window: TimeWindow): Mid[F, TransactionsInfo] =
       for {
-        _ <- trace"getSwapTransactions($window)"
+        _ <- info"getSwapTransactions($window)"
         r <- _
-        _ <- trace"getSwapTransactions($window) - $r"
+        _ <- info"getSwapTransactions($window) - ${r.numTxs}"
       } yield r
 
     def getDepositTransactions(window: TimeWindow): Mid[F, TransactionsInfo] =
       for {
-        _ <- trace"getDepositTransactions($window)"
+        _ <- info"getDepositTransactions($window)"
         r <- _
-        _ <- trace"getDepositTransactions($window) - $r"
+        _ <- info"getDepositTransactions($window) - ${r.numTxs}"
       } yield r
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
