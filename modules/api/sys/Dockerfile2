@@ -2,9 +2,7 @@ FROM ubuntu:latest
 
 RUN apt-get update && apt-get install -y openjdk-11-jdk
 
-RUN  apt-get update \
-  && apt-get install -y wget \
-  && rm -rf /var/lib/apt/lists/*
+RUN  apt-get update && apt-get install -y wget
 
 RUN wget https://www.yourkit.com/download/docker/YourKit-JavaProfiler-2022.3-docker.zip -P /tmp/ && \
   unzip /tmp/YourKit-JavaProfiler-2022.3-docker.zip -d /usr/local && \
