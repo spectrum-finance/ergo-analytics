@@ -71,10 +71,10 @@ object AmmStatsMath {
     ): Mid[F, FeePercentProjection] =
       for {
         _ <-
-          trace"feePercentProjection(poolId=$poolId,tvl=$tvl,fees=$fees,poolInfo=$poolInfo,projectionPeriod=$projectionPeriod)"
+          trace"feePercentProjection(poolId=$poolId,tvl=${tvl.toString},fees=${fees.toString},poolInfo=$poolInfo,projectionPeriod=$projectionPeriod)"
         r <- _
         _ <-
-          trace"feePercentProjection(poolId=$poolId,tvl=$tvl,fees=$fees,poolInfo=$poolInfo,projectionPeriod=$projectionPeriod) -> $r"
+          trace"feePercentProjection(poolId=$poolId,tvl=${tvl.toString},fees=${fees.toString},poolInfo=$poolInfo,projectionPeriod=$projectionPeriod) -> $r"
       } yield r
   }
 }

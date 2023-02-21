@@ -9,7 +9,7 @@ import io.circe.syntax._
 import sttp.tapir.Schema
 import tofu.logging.derivation.loggable
 
-@derive(encoder, decoder, loggable)
+@derive(encoder, decoder)
 final case class PlatformStats(tvl: TotalValueLocked, volume: Volume)
 
 object PlatformStats {

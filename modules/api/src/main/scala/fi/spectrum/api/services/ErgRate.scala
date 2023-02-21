@@ -50,9 +50,9 @@ object ErgRate {
 
     def rateOf(units: FiatUnits): Mid[F, Option[BigDecimal]] =
       for {
-        _ <- trace"rateOf($units)"
+        _ <- trace"rateOf(${units.currency})"
         r <- _
-        _ <- trace"rateOf($units) -> $r"
+        _ <- trace"rateOf(${units.currency}) -> $r"
       } yield r
 
     def update: Mid[F, Option[BigDecimal]] = info"It's time to update erg rate!" >> _

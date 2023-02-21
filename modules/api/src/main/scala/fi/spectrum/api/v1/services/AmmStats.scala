@@ -491,21 +491,21 @@ object AmmStats {
       for {
         _ <- info"platformStatsVerified($window)"
         r <- _
-        _ <- info"platformStatsVerified($window) - $r"
+        _ <- info"platformStatsVerified($window) - ${r.toString}"
       } yield r
 
     def platformStats(window: TimeWindow): Mid[F, PlatformStats] =
       for {
         _ <- info"platformStats($window)"
         r <- _
-        _ <- info"platformStats($window) - $r"
+        _ <- info"platformStats($window) - ${r.toString}"
       } yield r
 
     def getPoolStats(poolId: PoolId, window: TimeWindow): Mid[F, Option[PoolStats]] =
       for {
         _ <- info"getPoolStats($poolId, $window)"
         r <- _
-        _ <- info"getPoolStats($poolId, $window) - $r"
+        _ <- info"getPoolStats($poolId, $window) - ${r.map(_.toString)}"
       } yield r
 
     def getPoolsStats(window: TimeWindow): Mid[F, List[PoolStats]] =
@@ -513,14 +513,14 @@ object AmmStats {
         _ <- info"getPoolsStats($window)"
         r <- _
         _ <- info"getPoolsStats($window)"
-        _ <- trace"getPoolsStats($window) - $r"
+        _ <- trace"getPoolsStats($window) - ${r.mkString(",")}"
       } yield r
 
     def convertToFiat(id: TokenId, amount: Long): Mid[F, Option[FiatEquiv]] =
       for {
         _ <- trace"convertToFiat($id, $amount)"
         r <- _
-        _ <- trace"convertToFiat($id, $amount) - $r"
+        _ <- trace"convertToFiat($id, $amount) - ${r.map(_.toString)}"
       } yield r
 
     def getPoolsSummaryVerified: Mid[F, List[PoolSummary]] =

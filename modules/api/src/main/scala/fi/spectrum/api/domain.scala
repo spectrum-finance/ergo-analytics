@@ -3,20 +3,19 @@ package fi.spectrum.api
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.api.models.{CryptoUnits, FiatUnits}
-import io.estatico.newtype.macros.newtype
-import fi.spectrum.api.models.{CryptoUnits, FiatUnits}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
+import io.estatico.newtype.macros.newtype
 import sttp.tapir.Schema
 import tofu.logging.derivation.loggable
 
 object domain {
 
-  @derive(encoder, decoder, loggable)
+  @derive(encoder, decoder)
   final case class TotalValueLocked(value: BigDecimal, units: FiatUnits)
 
   implicit val schemaTvl: Schema[TotalValueLocked] = Schema.derived
 
-  @derive(encoder, decoder, loggable)
+  @derive(encoder, decoder)
   final case class Volume(value: BigDecimal, units: FiatUnits, window: TimeWindow)
 
   object Volume {
@@ -32,7 +31,7 @@ object domain {
     def empty(units: CryptoUnits, window: TimeWindow): CryptoVolume = CryptoVolume(BigDecimal(0), units, window)
   }
 
-  @derive(encoder, decoder, loggable)
+  @derive(encoder, decoder)
   final case class Fees(value: BigDecimal, units: FiatUnits, window: TimeWindow)
 
   object Fees {
