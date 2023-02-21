@@ -13,7 +13,7 @@ RUN wget https://www.yourkit.com/download/docker/YourKit-JavaProfiler-2022.3-doc
   unzip /tmp/YourKit-JavaProfiler-2022.3-docker.zip -d /usr/local && \
   rm /tmp/YourKit-JavaProfiler-2022.3-docker.zip
 
-COPY . /ergo-analytics
+COPY . ./ergo-analytics
 WORKDIR /ergo-analytics
 RUN sbt api/assembly
 RUN mv `find . -name api-assembly-0.1.0.jar` /api.jar
