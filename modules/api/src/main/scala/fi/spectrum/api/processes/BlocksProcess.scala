@@ -38,10 +38,10 @@ object BlocksProcess {
     logs: Logs[I, F]
   ): I[BlocksProcess[S]] = logs.forService[BlocksProcess[S]].flatMap { implicit __ =>
     for {
-      _      <- snapshots.update.lift[I]
-      _      <- volumes24H.update.lift[I]
-      _      <- assets.update.lift[I]
-      height <- network.getCurrentNetworkHeight.lift[I]
+      assetsL <- assets.update.lift[I]
+      _       <- snapshots.update(assetsL).lift[I]
+      _       <- volumes24H.update(assetsL).lift[I]
+      height  <- network.getCurrentNetworkHeight.lift[I]
     } yield new Live[F, S, C](height)
   }
 
@@ -64,9 +64,11 @@ object BlocksProcess {
           .evalMap { batch =>
             for {
               _ <- info"Got next block event: ${batch.toList.map(_.message.map(_.id))}"
-              _ <- Monad[F].whenA(batch.toList.lastOption.flatMap(_.message).exists(_.height > height))(
-                     List(snapshots.update, volumes24H.update, caching.invalidateAll, assets.update).parSequence
-                   )
+              _ <- Monad[F].whenA(batch.toList.lastOption.flatMap(_.message).exists(_.height > height)) {
+                     assets.update.flatMap { assets =>
+                       List(snapshots.update(assets), volumes24H.update(assets)).parSequence
+                     }.void >> caching.invalidateAll
+                   }
               _ <- batch.toList.lastOption.traverse(_.commit)
               blocks       = batch.toList.map(_.message.map(_.id))
               latestHeight = batch.toList.lastOption.flatMap(_.message).map(_.height)
