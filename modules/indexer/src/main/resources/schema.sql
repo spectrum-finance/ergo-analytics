@@ -33,7 +33,7 @@ alter table public.pools
     owner to ergo_admin;
 
 create index pools__pool_id on public.pools using btree (pool_id);
-create index pools__pool_state_id on public.pools using btree (pool_state_id);
+-- create index pools__pool_state_id on public.pools using btree (pool_state_id);
 create index pools__protocol_version on public.pools using btree (protocol_version);
 create index pools__x_id on public.pools using btree (x_id);
 create index pools__y_id on public.pools using btree (y_id);

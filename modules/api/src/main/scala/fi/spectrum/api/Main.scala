@@ -76,7 +76,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(context2: WithLocal[F, TraceId])     = wr.subcontext(implicitly[Contains[AppContext, TraceId]])
       implicit0(iso: IsoK[F, I])                     = IsoK.byFunK(wr.runContextK(appContext))(wr.liftF)
       implicit0(ul: Unlift[F, I])                    = Unlift.byIso(IsoK.byFunK(wr.runContextK(appContext))(wr.liftF))
-      transactor <- PostgresTransactor.make[F]("api").mapK(iso.tof)
+      transactor <- PostgresTransactor.make[F]("api-postgres-pool").mapK(iso.tof)
       implicit0(xa: Txr.Continuational[F])        = Txr.continuational[F](transactor)
       implicit0(elh: EmbeddableLogHandler[xa.DB]) = makeEmbeddableHandler[F, xa.DB]("api-db")
       implicit0(graphiteD: GraphiteClient[xa.DB]) <- GraphiteClient.make[F, xa.DB](config.graphite).mapK(iso.tof)
