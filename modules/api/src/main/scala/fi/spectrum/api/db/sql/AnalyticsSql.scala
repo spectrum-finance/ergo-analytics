@@ -47,8 +47,8 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |	LEFT JOIN (
          |		SELECT
          |			s.pool_id,
-         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
-         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
+         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS tx,
+         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS ty
          |		FROM
          |			swaps s
          |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id and $fragment
@@ -73,8 +73,8 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |	LEFT JOIN (
          |		SELECT
          |			s.pool_id,
-         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
-         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
+         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS tx,
+         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS ty
          |		FROM
          |			swaps s
          |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id
@@ -92,8 +92,8 @@ final class AnalyticsSql(implicit lg: LogHandler) {
 
     sql"""
          |SELECT
-         |	cast(sum(CASE WHEN (base_id = ${pool.lockedY.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint) AS tx,
-         |	cast(sum(CASE WHEN (base_id = ${pool.lockedX.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint) AS ty
+         |	COALESCE(cast(sum(CASE WHEN (base_id = ${pool.lockedY.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint), 0) AS tx,
+         |	COALESCE(cast(sum(CASE WHEN (base_id = ${pool.lockedX.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint), 0) AS ty
          |FROM swaps
          |WHERE pool_id = ${pool.id} and $fragment
        """.stripMargin.query[PoolFeesSnapshotDB]
