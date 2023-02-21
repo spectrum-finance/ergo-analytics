@@ -10,7 +10,7 @@ import fi.spectrum.core.domain.order.PoolId
 
 final class AnalyticsSql(implicit lg: LogHandler) {
 
-  def getFirstPoolSwapTime(id: PoolId): Query0[PoolInfo] =
+  def getFirstPoolSwapTime(id: PoolId): Query0[Long] =
     sql"""
          |SELECT min(executed_transaction_timestamp)
          |FROM swaps
@@ -88,7 +88,7 @@ final class AnalyticsSql(implicit lg: LogHandler) {
   }
 
   def getPoolFees(pool: PoolSnapshot, tw: TimeWindow): Query0[PoolFeesSnapshotDB] = {
-    val fragment = mkTimestamp(tw, "s.executed_transaction_timestamp")
+    val fragment = mkTimestamp(tw, "executed_transaction_timestamp")
 
     sql"""
          |SELECT

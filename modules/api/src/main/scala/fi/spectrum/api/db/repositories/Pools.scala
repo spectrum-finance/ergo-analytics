@@ -74,7 +74,7 @@ object Pools {
   final class Live(sql: AnalyticsSql) extends Pools[ConnectionIO] {
 
     def getFirstPoolSwapTime(id: PoolId): ConnectionIO[Option[PoolInfo]] =
-      sql.getFirstPoolSwapTime(id).option
+      sql.getFirstPoolSwapTime(id).option.mapIn(PoolInfo(_))
 
     def snapshots: ConnectionIO[List[PoolSnapshotDB]] =
       sql.getPoolSnapshots.to[List]
