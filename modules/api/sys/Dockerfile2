@@ -13,4 +13,4 @@ ENV ENV_CONFIG "conf/api.conf"
 
 ENV RUN_JAR "/data/ergoAnalyticsV2/sources2/ergo-analytics/modules/api/target/scala-2.13/api-assembly-0.1.0.jar"
 
-ENTRYPOINT java-agentpath:/usr/local/YourKit-JavaProfiler-2022.3/bin/linux-x86-64/libyjpagent.so=port=10001,listen=all  -Xms1G -Xmx2G -Dlogback.configurationFile=${LOG_CONFIG} -jar ${RUN_JAR} ${ENV_CONFIG}
+ENTRYPOINT java -agentpath:/usr/local/YourKit-JavaProfiler-2022.3/bin/linux-x86-64/libyjpagent.so=port=10001,listen=all  -Xms1G -Xmx2G -Dlogback.configurationFile=${LOG_CONFIG} -jar ${RUN_JAR} ${ENV_CONFIG}
