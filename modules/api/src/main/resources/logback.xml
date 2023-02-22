@@ -37,7 +37,7 @@
     <logger name="org.apache.kafka" level="INFO"/>
     <logger name="sttp.client3.asynchttpclient" level="INFO"/>
     <root level="info">
-        <appender-ref ref="ASYNCFILE"/>
+        <appender-ref ref="ASYNCSTDOUT"/>
     </root>
 
 </configuration>

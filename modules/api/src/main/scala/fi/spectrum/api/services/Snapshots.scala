@@ -16,7 +16,7 @@ import tofu.syntax.monadic._
 
 @derive(representableK)
 trait Snapshots[F[_]] {
-  def update(assets: List[AssetInfo]): F[Unit]
+  def update(assets: List[AssetInfo]): F[List[PoolSnapshot]]
   def get: F[List[PoolSnapshot]]
 }
 
@@ -37,16 +37,17 @@ object Snapshots {
     pools: Pools[D]
   ) extends Snapshots[F] {
 
-    def update(assets: List[AssetInfo]): F[Unit] = for {
+    def update(assets: List[AssetInfo]): F[List[PoolSnapshot]] = for {
       snapshots <- pools.snapshots.trans
-      _         <- cache.set(snapshots.map(_.toPoolSnapshot(assets)))
-    } yield ()
+      res = snapshots.map(_.toPoolSnapshot(assets))
+      _ <- cache.set(res)
+    } yield res
 
     def get: F[List[PoolSnapshot]] = cache.get
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Snapshots[Mid[F, *]] {
-    def update(assets: List[AssetInfo]): Mid[F, Unit] = info"It's time to update snapshots!" >> _
+    def update(assets: List[AssetInfo]): Mid[F, List[PoolSnapshot]] = info"It's time to update snapshots!" >> _
 
     def get: Mid[F, List[PoolSnapshot]] = trace"Get current snapshots" >> _
   }

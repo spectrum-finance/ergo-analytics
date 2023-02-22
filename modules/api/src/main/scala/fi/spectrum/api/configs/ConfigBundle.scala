@@ -17,7 +17,6 @@ final case class ConfigBundle(
   @promote postgres: PgConfig,
   http: HttpConfig,
   @promote redis: RedisConfig,
-  request: RequestConfig,
   blockConsumer: ConsumerConfig,
   graphite: GraphiteSettings,
   @promote network: NetworkConfig,

@@ -13,17 +13,16 @@ import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
 
 final class AmmStatsRoutes[
   F[_]: Async: AdaptThrowableEitherT[*[_], HttpError]
-](stats: AmmStats[F], locks: LqLocks[F], requestConf: RequestConfig)(implicit
+](stats: AmmStats[F], locks: LqLocks[F])(implicit
   opts: Http4sServerOptions[F]
 ) {
 
-  private val endpoints = new AmmStatsEndpoints(requestConf)
+  private val endpoints = new AmmStatsEndpoints
   import endpoints._
 
   private val interpreter = Http4sServerInterpreter(opts)
 
   def routes: HttpRoutes[F] =
-    platformStatsVerifiedR <+>
     platformStatsR <+>
     getPoolStatsR <+>
     getPoolsStatsR <+>
@@ -31,21 +30,12 @@ final class AmmStatsRoutes[
     getPoolsSummaryR <+>
     getAvgPoolSlippageR <+>
     getPoolPriceChartR <+>
-    getSwapTxsR <+>
-    getDepositTxsR <+>
     getPoolLocksR <+>
-    convertToFiatR <+>
     getAmmMarketsR
-
-  def platformStatsVerifiedR: HttpRoutes[F] =
-    interpreter
-      .toRoutes(
-        platformStatsVerifiedE.serverLogic(stats.platformStatsVerified(_).adaptThrowable.value)
-      )
 
   def platformStatsR: HttpRoutes[F] =
     interpreter
-      .toRoutes(platformStatsE.serverLogic(stats.platformStats(_).adaptThrowable.value))
+      .toRoutes(platformStats24hE.serverLogic(_ => stats.platformStats24h.adaptThrowable.value))
 
   def getPoolStatsR: HttpRoutes[F] =
     interpreter
@@ -55,7 +45,7 @@ final class AmmStatsRoutes[
 
   def getPoolsStatsR: HttpRoutes[F] =
     interpreter
-      .toRoutes(getPoolsStatsE.serverLogic(stats.getPoolsStats(_).adaptThrowable.value))
+      .toRoutes(getPoolsStats24hE.serverLogic(_ => stats.getPoolsStats24h.adaptThrowable.value))
 
   def getPoolsSummaryVerifiedR: HttpRoutes[F] = interpreter.toRoutes(getPoolsSummaryVerifiedE.serverLogic { _ =>
     stats.getPoolsSummaryVerified.adaptThrowable.value
@@ -75,18 +65,8 @@ final class AmmStatsRoutes[
       stats.getPoolPriceChart(poolId, window, res).adaptThrowable.value
   })
 
-  def getSwapTxsR: HttpRoutes[F] =
-    interpreter.toRoutes(getSwapTxsE.serverLogic(tw => stats.getSwapTransactions(tw).adaptThrowable.value))
-
-  def getDepositTxsR: HttpRoutes[F] =
-    interpreter.toRoutes(getDepositTxsE.serverLogic(tw => stats.getDepositTransactions(tw).adaptThrowable.value))
-
   def getPoolLocksR: HttpRoutes[F] = interpreter.toRoutes(getPoolLocksE.serverLogic { case (poolId, leastDeadline) =>
     locks.byPool(poolId, leastDeadline).adaptThrowable.value
-  })
-
-  def convertToFiatR: HttpRoutes[F] = interpreter.toRoutes(convertToFiatE.serverLogic { req =>
-    stats.convertToFiat(req.tokenId, req.amount).adaptThrowable.orNotFound(s"Token{id=${req.tokenId}}").value
   })
 
   def getAmmMarketsR: HttpRoutes[F] = interpreter.toRoutes(getAmmMarketsE.serverLogic { tw =>
@@ -98,10 +78,10 @@ object AmmStatsRoutes {
 
   def make[
     F[_]: Async: AdaptThrowableEitherT[*[_], HttpError]
-  ](requestConf: RequestConfig)(implicit
+  ](implicit
     stats: AmmStats[F],
     locks: LqLocks[F],
     opts: Http4sServerOptions[F]
   ): HttpRoutes[F] =
-    new AmmStatsRoutes[F](stats, locks, requestConf).routes
+    new AmmStatsRoutes[F](stats, locks).routes
 }

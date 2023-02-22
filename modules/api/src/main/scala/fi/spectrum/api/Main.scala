@@ -3,6 +3,7 @@ package fi.spectrum.api
 import cats.effect.Resource
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
+import doobie.ConnectionIO
 import fi.spectrum.api.configs.ConfigBundle
 import fi.spectrum.api.db.repositories._
 import fi.spectrum.api.models.TraceId
@@ -91,7 +92,6 @@ object Main extends EnvApp[AppContext] {
       implicit0(asset: Asset[xa.DB])                     <- Asset.make[I, xa.DB].toResource
       implicit0(blocks: Blocks[xa.DB])                   <- Blocks.make[I, xa.DB].toResource
       implicit0(pools: Pools[xa.DB])                     <- Pools.make[I, xa.DB].toResource
-      implicit0(orders: Orders[xa.DB])                   <- Orders.make[I, xa.DB].toResource
       implicit0(locks: Locks[xa.DB])                     <- Locks.make[I, xa.DB].toResource
       implicit0(history: History[xa.DB])                 <- History.make[I, xa.DB].toResource
       implicit0(redis: Plain[F])                         <- mkRedis[Array[Byte], Array[Byte], F].mapK(iso.tof)
@@ -105,9 +105,11 @@ object Main extends EnvApp[AppContext] {
       implicit0(ergProcess: ErgPriceProcess[S])          <- ErgPriceProcess.make[I, F, S].toResource
       implicit0(tokens: VerifiedTokens[F])               <- VerifiedTokens.make[I, F].toResource
       implicit0(tokensProcess: VerifiedTokensProcess[S]) <- VerifiedTokensProcess.make[I, F, S].toResource
-      implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S, Chunk].toResource
       implicit0(cryptoSolver: CryptoPriceSolver[F])      <- CryptoPriceSolver.make[I, F].toResource
       implicit0(fiatSolver: FiatPriceSolver[F])          <- FiatPriceSolver.make[I, F].toResource
+      implicit0(fees24H: Fees24H[F])                     <- Fees24H.make[I, F, xa.DB].toResource
+      implicit0(poolsStats: PoolsStats24H[F])            <- PoolsStats24H.make[I, F, xa.DB].toResource
+      implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S, Chunk].toResource
       implicit0(locks: LqLocks[F])                       = LqLocks.make[F, xa.DB]
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
@@ -115,7 +117,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(stats: AmmStats[F])                    <- AmmStats.make[I, F, xa.DB].toResource
       implicit0(mempool: MempoolApi[F])                <- MempoolApi.make[I, F, xa.DB].toResource
       implicit0(historyApi: HistoryApi[F])             <- HistoryApi.make[I, F, xa.DB].toResource
-      serverProc = HttpServer.make[I, F](config.http, config.request)
+      serverProc = HttpServer.make[I, F](config.http)
     } yield List(
       ergProcess.run,
       tokensProcess.run,

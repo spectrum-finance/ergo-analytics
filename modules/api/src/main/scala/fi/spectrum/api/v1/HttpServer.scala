@@ -23,7 +23,7 @@ object HttpServer {
   def make[
     I[_]: Async,
     F[_]: Async: Unlift[*[_], I]: TraceId.Local
-  ](conf: HttpConfig, requestConf: RequestConfig)(implicit
+  ](conf: HttpConfig)(implicit
     stats: AmmStats[F],
     locks: LqLocks[F],
     mempool: MempoolApi[F],
@@ -35,9 +35,9 @@ object HttpServer {
     logs: Logs[I, F]
   ): fs2.Stream[I, ExitCode] =
     fs2.Stream.eval(logs.forService[HttpServer.type]).flatMap { implicit __ =>
-      val ammStatsR = AmmStatsRoutes.make[F](requestConf)
+      val ammStatsR = AmmStatsRoutes.make[F]
       val historyR  = HistoryRoutes.make[F]
-      val docsR     = DocsRoutes.make[F](requestConf)
+      val docsR     = DocsRoutes.make[F]
       val routes = unliftRoutes[F, I](
         errorsMiddleware.middleware(metrics.middleware(historyR <+> cache.middleware(ammStatsR <+> docsR)))
       )
