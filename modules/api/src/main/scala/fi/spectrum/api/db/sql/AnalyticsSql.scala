@@ -47,8 +47,8 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |	LEFT JOIN (
          |		SELECT
          |			s.pool_id,
-         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS tx,
-         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS ty
+         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
+         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
          |		FROM
          |			swaps s
          |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id and $fragment
@@ -73,8 +73,8 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |	LEFT JOIN (
          |		SELECT
          |			s.pool_id,
-         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS tx,
-         |			COALESCE(cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT), 0) AS ty
+         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
+         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
          |		FROM
          |			swaps s
          |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id
@@ -92,8 +92,8 @@ final class AnalyticsSql(implicit lg: LogHandler) {
 
     sql"""
          |SELECT
-         |	COALESCE(cast(sum(CASE WHEN (base_id = ${pool.lockedY.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint), 0) AS tx,
-         |	COALESCE(cast(sum(CASE WHEN (base_id = ${pool.lockedX.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint), 0) AS ty
+         |	cast(sum(CASE WHEN (base_id = ${pool.lockedY.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint) AS tx,
+         |	cast(sum(CASE WHEN (base_id = ${pool.lockedX.id}) THEN quote_amount::decimal * (1000 - ${pool.fee}) / 1000 ELSE 0 END) AS bigint) AS ty
          |FROM swaps
          |WHERE pool_id = ${pool.id} and $fragment
        """.stripMargin.query[PoolFeesSnapshotDB]
@@ -150,62 +150,4 @@ final class AnalyticsSql(implicit lg: LogHandler) {
          |	k
          """.stripMargin.query[AvgAssetAmounts]
   }
-
-  def getSwapTransactions(tw: TimeWindow): Query0[SwapInfo] = {
-    val fragment  = mkTimestamp(tw, "sx.executed_transaction_timestamp")
-    val fragment2 = mkTimestamp(tw, "s.executed_transaction_timestamp")
-    sql"""
-         |SELECT
-         |	s.min_quote_id,
-         |	s.min_quote_amount,
-         |	a.ticker,
-         |	a.decimals,
-         |	(
-         |		SELECT
-         |			count(*)
-         |		FROM
-         |			swaps sx
-         |		WHERE
-         |			quote_amount IS NOT NULL
-         |			AND $fragment) AS numTxs
-         |	FROM
-         |		swaps s
-         |	LEFT JOIN assets a ON a.id = s.min_quote_id
-         |WHERE
-         |	s.quote_amount IS NOT NULL
-         |	AND $fragment2
-         """.stripMargin.query[SwapInfo]
-  }
-
-  def getDepositTransactions(tw: TimeWindow): Query0[DepositInfo] = {
-    val fragment  = mkTimestamp(tw, "sx.executed_transaction_timestamp")
-    val fragment2 = mkTimestamp(tw, "s.executed_transaction_timestamp")
-    sql"""
-         |SELECT
-         |	s.input_id_x,
-         |	s.input_amount_x,
-         |	ax.ticker,
-         |	ax.decimals,
-         |	s.input_id_y,
-         |	s.input_amount_y,
-         |	ay.ticker,
-         |	ay.decimals,
-         |	(
-         |		SELECT
-         |			count(*)
-         |		FROM
-         |			deposits sx
-         |		WHERE
-         |			output_amount_lp IS NOT NULL
-         |			AND $fragment) AS numTxs
-         |	FROM
-         |		deposits s
-         |	LEFT JOIN assets ax ON ax.id = s.input_id_x
-         |	LEFT JOIN assets ay ON ay.id = s.input_id_y
-         |WHERE
-         |	output_amount_lp IS NOT NULL
-         |	AND $fragment2
-         """.stripMargin.query[DepositInfo]
-  }
-
 }

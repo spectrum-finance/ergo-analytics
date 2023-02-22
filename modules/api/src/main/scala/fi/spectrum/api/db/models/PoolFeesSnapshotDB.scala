@@ -1,13 +1,16 @@
 package fi.spectrum.api.db.models
 
 import fi.spectrum.api.db.models.amm.{PoolFeesSnapshot, PoolSnapshot}
+import cats.syntax.option._
 
-final case class PoolFeesSnapshotDB(feesByX: Long, feesByY: Long) {
+final case class PoolFeesSnapshotDB(feesByX: Option[Long], feesByY: Option[Long]) {
 
-  def tooPoolFeesSnapshot(pool: PoolSnapshot): PoolFeesSnapshot =
-    PoolFeesSnapshot(
-      pool.id,
-      pool.lockedX.withAmount(feesByX),
-      pool.lockedY.withAmount(feesByY)
-    )
+  def tooPoolFeesSnapshot(pool: PoolSnapshot): Option[PoolFeesSnapshot] =
+    if (feesByX.isEmpty && feesByY.isEmpty) None
+    else
+      PoolFeesSnapshot(
+        pool.id,
+        pool.lockedX.withAmount(feesByX.getOrElse(0)),
+        pool.lockedY.withAmount(feesByY.getOrElse(0))
+      ).some
 }
