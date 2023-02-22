@@ -87,34 +87,19 @@ object AmmStats {
     solver: FiatPriceSolver[F],
     ammMath: AmmStatsMath[F]
   ) extends AmmStats[F] {
-    // volumes: 5688371474434     61651585074
-    // volumes: 6722429622840175, 3557341318881970
-    //          5606537560422     61651585074
-    //tvl: TotalValueLocked(2458172637,FiatUnits(Currency(USD,2))). 114373628 -> 2343799009
-    //tvl: TotalValueLocked(171902552,FiatUnits(Currency(USD,2))).  85951450 ->  85951102
-    // 1749818.39 -> 22211.47
+
     def platformStats24h: F[PlatformStats] =
       for {
         now       <- millis
         volumes   <- volumes24H.get
-        _ = println(s"volumes: ${volumes.map(_.volumeByX.amount).sum} ${volumes.map(_.volumeByY.amount).sum}")
-        _ = println(s"volume1: ${volumes.headOption}")
         snapshots <- snapshots.get
-        snapshots1 = snapshots.find(_.id == PoolId.unsafeFromString("9916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec"))
-        _ = println(s"snapshots1: ${snapshots1}")
-        s <- snapshots1.toList.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, snapshots).map(_.toList))
-        s2 <- snapshots1.toList.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, snapshots).map(_.toList))
-        _ = println(s"s1: ${s}")
-        _ = println(s"s2: ${s2}")
         lockedX   <- snapshots.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, snapshots).map(_.toList))
         lockedY   <- snapshots.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, snapshots).map(_.toList))
         tvl = TotalValueLocked(lockedX.map(_.value).sum + lockedY.map(_.value).sum, UsdUnits)
-        _ = println(s"tvl: $tvl. ${lockedX.map(_.value).sum} -> ${lockedY.map(_.value).sum}")
         volumeByX <- volumes.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, snapshots).map(_.toList))
         volumeByY <- volumes.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, snapshots).map(_.toList))
         tw     = TimeWindow(now - MillisInDay.toMillis, now)
         volume = Volume(volumeByX.map(_.value).sum + volumeByY.map(_.value).sum, UsdUnits, tw)
-        _ = println(s"volume: $volume")
       } yield PlatformStats(tvl, volume)
 
     def getPoolsSummary: F[List[PoolSummary]] = calculatePoolsSummary(_ => true)
@@ -334,9 +319,9 @@ object AmmStats {
 
     def platformStats24h: Mid[F, PlatformStats] =
       for {
-        _ <- info"platformStats()"
+        _ <- info"platformStats24h()"
         r <- _
-        _ <- info"platformStats() - ${r.toString}"
+        _ <- info"platformStats24h() - ${r.toString}"
       } yield r
 
     def getPoolStats(poolId: PoolId, window: TimeWindow): Mid[F, Option[PoolStats]] =
