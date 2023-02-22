@@ -2,7 +2,7 @@ package fi.spectrum.api.processes
 
 import cats.{Foldable, Functor, Monad, Parallel}
 import fi.spectrum.api.configs.BlocksProcessConfig
-import fi.spectrum.api.services.{Assets, Network, Snapshots, Volumes24H}
+import fi.spectrum.api.services.{Assets, Fees24H, Network, PoolsStats24H, Snapshots, Volumes24H}
 import fi.spectrum.cache.middleware.HttpResponseCaching
 import fi.spectrum.streaming.kafka.BlocksConsumer
 import tofu.lift.Lift
@@ -15,6 +15,7 @@ import tofu.syntax.streams.all._
 import cats.syntax.foldable._
 import cats.syntax.traverse._
 import cats.syntax.parallel._
+import fi.spectrum.api.Main.F
 
 trait BlocksProcess[S[_]] {
   def run: S[Unit]
@@ -31,6 +32,8 @@ object BlocksProcess {
     events: BlocksConsumer[S, F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
+    fees24H: Fees24H[F],
+    poolsStats: PoolsStats24H[F],
     assets: Assets[F],
     network: Network[F],
     caching: HttpResponseCaching[F],
@@ -38,10 +41,12 @@ object BlocksProcess {
     logs: Logs[I, F]
   ): I[BlocksProcess[S]] = logs.forService[BlocksProcess[S]].flatMap { implicit __ =>
     for {
-      assetsL <- assets.update.lift[I]
-      _       <- snapshots.update(assetsL).lift[I]
-      _       <- volumes24H.update(assetsL).lift[I]
-      height  <- network.getCurrentNetworkHeight.lift[I]
+      assetsL  <- assets.update.lift[I]
+      poolsL   <- snapshots.update(assetsL).lift[I]
+      volumesL <- volumes24H.update(assetsL).lift[I]
+      feesL    <- fees24H.update(poolsL).lift[I]
+      _        <- poolsStats.update(poolsL, volumesL, feesL).lift[I]
+      height   <- network.getCurrentNetworkHeight.lift[I]
     } yield new Live[F, S, C](height)
   }
 
@@ -54,6 +59,8 @@ object BlocksProcess {
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     assets: Assets[F],
+    fees24H: Fees24H[F],
+    poolsStats: PoolsStats24H[F],
     caching: HttpResponseCaching[F]
   ) extends BlocksProcess[S] {
 
@@ -65,9 +72,14 @@ object BlocksProcess {
             for {
               _ <- info"Got next block event: ${batch.toList.map(_.message.map(_.id))}"
               _ <- Monad[F].whenA(batch.toList.lastOption.flatMap(_.message).exists(_.height > height)) {
-                     assets.update.flatMap { assets =>
-                       List(snapshots.update(assets), volumes24H.update(assets)).parSequence
-                     }.void >> caching.invalidateAll
+                     for {
+                       assetsL    <- assets.update
+                       snapshotsL <- snapshots.update(assetsL)
+                       volumesL   <- volumes24H.update(assetsL)
+                       feesL      <- fees24H.update(snapshotsL)
+                       _          <- poolsStats.update(snapshotsL, volumesL, feesL)
+                       _          <- caching.invalidateAll
+                     } yield ()
                    }
               _ <- batch.toList.lastOption.traverse(_.commit)
               blocks       = batch.toList.map(_.message.map(_.id))
