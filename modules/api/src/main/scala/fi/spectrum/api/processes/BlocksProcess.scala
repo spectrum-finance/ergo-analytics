@@ -65,7 +65,8 @@ object BlocksProcess {
   ) extends BlocksProcess[S] {
 
     def run: S[Unit] =
-      eval(BlocksProcessConfig.access).flatMap { config =>
+      eval(BlocksProcessConfig.access)
+        .flatMap { config =>
         events.stream
           .groupWithin(config.blocksBatchSize, config.blocksGroupTime)
           .evalMap { batch =>

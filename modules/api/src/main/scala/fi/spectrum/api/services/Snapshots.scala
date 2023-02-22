@@ -39,7 +39,9 @@ object Snapshots {
 
     def update(assets: List[AssetInfo]): F[List[PoolSnapshot]] = for {
       snapshots <- pools.snapshots.trans
-      res = snapshots.map(_.toPoolSnapshot(assets))
+      res = snapshots
+              .map(_.toPoolSnapshot(assets))
+              .sortBy(p => BigDecimal(p.lockedX.amount) * p.lockedY.amount)(Ordering[BigDecimal].reverse)
       _ <- cache.set(res)
     } yield res
 
