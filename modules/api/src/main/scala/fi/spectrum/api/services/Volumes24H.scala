@@ -20,7 +20,7 @@ import tofu.time.Clock
 
 @derive(representableK)
 trait Volumes24H[F[_]] {
-  def update(assets: List[AssetInfo]): F[Unit]
+  def update(assets: List[AssetInfo]): F[List[PoolVolumeSnapshot]]
 
   def get: F[List[PoolVolumeSnapshot]]
 }
@@ -44,17 +44,18 @@ object Volumes24H {
     pools: Pools[D]
   ) extends Volumes24H[F] {
 
-    def update(assets: List[AssetInfo]): F[Unit] = for {
+    def update(assets: List[AssetInfo]): F[List[PoolVolumeSnapshot]] = for {
       timestamp <- millis
       volumes   <- pools.volumes(TimeWindow(Some(timestamp - day), Some(timestamp))).trans
-      _         <- cache.set(volumes.map(_.toPoolVolumeSnapshot2(assets)))
-    } yield ()
+      res = volumes.map(_.toPoolVolumeSnapshot2(assets))
+      _         <- cache.set(res)
+    } yield res
 
     def get: F[List[PoolVolumeSnapshot]] = cache.get
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Volumes24H[Mid[F, *]] {
-    def update(assets: List[AssetInfo]): Mid[F, Unit] = trace"It's time to update volumes!" >> _
+    def update(assets: List[AssetInfo]): Mid[F, List[PoolVolumeSnapshot]] = trace"It's time to update volumes!" >> _
 
     def get: Mid[F, List[PoolVolumeSnapshot]] = trace"Get current volumes" >> _
   }

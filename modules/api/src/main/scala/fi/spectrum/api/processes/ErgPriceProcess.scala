@@ -31,6 +31,7 @@ object ErgPriceProcess {
     for {
       implicit0(logging: Logging[F]) <- logs.forService[ErgPriceProcess[F]]
       config                         <- NetworkConfig.access.lift[I]
+      _                              <- ergRate.update.lift[I]
     } yield new Live[S, F](config.cmcRequestTime)
 
   final private class Live[S[_]: Monad: Evals[*[_], F], F[_]: Temporal: Logging](requestTime: FiniteDuration)(implicit
