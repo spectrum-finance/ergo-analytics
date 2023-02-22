@@ -34,8 +34,6 @@ import scala.concurrent.duration._
 @derive(representableK)
 trait AmmStats[F[_]] {
 
-  def platformStatsVerified24h: F[PlatformStats]
-
   def platformStats24h: F[PlatformStats]
 
   def getPoolStats(poolId: PoolId, window: TimeWindow): F[Option[PoolStats]]
@@ -89,30 +87,18 @@ object AmmStats {
     ammMath: AmmStatsMath[F]
   ) extends AmmStats[F] {
 
-    def platformStatsVerified24h: F[PlatformStats] =
+    def platformStats24h: F[PlatformStats] =
       for {
-        validTokens <- tokens.get
-        res <- platformStats(snapshot =>
-                 validTokens.contains(snapshot.lockedX.id) && validTokens.contains(snapshot.lockedY.id)
-               )
-      } yield res
-
-    def platformStats24h: F[PlatformStats] = platformStats(_ => true)
-
-    private def platformStats(f: PoolSnapshot => Boolean): F[PlatformStats] =
-      for {
-        now      <- millis
-        volumes  <- volumes24H.get
-        filtered <- snapshots.get.map(_.filter(f))
-        lockedX  <- filtered.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, filtered).map(_.toList))
-        lockedY  <- filtered.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, filtered).map(_.toList))
+        now       <- millis
+        volumes   <- volumes24H.get
+        snapshots <- snapshots.get
+        lockedX   <- snapshots.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, snapshots).map(_.toList))
+        lockedY   <- snapshots.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, snapshots).map(_.toList))
         tvl = TotalValueLocked(lockedX.map(_.value).sum + lockedY.map(_.value).sum, UsdUnits)
-        volumeByX <- volumes.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, filtered).map(_.toList))
-        volumeByY <- volumes.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, filtered).map(_.toList))
+        volumeByX <- volumes.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, snapshots).map(_.toList))
+        volumeByY <- volumes.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, snapshots).map(_.toList))
         tw     = TimeWindow(now - MillisInDay.toMillis, now)
         volume = Volume(volumeByX.map(_.value).sum + volumeByY.map(_.value).sum, UsdUnits, tw)
-        finish <- millis
-        _      <- info"platformStats took: ${finish - now}ms"
       } yield PlatformStats(tvl, volume)
 
     def getPoolsSummary: F[List[PoolSummary]] = calculatePoolsSummary(_ => true)
@@ -120,7 +106,7 @@ object AmmStats {
     def getPoolsSummaryVerified: F[List[PoolSummary]] =
       for {
         validTokens <- tokens.get
-        res         <- calculatePoolsSummary(s => validTokens.contains(s.lockedY.id))
+        res         <- calculatePoolsSummary(s => validTokens.contains(s.lockedX.id) && validTokens.contains(s.lockedY.id))
       } yield res
 
     private def calculatePoolsSummary(f: PoolSnapshot => Boolean): F[List[PoolSummary]] =
@@ -330,13 +316,6 @@ object AmmStats {
 
   final private class Tracing[F[_]: Monad: Logging] extends AmmStats[Mid[F, *]] {
 
-    def platformStatsVerified24h: Mid[F, PlatformStats] =
-      for {
-        _ <- info"platformStatsVerified()"
-        r <- _
-        _ <- info"platformStatsVerified() - ${r.toString}"
-      } yield r
-
     def platformStats24h: Mid[F, PlatformStats] =
       for {
         _ <- info"platformStats()"
@@ -424,9 +403,6 @@ object AmmStats {
       sendMetrics(window, "window.getPoolPriceChart", _)
 
     def platformStats24h: Mid[F, PlatformStats] =
-      _ <* unit
-
-    def platformStatsVerified24h: Mid[F, PlatformStats] =
       _ <* unit
 
     def getPoolsSummaryVerified: Mid[F, List[PoolSummary]] =

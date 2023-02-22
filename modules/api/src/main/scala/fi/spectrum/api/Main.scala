@@ -82,11 +82,11 @@ object Main extends EnvApp[AppContext] {
       implicit0(elh: EmbeddableLogHandler[xa.DB]) = makeEmbeddableHandler[F, xa.DB]("api-db")
       implicit0(graphiteD: GraphiteClient[xa.DB]) <- GraphiteClient.make[F, xa.DB](config.graphite).mapK(iso.tof)
       implicit0(graphiteF: GraphiteClient[F])     <- GraphiteClient.make[F, F](config.graphite).mapK(iso.tof)
-      implicit0(metricsD: Metrics[xa.DB]) = Metrics.make[xa.DB]
-      implicit0(metricsF: Metrics[F])     = Metrics.make[F]
+      implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
+      implicit0(metricsF: Metrics[F])          = Metrics.make[F]
       implicit0(blocksC: BlocksConsumer[S, F]) = makeConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
-      implicit0(logs: Logs[I, xa.DB]) = Logs.sync[I, xa.DB]
-      implicit0(logs2: Logs[I, F])    = Logs.withContext[I, F]
+      implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
+      implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
       implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
       implicit0(ammStatsMath: AmmStatsMath[F])           <- AmmStatsMath.make[I, F].toResource
       implicit0(asset: Asset[xa.DB])                     <- Asset.make[I, xa.DB].toResource
@@ -117,7 +117,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(stats: AmmStats[F])                    <- AmmStats.make[I, F, xa.DB].toResource
       implicit0(mempool: MempoolApi[F])                <- MempoolApi.make[I, F, xa.DB].toResource
       implicit0(historyApi: HistoryApi[F])             <- HistoryApi.make[I, F, xa.DB].toResource
-      serverProc = HttpServer.make[I, F](config.http, config.request)
+      serverProc = HttpServer.make[I, F](config.http)
     } yield List(
       ergProcess.run,
       tokensProcess.run,

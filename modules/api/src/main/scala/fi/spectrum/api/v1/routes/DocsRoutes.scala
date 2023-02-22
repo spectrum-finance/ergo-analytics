@@ -18,7 +18,7 @@ import sttp.tapir.openapi.{Info, OpenAPI}
 import sttp.tapir.redoc.http4s.RedocHttp4s
 import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
 
-final class DocsRoutes[F[_]: Concurrent: Async](requestConf: RequestConfig)(implicit
+final class DocsRoutes[F[_]: Concurrent: Async](implicit
   opts: Http4sServerOptions[F]
 ) extends TapirOpenAPICirceYaml {
 
@@ -29,7 +29,7 @@ final class DocsRoutes[F[_]: Concurrent: Async](requestConf: RequestConfig)(impl
 
   val routes: HttpRoutes[F] = openApiSpecR <+> redocApiSpecR
 
-  val statsEndpoints = new AmmStatsEndpoints(requestConf)
+  val statsEndpoints = new AmmStatsEndpoints
 
   private def allEndpoints =
     statsEndpoints.endpoints
@@ -69,8 +69,8 @@ final class DocsRoutes[F[_]: Concurrent: Async](requestConf: RequestConfig)(impl
 
 object DocsRoutes {
 
-  def make[F[_]: Concurrent: Async](requestConf: RequestConfig)(implicit
+  def make[F[_]: Concurrent: Async](implicit
     opts: Http4sServerOptions[F]
   ): HttpRoutes[F] =
-    new DocsRoutes[F](requestConf).routes
+    new DocsRoutes[F].routes
 }

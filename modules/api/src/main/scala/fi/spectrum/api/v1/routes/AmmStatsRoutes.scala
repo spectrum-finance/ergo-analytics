@@ -13,17 +13,16 @@ import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
 
 final class AmmStatsRoutes[
   F[_]: Async: AdaptThrowableEitherT[*[_], HttpError]
-](stats: AmmStats[F], locks: LqLocks[F], requestConf: RequestConfig)(implicit
+](stats: AmmStats[F], locks: LqLocks[F])(implicit
   opts: Http4sServerOptions[F]
 ) {
 
-  private val endpoints = new AmmStatsEndpoints(requestConf)
+  private val endpoints = new AmmStatsEndpoints
   import endpoints._
 
   private val interpreter = Http4sServerInterpreter(opts)
 
   def routes: HttpRoutes[F] =
-    platformStatsVerifiedR <+>
     platformStatsR <+>
     getPoolStatsR <+>
     getPoolsStatsR <+>
@@ -33,10 +32,6 @@ final class AmmStatsRoutes[
     getPoolPriceChartR <+>
     getPoolLocksR <+>
     getAmmMarketsR
-
-  def platformStatsVerifiedR: HttpRoutes[F] =
-    interpreter
-      .toRoutes(platformStatsVerified24hE.serverLogic(_ => stats.platformStatsVerified24h.adaptThrowable.value))
 
   def platformStatsR: HttpRoutes[F] =
     interpreter
@@ -83,10 +78,10 @@ object AmmStatsRoutes {
 
   def make[
     F[_]: Async: AdaptThrowableEitherT[*[_], HttpError]
-  ](requestConf: RequestConfig)(implicit
+  ](implicit
     stats: AmmStats[F],
     locks: LqLocks[F],
     opts: Http4sServerOptions[F]
   ): HttpRoutes[F] =
-    new AmmStatsRoutes[F](stats, locks, requestConf).routes
+    new AmmStatsRoutes[F](stats, locks).routes
 }

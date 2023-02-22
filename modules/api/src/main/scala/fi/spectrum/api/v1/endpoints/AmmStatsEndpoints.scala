@@ -9,13 +9,12 @@ import fi.spectrum.core.domain.order.PoolId
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
-final class AmmStatsEndpoints(conf: RequestConfig) {
+final class AmmStatsEndpoints {
 
   val PathPrefix = "amm"
   val Group      = "ammStats"
 
   def endpoints: List[Endpoint[_, _, _, _, _]] = List(
-    platformStatsVerified24hE,
     platformStats24hE,
     getPoolStatsE,
     getPoolsStats24hE,
@@ -26,14 +25,6 @@ final class AmmStatsEndpoints(conf: RequestConfig) {
     getAmmMarketsE,
     getPoolLocksE
   )
-
-  def platformStatsVerified24hE: Endpoint[Unit, Unit, HttpError, PlatformStats, Any] =
-    baseEndpoint.get
-      .in(PathPrefix / "platform" / "stats" / "verified")
-      .out(jsonBody[PlatformStats])
-      .tag(Group)
-      .name("TVL/Volume statistic for verified tokens only")
-      .description("Provides TVL and Volume for last 24h for verified tokens only")
 
   def platformStats24hE: Endpoint[Unit, Unit, HttpError, PlatformStats, Any] =
     baseEndpoint.get
