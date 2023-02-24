@@ -6,8 +6,7 @@ import cats.syntax.applicative._
 import cats.syntax.either._
 import cats.syntax.option._
 import cats.syntax.semigroupk._
-import fi.spectrum.api.configs.RequestConfig
-import fi.spectrum.api.v1.endpoints.{AmmStatsEndpoints, DocsEndpoints}
+import fi.spectrum.api.v1.endpoints.{AmmStatsEndpoints, DocsEndpoints, LmStatsEndpoints}
 import fi.spectrum.common.http.{HttpError, VersionPrefix}
 import org.http4s.HttpRoutes
 import sttp.apispec.Tag
@@ -29,13 +28,15 @@ final class DocsRoutes[F[_]: Concurrent: Async](implicit
 
   val routes: HttpRoutes[F] = openApiSpecR <+> redocApiSpecR
 
-  val statsEndpoints = new AmmStatsEndpoints
+  val ammStatsEndpoints = new AmmStatsEndpoints
+  val lmStatsEndpoints  = new LmStatsEndpoints
 
   private def allEndpoints =
-    statsEndpoints.endpoints
+    ammStatsEndpoints.endpoints ++ lmStatsEndpoints.endpoints
 
   private def tags =
-    Tag(statsEndpoints.PathPrefix, "AMM Statistics".some) :: Nil
+    Tag(ammStatsEndpoints.PathPrefix, "AMM Statistics".some) ::
+    Tag(lmStatsEndpoints.PathPrefix, "LM Statistics".some) :: Nil
 
   private val openapi =
     OpenAPIDocsInterpreter()

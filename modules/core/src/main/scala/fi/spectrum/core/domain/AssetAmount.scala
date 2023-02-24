@@ -10,6 +10,7 @@ import tofu.logging.derivation.{loggable, show}
 @derive(encoder, decoder, loggable, show)
 final case class AssetAmount(tokenId: TokenId, amount: Long) {
   def withAmount(x: Long): AssetAmount  = copy(amount = x)
+  def withAmount(x: BigInt): AssetAmount = copy(amount = x.toLong)
   def -(that: AssetAmount): AssetAmount = withAmount(amount - that.amount)
 
   def isNative: Boolean = tokenId == ErgoAssetId

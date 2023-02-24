@@ -2,7 +2,17 @@ package fi.spectrum.api.processes
 
 import cats.{Foldable, Functor, Monad, Parallel}
 import fi.spectrum.api.configs.BlocksProcessConfig
-import fi.spectrum.api.services.{Assets, Fees24H, Network, PoolsStats24H, Snapshots, Volumes24H}
+import fi.spectrum.api.services.{
+  Assets,
+  Fees24H,
+  Height,
+  LMSnapshots,
+  LmStats,
+  Network,
+  PoolsStats24H,
+  Snapshots,
+  Volumes24H
+}
 import fi.spectrum.cache.middleware.HttpResponseCaching
 import fi.spectrum.streaming.kafka.BlocksConsumer
 import tofu.lift.Lift
@@ -37,16 +47,22 @@ object BlocksProcess {
     assets: Assets[F],
     network: Network[F],
     caching: HttpResponseCaching[F],
+    heightService: Height[F],
+    lMSnapshots: LMSnapshots[F],
+    lmStats: LmStats[F],
     lift: Lift[F, I],
     logs: Logs[I, F]
   ): I[BlocksProcess[S]] = logs.forService[BlocksProcess[S]].flatMap { implicit __ =>
     for {
-      assetsL  <- assets.update.lift[I]
-      poolsL   <- snapshots.update(assetsL).lift[I]
-      volumesL <- volumes24H.update(assetsL).lift[I]
-      feesL    <- fees24H.update(poolsL).lift[I]
-      _        <- poolsStats.update(poolsL, volumesL, feesL).lift[I]
-      height   <- network.getCurrentNetworkHeight.lift[I]
+      assetsL      <- assets.update.lift[I]
+      poolsL       <- snapshots.update(assetsL).lift[I]
+      volumesL     <- volumes24H.update(assetsL).lift[I]
+      feesL        <- fees24H.update(poolsL).lift[I]
+      _            <- poolsStats.update(poolsL, volumesL, feesL).lift[I]
+      height       <- network.getCurrentNetworkHeight.lift[I]
+      newHeight    <- heightService.update(height).lift[I]
+      lmSnapshotsL <- lMSnapshots.update.lift[I]
+      _            <- lmStats.update(poolsL, newHeight, lmSnapshotsL).lift[I]
     } yield new Live[F, S, C](height)
   }
 
@@ -61,33 +77,41 @@ object BlocksProcess {
     assets: Assets[F],
     fees24H: Fees24H[F],
     poolsStats: PoolsStats24H[F],
-    caching: HttpResponseCaching[F]
+    caching: HttpResponseCaching[F],
+    heightService: Height[F],
+    lMSnapshots: LMSnapshots[F],
+    lmStats: LmStats[F]
   ) extends BlocksProcess[S] {
 
     def run: S[Unit] =
       eval(BlocksProcessConfig.access)
         .flatMap { config =>
-        events.stream
-          .groupWithin(config.blocksBatchSize, config.blocksGroupTime)
-          .evalMap { batch =>
-            for {
-              _ <- info"Got next block event: ${batch.toList.map(_.message.map(_.id))}"
-              _ <- Monad[F].whenA(batch.toList.lastOption.flatMap(_.message).exists(_.height > height)) {
-                     for {
-                       assetsL    <- assets.update
-                       snapshotsL <- snapshots.update(assetsL)
-                       volumesL   <- volumes24H.update(assetsL)
-                       feesL      <- fees24H.update(snapshotsL)
-                       _          <- poolsStats.update(snapshotsL, volumesL, feesL)
-                       _          <- caching.invalidateAll
-                     } yield ()
-                   }
-              _ <- batch.toList.lastOption.traverse(_.commit)
-              blocks       = batch.toList.map(_.message.map(_.id))
-              latestHeight = batch.toList.lastOption.flatMap(_.message).map(_.height)
-              _ <- info"Block $blocks processed successfully. height is: $latestHeight. Height on app start is: $height"
-            } yield ()
-          }
-      }
+          events.stream
+            .groupWithin(config.blocksBatchSize, config.blocksGroupTime)
+            .evalMap { batch =>
+              for {
+                _ <- info"Got next block event: ${batch.toList.map(_.message.map(_.id))}"
+                _ <- Monad[F].whenA(batch.toList.lastOption.flatMap(_.message).exists(_.height > height)) {
+                       val lastHeight = batch.toList.lastOption.flatMap(_.message).map(_.height).getOrElse(0)
+                       for {
+                         assetsL      <- assets.update
+                         snapshotsL   <- snapshots.update(assetsL)
+                         volumesL     <- volumes24H.update(assetsL)
+                         feesL        <- fees24H.update(snapshotsL)
+                         _            <- poolsStats.update(snapshotsL, volumesL, feesL)
+                         newHeight    <- heightService.update(lastHeight)
+                         lmSnapshotsL <- lMSnapshots.update
+                         _            <- lmStats.update(snapshotsL, newHeight, lmSnapshotsL)
+                         _            <- caching.invalidateAll
+                       } yield ()
+                     }
+                _ <- batch.toList.lastOption.traverse(_.commit)
+                blocks       = batch.toList.map(_.message.map(_.id))
+                latestHeight = batch.toList.lastOption.flatMap(_.message).map(_.height)
+                _ <-
+                  info"Block $blocks processed successfully. height is: $latestHeight. Height on app start is: $height"
+              } yield ()
+            }
+        }
   }
 }

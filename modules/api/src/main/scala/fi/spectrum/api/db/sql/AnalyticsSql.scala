@@ -19,7 +19,7 @@ final class AnalyticsSql(implicit lg: LogHandler) {
 
   def getPoolSnapshots: Query0[PoolSnapshotDB] =
     sql"""
-         |SELECT p1.pool_id, p1.x_id, p1.x_amount, p1.y_id, p1.y_amount, p1.fee_num
+         |SELECT p1.pool_id, p1.x_id, p1.x_amount, p1.y_id, p1.y_amount, p1.lp_id, p1.lp_amount, p1.fee_num
          |FROM
          |	pools p1
          |	LEFT JOIN (
