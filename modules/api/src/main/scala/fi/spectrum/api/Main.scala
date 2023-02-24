@@ -13,7 +13,7 @@ import fi.spectrum.api.processes.{BlocksProcess, ErgPriceProcess, VerifiedTokens
 import fi.spectrum.api.services._
 import fi.spectrum.api.v1.ErrorsMiddleware.ErrorsMiddleware
 import fi.spectrum.api.v1.{ErrorsMiddleware, HttpServer}
-import fi.spectrum.api.v1.services.{AmmStats, HistoryApi, LqLocks, MempoolApi}
+import fi.spectrum.api.v1.services.{AmmStats, HistoryApi, LmStatsApi, LqLocks, MempoolApi}
 import fi.spectrum.cache.Cache
 import fi.spectrum.cache.Cache.Plain
 import fi.spectrum.cache.middleware.CacheMiddleware.CachingMiddleware
@@ -94,6 +94,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(pools: Pools[xa.DB])                     <- Pools.make[I, xa.DB].toResource
       implicit0(locks: Locks[xa.DB])                     <- Locks.make[I, xa.DB].toResource
       implicit0(history: History[xa.DB])                 <- History.make[I, xa.DB].toResource
+      implicit0(lm: LM[xa.DB])                           <- LM.make[I, xa.DB].toResource
       implicit0(redis: Plain[F])                         <- mkRedis[Array[Byte], Array[Byte], F].mapK(iso.tof)
       implicit0(cache: Cache[F])                         <- Cache.make[I, F].toResource
       implicit0(httpRespCache: HttpResponseCaching[F])   <- HttpResponseCaching.make[I, F].toResource
@@ -108,13 +109,17 @@ object Main extends EnvApp[AppContext] {
       implicit0(cryptoSolver: CryptoPriceSolver[F])      <- CryptoPriceSolver.make[I, F].toResource
       implicit0(fiatSolver: FiatPriceSolver[F])          <- FiatPriceSolver.make[I, F].toResource
       implicit0(fees24H: Fees24H[F])                     <- Fees24H.make[I, F, xa.DB].toResource
+      implicit0(lmSnapshots: LMSnapshots[F])             <- LMSnapshots.make[I, F, xa.DB].toResource
+      implicit0(height: Height[F])                       <- Height.make[I, F].toResource
+      implicit0(lmStats: LmStats[F])                     <- LmStats.make[I, F].toResource
       implicit0(poolsStats: PoolsStats24H[F])            <- PoolsStats24H.make[I, F, xa.DB].toResource
       implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S, Chunk].toResource
       implicit0(locks: LqLocks[F])                       = LqLocks.make[F, xa.DB]
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
       implicit0(errorsMiddleware: ErrorsMiddleware[F]) <- ErrorsMiddleware.make[I, F].toResource
-      implicit0(stats: AmmStats[F])                    <- AmmStats.make[I, F, xa.DB].toResource
+      implicit0(ammStats: AmmStats[F])                 <- AmmStats.make[I, F, xa.DB].toResource
+      implicit0(lmStats: LmStatsApi[F])                <- LmStatsApi.make[I, F, xa.DB].toResource
       implicit0(mempool: MempoolApi[F])                <- MempoolApi.make[I, F, xa.DB].toResource
       implicit0(historyApi: HistoryApi[F])             <- HistoryApi.make[I, F, xa.DB].toResource
       serverProc = HttpServer.make[I, F](config.http)

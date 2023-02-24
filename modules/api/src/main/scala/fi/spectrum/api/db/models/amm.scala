@@ -3,7 +3,7 @@ package fi.spectrum.api.db.models
 import derevo.derive
 import fi.spectrum.api.models.FullAsset
 import fi.spectrum.core.domain.order.PoolId
-import fi.spectrum.core.domain.TokenId
+import fi.spectrum.core.domain.{AssetAmount, TokenId}
 import fi.spectrum.api.models.{FullAsset, Ticker}
 import tofu.logging.derivation.loggable
 
@@ -28,8 +28,16 @@ object amm {
     id: PoolId,
     fee: Int,
     lockedX: FullAsset,
-    lockedY: FullAsset
-  )
+    lockedY: FullAsset,
+    lp: AssetAmount
+  ) {
+
+    def supplyLP: Long = 0x7fffffffffffffffL - lp.amount
+
+    def shares(lpIn: AssetAmount): (FullAsset, FullAsset) =
+      lockedX.withAmount(BigInt(lpIn.amount) * lockedX.amount / supplyLP) ->
+      lockedY.withAmount(BigInt(lpIn.amount) * lockedY.amount / supplyLP)
+  }
 
   @derive(loggable)
   final case class PoolVolumeSnapshot(
