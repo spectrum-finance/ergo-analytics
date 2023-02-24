@@ -87,7 +87,7 @@ object PriceSolver {
             ergEquiv <- OptionT(cryptoSolver.convert(asset, ErgoUnits, knownPools))
             ergRate  <- OptionT(rates.rateOf(fiat))
             fiatEquiv    = ergEquiv.value / math.pow(10, ErgoAssetDecimals - fiat.currency.decimals) * ergRate
-            fiatEquivFmt = fiatEquiv.setScale(0, RoundingMode.FLOOR)
+            fiatEquivFmt = fiatEquiv.setScale(2, RoundingMode.FLOOR)
           } yield AssetEquiv(asset, fiat, fiatEquivFmt)).value
       }
   }

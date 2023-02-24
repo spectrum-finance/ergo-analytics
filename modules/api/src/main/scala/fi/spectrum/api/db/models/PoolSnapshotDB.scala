@@ -12,6 +12,7 @@ final case class PoolSnapshotDB(
   id: PoolId,
   lockedX: AssetAmount,
   lockedY: AssetAmount,
+  lp: AssetAmount,
   fee: Int
 ) {
 
@@ -22,7 +23,9 @@ final case class PoolSnapshotDB(
       id,
       fee,
       FullAsset(lockedX.tokenId, lockedX.amount, x.flatMap(_.ticker), x.flatMap(_.decimals)),
-      FullAsset(lockedY.tokenId, lockedY.amount, y.flatMap(_.ticker), y.flatMap(_.decimals))
+      FullAsset(lockedY.tokenId, lockedY.amount, y.flatMap(_.ticker), y.flatMap(_.decimals)),
+      lp
     )
   }
+
 }
