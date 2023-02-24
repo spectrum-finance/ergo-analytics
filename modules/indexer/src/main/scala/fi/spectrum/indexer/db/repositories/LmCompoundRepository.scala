@@ -24,6 +24,8 @@ class LmCompoundRepository
     "v_lq_amount",
     "tmp_id",
     "tmp_amount",
+    "interest_id",
+    "interest_amount",
     "bundle_key_id",
     "redeemer",
     "version",
@@ -39,9 +41,9 @@ class LmCompoundRepository
   def updateExecuted(
     update: UpdateEvaluatedTx[LmDepositCompoundEvaluation]
   )(implicit lh: LogHandler): ConnectionIO[Int] = {
-    val u = LmCompoundUpdate(update.info, update.poolStateId, update.orderId)
+    val u = LmCompoundUpdate(update.eval.map(_.tokens), update.info, update.poolStateId, update.orderId)
     Update[LmCompoundUpdate](
-      s"""update $tableName set $executed=?, $executedTs=?, pool_state_id=? where order_id=?""".stripMargin
+      s"""update $tableName set interest_id=?, interest_amount=?, $executed=?, $executedTs=?, pool_state_id=? where order_id=?""".stripMargin
     )
       .toUpdate0(u)
       .run
@@ -51,7 +53,7 @@ class LmCompoundRepository
     Update[OrderId](
       s"""
          |update $tableName
-         |set $executed=null, $executedTs=null, pool_state_id=null
+         |set interest_id=null, interest_amount=null, $executed=null, $executedTs=null, pool_state_id=null
          |where order_id=?""".stripMargin
     )
       .toUpdate0(delete)

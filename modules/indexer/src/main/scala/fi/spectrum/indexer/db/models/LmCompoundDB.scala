@@ -1,6 +1,7 @@
 package fi.spectrum.indexer.db.models
 
 import cats.syntax.option._
+import fi.spectrum.core.domain.analytics.OrderEvaluation.LmDepositCompoundEvaluation
 import fi.spectrum.core.domain.analytics.{Processed, Version}
 import fi.spectrum.core.domain.order.Order.Compound
 import fi.spectrum.core.domain.order.Order.Compound._
@@ -16,6 +17,7 @@ final case class LmCompoundDB(
   poolStateId: Option[BoxId],
   vLq: AssetAmount,
   tmp: Option[AssetAmount],
+  interest: Option[AssetAmount],
   bundleKeyId: TokenId,
   redeemer: PubKey,
   version: Version,
@@ -42,6 +44,7 @@ object LmCompoundDB {
         processed.poolBoxId,
         compound.params.vLq,
         compound.params.tmp,
+        processed.evaluation.flatMap(_.widen[LmDepositCompoundEvaluation]).map(_.tokens),
         compound.params.bundleKeyId,
         compound.redeemer.value,
         compound.version,

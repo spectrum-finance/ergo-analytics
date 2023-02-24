@@ -10,7 +10,7 @@ final case class PoolFeesSnapshotDB(feesByX: Option[Long], feesByY: Option[Long]
     else
       PoolFeesSnapshot(
         pool.id,
-        pool.lockedX.withAmount(feesByX.getOrElse(0)),
-        pool.lockedY.withAmount(feesByY.getOrElse(0))
+        pool.lockedX.withAmount(feesByX.getOrElse(0L)),
+        pool.lockedY.withAmount(feesByY.getOrElse(0L))
       ).some
 }

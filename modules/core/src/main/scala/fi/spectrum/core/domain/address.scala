@@ -20,12 +20,7 @@ object address {
     }
 
   def formRedeemer(address: Address)(implicit e: ErgoAddressEncoder): Option[Redeemer] =
-    e
-      .fromString(address.value.value)
-      .collect { case address: P2PKAddress => address.pubkeyBytes }
-      .map(PubKey.fromBytes)
-      .toOption
-      .map(Redeemer.PublicKeyRedeemer(_))
+    formPKRedeemer(address)
 
   def formPKRedeemer(address: Address)(implicit e: ErgoAddressEncoder): Option[PublicKeyRedeemer] =
     e
@@ -34,5 +29,13 @@ object address {
       .map(PubKey.fromBytes)
       .toOption
       .map(Redeemer.PublicKeyRedeemer(_))
+
+  def formErgoTree(address: Address)(implicit e: ErgoAddressEncoder): Option[SErgoTree] =
+    e
+      .fromString(address.value.value)
+      .collect { case address: P2PKAddress => address.pubkeyBytes }
+      .map(PubKey.fromBytes)
+      .map(_.ergoTree)
+      .toOption
 
 }
