@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.{Functor, Monad}
 import fi.spectrum.api.db.models.lm.{UserDeposit, UserInterest}
 import fi.spectrum.api.db.repositories.LM
-import fi.spectrum.api.services.{LMSnapshots, LmStats}
+import fi.spectrum.api.services.{Height, LMSnapshots, LmStats}
 import fi.spectrum.api.v1.models.lm._
 import fi.spectrum.core.domain.Address
 import fi.spectrum.core.domain.address._
@@ -15,6 +15,7 @@ import tofu.logging.{Logging, Logs}
 import tofu.syntax.doobie.txr._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
+import cats.syntax.option._
 import tofu.time.Clock
 
 import scala.math.BigDecimal.RoundingMode
@@ -36,6 +37,7 @@ object LmStatsApi {
     lmSnapshots: LMSnapshots[F],
     lmStats: LmStats[F],
     e: ErgoAddressEncoder,
+    height: Height[F],
     logs: Logs[I, F]
   ): I[LmStatsApi[F]] =
     logs.forService[LmStatsApi[F]].map(implicit __ => new Tracing[F] attach new Live[F, D])
@@ -45,7 +47,8 @@ object LmStatsApi {
     txr: Txr[F, D],
     lmSnapshots: LMSnapshots[F],
     lmStats: LmStats[F],
-    e: ErgoAddressEncoder
+    e: ErgoAddressEncoder,
+    height: Height[F]
   ) extends LmStatsApi[F] {
 
     def lmStatsApi: F[List[LMPoolStat]] = lmStats.get
@@ -61,12 +64,18 @@ object LmStatsApi {
           for {
             (userStake, userInterest) <- query.trans
             lmPools                   <- lmSnapshots.get
+            height                    <- height.getCurrent
           } yield {
             val userStakes = userStake.flatMap { deposit =>
-              lmPools.find(_.poolId == deposit.poolId).map { pool =>
-                val relation       = BigDecimal(deposit.lq.amount) / pool.lq.amount
-                val rewardForEpoch = BigDecimal(pool.initialRewardAmount) / pool.epochNum
-                UserNextStakeReward(deposit.poolId, (rewardForEpoch * relation).setScale(0, RoundingMode.HALF_UP))
+              lmPools.find(_.poolId == deposit.poolId).flatMap {
+                case pool if pool.lastBlockHeight > height =>
+                  val relation       = BigDecimal(deposit.lq.amount) / pool.lq.amount
+                  val rewardForEpoch = BigDecimal(pool.initialRewardAmount) / pool.epochNum
+                  UserNextStakeReward(
+                    deposit.poolId,
+                    (rewardForEpoch * relation).setScale(0, RoundingMode.HALF_UP)
+                  ).some
+                case _ => none
               }
             }
             val userInterests = userInterest.map { interest =>
