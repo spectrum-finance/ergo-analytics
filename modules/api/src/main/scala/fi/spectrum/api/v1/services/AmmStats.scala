@@ -16,7 +16,6 @@ import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.endpoints.monthMillis
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.amm.types.{MarketId, RealPrice}
-import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.constants.ErgoAssetId
 import fi.spectrum.core.domain.order.PoolId
 import fi.spectrum.graphite.Metrics
@@ -90,14 +89,19 @@ object AmmStats {
 
     def platformStats24h: F[PlatformStats] =
       for {
-        now       <- millis
-        volumes   <- volumes24H.get
-        snapshots <- snapshots.get
-        lockedX   <- snapshots.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, snapshots).map(_.toList))
-        lockedY   <- snapshots.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, snapshots).map(_.toList))
+        now            <- millis
+        volumes        <- volumes24H.get
+        snapshots      <- snapshots.get
+        verifiedTokens <- tokens.get
+        verifiedS =
+          snapshots.filter(ps => verifiedTokens.contains(ps.lockedX.id) && verifiedTokens.contains(ps.lockedY.id))
+        verifiedV =
+          volumes.filter(ps => verifiedTokens.contains(ps.volumeByX.id) && verifiedTokens.contains(ps.volumeByY.id))
+        lockedX <- verifiedS.flatTraverse(p => solver.convert(p.lockedX, UsdUnits, verifiedS).map(_.toList))
+        lockedY <- verifiedS.flatTraverse(p => solver.convert(p.lockedY, UsdUnits, verifiedS).map(_.toList))
         tvl = TotalValueLocked(lockedX.map(_.value).sum + lockedY.map(_.value).sum, UsdUnits)
-        volumeByX <- volumes.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, snapshots).map(_.toList))
-        volumeByY <- volumes.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, snapshots).map(_.toList))
+        volumeByX <- verifiedV.flatTraverse(p => solver.convert(p.volumeByX, UsdUnits, verifiedS).map(_.toList))
+        volumeByY <- verifiedV.flatTraverse(p => solver.convert(p.volumeByY, UsdUnits, verifiedS).map(_.toList))
         tw     = TimeWindow(now - MillisInDay.toMillis, now)
         volume = Volume(volumeByX.map(_.value).sum + volumeByY.map(_.value).sum, UsdUnits, tw)
       } yield PlatformStats(tvl, volume)
