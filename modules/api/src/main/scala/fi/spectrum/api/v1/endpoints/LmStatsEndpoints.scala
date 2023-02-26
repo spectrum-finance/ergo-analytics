@@ -20,8 +20,8 @@ class LmStatsEndpoints {
       .in(PathPrefix / "pools" / "stats")
       .out(jsonBody[List[LMPoolStat]])
       .tag(Group)
-      .name("Provides LM pools stats")
-      .description("Provides LM pools stats")
+      .name("LM pools stats")
+      .description("Provides LM pools statistics")
 
   def lmUserStatsE: Endpoint[Unit, List[Address], HttpError, UserLmStats, Any] =
     baseEndpoint.post
@@ -29,6 +29,6 @@ class LmStatsEndpoints {
       .in(jsonBody[List[Address]])
       .out(jsonBody[UserLmStats])
       .tag(Group)
-      .name("Provides LM stats by addresses")
-      .description("Provides LM stats by addresses")
+      .name("LM stats by addresses")
+      .description("Provides LM statistics by addresses")
 }
