@@ -11,16 +11,14 @@ import fi.spectrum.api.v1.endpoints.{AmmStatsEndpoints, DocsEndpoints}
 import fi.spectrum.common.http.{HttpError, VersionPrefix}
 import org.http4s.HttpRoutes
 import sttp.apispec.Tag
-import sttp.tapir.apispec.{Tag => TapirTag}
+import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
-import sttp.tapir.openapi.circe.yaml.TapirOpenAPICirceYaml
-import sttp.tapir.openapi.{Info, OpenAPI}
 import sttp.tapir.redoc.http4s.RedocHttp4s
 import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
 
 final class DocsRoutes[F[_]: Concurrent: Async](requestConf: RequestConfig)(implicit
   opts: Http4sServerOptions[F]
-) extends TapirOpenAPICirceYaml {
+) {
 
   private val endpoints = DocsEndpoints
   import endpoints._
@@ -37,17 +35,11 @@ final class DocsRoutes[F[_]: Concurrent: Async](requestConf: RequestConfig)(impl
   private def tags =
     Tag(statsEndpoints.PathPrefix, "AMM Statistics".some) :: Nil
 
-  private val openapi =
+  private val docsAsYaml =
     OpenAPIDocsInterpreter()
       .toOpenAPI(allEndpoints, "ErgoDEX API v1", "1.0")
       .tags(tags)
-
-  private val docsAsYaml =
-    OpenAPI(
-      openapi.openapi,
-      Info(openapi.info.title, openapi.info.version),
-      openapi.tags.map(t => TapirTag(t.name, t.description))
-    ).toYaml
+      .toYaml
 
   private def openApiSpecR: HttpRoutes[F] =
     interpreter.toRoutes(
