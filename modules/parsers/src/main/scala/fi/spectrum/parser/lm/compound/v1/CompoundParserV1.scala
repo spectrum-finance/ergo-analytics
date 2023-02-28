@@ -21,9 +21,9 @@ final class CompoundParserV1 extends CompoundParser[V1] {
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == bundleV1,
         for {
-          redeemer <- box.additionalRegisters.get(RegisterId.R4).collect { case SigmaPropConstant(x) => x }
+          redeemer <- box.additionalRegisters.get(RegisterId.R6).collect { case SigmaPropConstant(x) => x }
           poolId <- box.additionalRegisters
-                      .get(RegisterId.R5)
+                      .get(RegisterId.R7)
                       .collect { case ByteaConstant(x) => x }
                       .map(x => PoolId(TokenId(x)))
           vLq <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
