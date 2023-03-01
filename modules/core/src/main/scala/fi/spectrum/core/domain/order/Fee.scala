@@ -1,5 +1,6 @@
 package fi.spectrum.core.domain.order
 
+import cats.Show
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import cats.syntax.option._
@@ -9,7 +10,7 @@ import tofu.logging.derivation.{loggable, show}
 
 /** Fee can be either in ergo or spf tokens
   */
-@derive(encoder, decoder, loggable, show)
+@derive(encoder, decoder, loggable)
 sealed trait Fee {
   val amount: Long
 }
@@ -30,6 +31,11 @@ object Fee {
 
   object ERG {
     def apply(in: BigInt): ERG = ERG(in.toLong)
+  }
+
+  implicit def showFee: Show[Fee] = {
+    case SPF(_) => "spf"
+    case ERG(_) => "erg"
   }
 
   implicit def put: Write[Fee] = Write[(Long, String)].contramap {
