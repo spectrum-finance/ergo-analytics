@@ -40,47 +40,47 @@ object ApiOrder {
 
   implicit val toApiAny: ToAPI[Processed.Any, ApiOrder, Any] = new ToAPI[Processed.Any, ApiOrder, Any] {
 
-    def toAPI(a: Processed.Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+    def toAPI(a: Processed.Any, now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
       a.wined[AmmDeposit]
-        .flatMap(AmmDepositApi.toApiDeposit.toAPI(_))
-        .orElse(a.wined[AmmRedeem].flatMap(AmmRedeemApi.toApiRedeem.toAPI(_)))
-        .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap.toAPI(_)))
-        .orElse(a.wined[order.Order.Lock].flatMap(Lock.toApiLock.toAPI(_)))
-        .orElse(a.wined[LmDeposit].flatMap(LmDepositApi.toApiLmDeposit.toAPI(_)))
-        .orElse(a.wined[order.Order.Compound].flatMap(LmCompoundApi.toApiCompound.toAPI(_)))
-        .orElse(a.wined[LmRedeem].flatMap(LmRedeemApi.toApiLmRedeem.toAPI(_)))
+        .flatMap(AmmDepositApi.toApiDeposit.toAPI(_, now))
+        .orElse(a.wined[AmmRedeem].flatMap(AmmRedeemApi.toApiRedeem.toAPI(_, now)))
+        .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap.toAPI(_, now)))
+        .orElse(a.wined[order.Order.Lock].flatMap(Lock.toApiLock.toAPI(_, now)))
+        .orElse(a.wined[LmDeposit].flatMap(LmDepositApi.toApiLmDeposit.toAPI(_, now)))
+        .orElse(a.wined[order.Order.Compound].flatMap(LmCompoundApi.toApiCompound.toAPI(_, now)))
+        .orElse(a.wined[LmRedeem].flatMap(LmRedeemApi.toApiLmRedeem.toAPI(_, now)))
 
-    def toAPI(a: Processed.Any, c: Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
+    def toAPI(a: Processed.Any, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
   }
 
   implicit val toApi2Any: ToAPI[Processed.Any, ApiOrder, Processed.Any] =
     new ToAPI[Processed.Any, ApiOrder, Processed.Any] {
 
-      def toAPI(a: Processed.Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
+      def toAPI(a: Processed.Any, now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
 
-      def toAPI(a: Processed.Any, c: Processed.Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+      def toAPI(a: Processed.Any, c: Processed.Any, now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
         a.wined[AmmDeposit]
-          .flatMap(AmmDepositApi.toApiDeposit2.toAPI(_, c))
-          .orElse(a.wined[AmmRedeem].flatMap(AmmRedeemApi.toApiRedeem2.toAPI(_, c)))
-          .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap2.toAPI(_, c)))
-          .orElse(a.wined[LmDeposit].flatMap(LmDepositApi.toApiLmDeposit2.toAPI(_, c)))
-          .orElse(a.wined[order.Order.Compound].flatMap(LmCompoundApi.toApiCompound2.toAPI(_, c)))
-          .orElse(a.wined[LmRedeem].flatMap(LmRedeemApi.toApiLmRedeem2.toAPI(_, c)))
+          .flatMap(AmmDepositApi.toApiDeposit2.toAPI(_, c, now))
+          .orElse(a.wined[AmmRedeem].flatMap(AmmRedeemApi.toApiRedeem2.toAPI(_, c, now)))
+          .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap2.toAPI(_, c, now)))
+          .orElse(a.wined[LmDeposit].flatMap(LmDepositApi.toApiLmDeposit2.toAPI(_, c, now)))
+          .orElse(a.wined[order.Order.Compound].flatMap(LmCompoundApi.toApiCompound2.toAPI(_, c, now)))
+          .orElse(a.wined[LmRedeem].flatMap(LmRedeemApi.toApiLmRedeem2.toAPI(_, c, now)))
     }
 
   implicit val toApiAnyOrder: ToAPI[AnyOrderDB, ApiOrder, Any] = new ToAPI[AnyOrderDB, ApiOrder, Any] {
 
-    def toAPI(a: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+    def toAPI(a: AnyOrderDB, now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
       AmmDepositApi.toApiDepositDBAny
-        .toAPI(a)
-        .orElse(AmmRedeemApi.toApiRedeemDBAny.toAPI(a))
-        .orElse(Swap.toApSwapDBAny.toAPI(a))
-        .orElse(Lock.toApiLockDBAny.toAPI(a))
-        .orElse(LmDepositApi.toApiLmDepositDBAny.toAPI(a))
-        .orElse(LmCompoundApi.toApiLmCompoundDBAny.toAPI(a))
-        .orElse(LmRedeemApi.toApiLmRedeemDBAny.toAPI(a))
+        .toAPI(a, now)
+        .orElse(AmmRedeemApi.toApiRedeemDBAny.toAPI(a, now))
+        .orElse(Swap.toApSwapDBAny.toAPI(a, now))
+        .orElse(Lock.toApiLockDBAny.toAPI(a, now))
+        .orElse(LmDepositApi.toApiLmDepositDBAny.toAPI(a, now))
+        .orElse(LmCompoundApi.toApiLmCompoundDBAny.toAPI(a, now))
+        .orElse(LmRedeemApi.toApiLmRedeemDBAny.toAPI(a, now))
 
-    def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
+    def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
   }
 
   @derive(encoder, decoder, loggable)
@@ -106,12 +106,12 @@ object ApiOrder {
     implicit val toApiDeposit: ToAPI[Processed[AmmDeposit], ApiOrder, RegisterDeposit] =
       new ToAPI[Processed[AmmDeposit], ApiOrder, RegisterDeposit] {
 
-        def toAPI(o: Processed[AmmDeposit])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(o: Processed[AmmDeposit], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           Optional[order.Order, AmmDepositParams].getOption(o.order).map { params =>
             AmmDepositApi(
               o.order.id,
               o.order.poolId,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               params.inX,
               params.inY,
               none,
@@ -126,14 +126,14 @@ object ApiOrder {
             )
           }
 
-        def toAPI(o: Processed[AmmDeposit], c: RegisterDeposit)(implicit
+        def toAPI(o: Processed[AmmDeposit], c: RegisterDeposit, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           o.evaluation.flatMap(_.widen[AmmDepositEvaluation]).map { eval =>
             AmmDepositApi(
               o.order.id,
               o.order.poolId,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               c.inX,
               c.inY,
               eval.actualX.some,
@@ -152,10 +152,10 @@ object ApiOrder {
     implicit val toApiDeposit2: ToAPI[Processed[AmmDeposit], ApiOrder, Processed.Any] =
       new ToAPI[Processed[AmmDeposit], ApiOrder, Processed.Any] {
 
-        def toAPI(a: Processed[AmmDeposit])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-          toApiDeposit.toAPI(a)
+        def toAPI(a: Processed[AmmDeposit], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+          toApiDeposit.toAPI(a, now)
 
-        def toAPI(x: Processed[AmmDeposit], c: Processed.Any)(implicit
+        def toAPI(x: Processed[AmmDeposit], c: Processed.Any, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           for {
@@ -169,7 +169,7 @@ object ApiOrder {
             AmmDepositApi(
               x.order.id,
               x.order.poolId,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               params.inX,
               params.inY,
               eval.map(_.actualX),
@@ -190,12 +190,12 @@ object ApiOrder {
 
     implicit val toApiDepositDB: ToAPI[AmmDepositDB, AmmDepositApi, Any] = new ToAPI[AmmDepositDB, AmmDepositApi, Any] {
 
-      def toAPI(d: AmmDepositDB)(implicit e: ErgoAddressEncoder): Option[AmmDepositApi] =
+      def toAPI(d: AmmDepositDB, now: Long)(implicit e: ErgoAddressEncoder): Option[AmmDepositApi] =
         d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
           AmmDepositApi(
             d.orderId,
             d.poolId,
-            history.OrderStatus.Ledger,
+            history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
             d.inputX,
             d.inputY,
             d.actualX,
@@ -210,12 +210,12 @@ object ApiOrder {
           )
         }
 
-      def toAPI(a: AmmDepositDB, c: Any)(implicit e: ErgoAddressEncoder): Option[AmmDepositApi] = none
+      def toAPI(a: AmmDepositDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[AmmDepositApi] = none
     }
 
     implicit val toApiDepositDBAny: ToAPI[AnyOrderDB, AmmDepositApi, Any] = new ToAPI[AnyOrderDB, AmmDepositApi, Any] {
 
-      def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[AmmDepositApi] =
+      def toAPI(d: AnyOrderDB, now: Long)(implicit e: ErgoAddressEncoder): Option[AmmDepositApi] =
         for {
           poolId <- d.poolId
           inX    <- d.depositX
@@ -225,7 +225,7 @@ object ApiOrder {
         } yield AmmDepositApi(
           d.orderId,
           poolId,
-          history.OrderStatus.Ledger,
+          history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
           inX,
           inY,
           d.depositActualX,
@@ -239,7 +239,7 @@ object ApiOrder {
           d.executedTx
         )
 
-      def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[AmmDepositApi] = none
+      def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[AmmDepositApi] = none
     }
   }
 
@@ -264,12 +264,12 @@ object ApiOrder {
     implicit val toApiRedeem: ToAPI[Processed[AmmRedeem], ApiOrder, RegisterRedeem] =
       new ToAPI[Processed[AmmRedeem], ApiOrder, RegisterRedeem] {
 
-        def toAPI(o: Processed[AmmRedeem])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(o: Processed[AmmRedeem], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           Optional[order.Order, RedeemParams].getOption(o.order).map { params =>
             AmmRedeemApi(
               o.order.id,
               o.order.poolId,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               params.lp,
               none,
               none,
@@ -282,14 +282,14 @@ object ApiOrder {
             )
           }
 
-        def toAPI(o: Processed[AmmRedeem], c: RegisterRedeem)(implicit
+        def toAPI(o: Processed[AmmRedeem], c: RegisterRedeem, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           o.evaluation.flatMap(_.widen[AmmRedeemEvaluation]).map { eval =>
             AmmRedeemApi(
               o.order.id,
               o.order.poolId,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               c.lp,
               eval.outputX.some,
               eval.outputY.some,
@@ -306,10 +306,10 @@ object ApiOrder {
     implicit val toApiRedeem2: ToAPI[Processed[AmmRedeem], ApiOrder, Processed.Any] =
       new ToAPI[Processed[AmmRedeem], ApiOrder, Processed.Any] {
 
-        def toAPI(a: Processed[AmmRedeem])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-          toApiRedeem.toAPI(a)
+        def toAPI(a: Processed[AmmRedeem], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+          toApiRedeem.toAPI(a, now)
 
-        def toAPI(x: Processed[AmmRedeem], c: Processed.Any)(implicit
+        def toAPI(x: Processed[AmmRedeem], c: Processed.Any, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           for {
@@ -323,7 +323,7 @@ object ApiOrder {
             AmmRedeemApi(
               x.order.id,
               x.order.poolId,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               params.lp,
               eval.map(_.outputX),
               eval.map(_.outputY),
@@ -342,12 +342,12 @@ object ApiOrder {
 
     implicit val toApiRedeemDB: ToAPI[AmmRedeemDB, AmmRedeemApi, Any] = new ToAPI[AmmRedeemDB, AmmRedeemApi, Any] {
 
-      def toAPI(d: AmmRedeemDB)(implicit e: ErgoAddressEncoder): Option[AmmRedeemApi] =
+      def toAPI(d: AmmRedeemDB, now: Long)(implicit e: ErgoAddressEncoder): Option[AmmRedeemApi] =
         d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
           AmmRedeemApi(
             d.id,
             d.poolId,
-            history.OrderStatus.Ledger,
+            history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
             d.lp,
             d.outX,
             d.outY,
@@ -360,12 +360,12 @@ object ApiOrder {
           )
         }
 
-      def toAPI(a: AmmRedeemDB, c: Any)(implicit e: ErgoAddressEncoder): Option[AmmRedeemApi] = none
+      def toAPI(a: AmmRedeemDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[AmmRedeemApi] = none
     }
 
     implicit val toApiRedeemDBAny: ToAPI[AnyOrderDB, AmmRedeemApi, Any] = new ToAPI[AnyOrderDB, AmmRedeemApi, Any] {
 
-      def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[AmmRedeemApi] =
+      def toAPI(d: AnyOrderDB, now: Long)(implicit e: ErgoAddressEncoder): Option[AmmRedeemApi] =
         for {
           poolId <- d.poolId
           lp     <- d.redeemLp
@@ -374,7 +374,7 @@ object ApiOrder {
         } yield AmmRedeemApi(
           d.orderId,
           poolId,
-          history.OrderStatus.Ledger,
+          history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
           lp,
           d.redeemX,
           d.redeemY,
@@ -386,7 +386,7 @@ object ApiOrder {
           d.executedTx
         )
 
-      def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[AmmRedeemApi] = none
+      def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[AmmRedeemApi] = none
     }
   }
 
@@ -411,12 +411,12 @@ object ApiOrder {
     implicit val toApiSwap: ToAPI[Processed[order.Order.Swap], ApiOrder, RegisterSwap] =
       new ToAPI[Processed[order.Order.Swap], ApiOrder, RegisterSwap] {
 
-        def toAPI(o: Processed[order.Order.Swap])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(o: Processed[order.Order.Swap], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           Optional[order.Order, SwapParams].getOption(o.order).map { params =>
             Swap(
               o.order.id,
               o.order.poolId,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               params.base,
               params.minQuote,
               none,
@@ -429,14 +429,14 @@ object ApiOrder {
             )
           }
 
-        def toAPI(o: Processed[order.Order.Swap], c: RegisterSwap)(implicit
+        def toAPI(o: Processed[order.Order.Swap], c: RegisterSwap, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           o.evaluation.flatMap(_.widen[SwapEvaluation]).map { eval =>
             Swap(
               o.order.id,
               o.order.poolId,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               c.base,
               c.minQuote,
               eval.output.amount.some,
@@ -453,10 +453,10 @@ object ApiOrder {
     implicit val toApiSwap2: ToAPI[Processed[order.Order.Swap], ApiOrder, Processed.Any] =
       new ToAPI[Processed[order.Order.Swap], ApiOrder, Processed.Any] {
 
-        def toAPI(a: Processed[order.Order.Swap])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-          toApiSwap.toAPI(a)
+        def toAPI(a: Processed[order.Order.Swap], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+          toApiSwap.toAPI(a, now)
 
-        def toAPI(x: Processed[order.Order.Swap], c: Processed.Any)(implicit
+        def toAPI(x: Processed[order.Order.Swap], c: Processed.Any, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           for {
@@ -470,7 +470,7 @@ object ApiOrder {
             Swap(
               x.order.id,
               x.order.poolId,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               params.base,
               params.minQuote,
               eval.map(_.output.amount),
@@ -489,12 +489,12 @@ object ApiOrder {
 
     implicit val toApiSwapDB: ToAPI[SwapDB, Swap, Any] = new ToAPI[SwapDB, Swap, Any] {
 
-      def toAPI(d: SwapDB)(implicit e: ErgoAddressEncoder): Option[Swap] =
+      def toAPI(d: SwapDB, now: Long)(implicit e: ErgoAddressEncoder): Option[Swap] =
         d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
           Swap(
             d.id,
             d.poolId,
-            history.OrderStatus.Ledger,
+            history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
             d.base,
             d.minQuote,
             d.quote,
@@ -507,12 +507,12 @@ object ApiOrder {
           )
         }
 
-      def toAPI(a: SwapDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Swap] = none
+      def toAPI(a: SwapDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[Swap] = none
     }
 
     implicit val toApSwapDBAny: ToAPI[AnyOrderDB, Swap, Any] = new ToAPI[AnyOrderDB, Swap, Any] {
 
-      def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[Swap] =
+      def toAPI(d: AnyOrderDB, now: Long)(implicit e: ErgoAddressEncoder): Option[Swap] =
         for {
           poolId   <- d.poolId
           base     <- d.swapBase
@@ -521,7 +521,7 @@ object ApiOrder {
         } yield Swap(
           d.orderId,
           poolId,
-          history.OrderStatus.Ledger,
+          history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
           base,
           minQuote,
           d.swapQuote,
@@ -533,7 +533,7 @@ object ApiOrder {
           d.executedTx
         )
 
-      def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Swap] = none
+      def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[Swap] = none
     }
   }
 
@@ -554,11 +554,11 @@ object ApiOrder {
     implicit val toApiLock: ToAPI[Processed[order.Order.Lock], ApiOrder, Any] =
       new ToAPI[Processed[order.Order.Lock], ApiOrder, Any] {
 
-        def toAPI(o: Processed[order.Order.Lock])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(o: Processed[order.Order.Lock], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           Prism[order.Order.Lock, LockV1].getOption(o.order).map { lock =>
             Lock(
               o.order.id,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               TxData(o.state.txId, o.state.timestamp),
               lock.deadline,
               lock.amount,
@@ -568,7 +568,7 @@ object ApiOrder {
             )
           }
 
-        def toAPI(o: Processed[order.Order.Lock], c: Any)(implicit
+        def toAPI(o: Processed[order.Order.Lock], c: Any, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] = none
       }
@@ -578,11 +578,11 @@ object ApiOrder {
 
     implicit val toApiLockDB: ToAPI[LockDB, Lock, Any] = new ToAPI[LockDB, Lock, Any] {
 
-      def toAPI(d: LockDB)(implicit e: ErgoAddressEncoder): Option[Lock] =
+      def toAPI(d: LockDB, now: Long)(implicit e: ErgoAddressEncoder): Option[Lock] =
         d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
           Lock(
             d.id,
-            history.OrderStatus.Ledger,
+            history.OrderStatus.Evaluated,
             d.registerTx,
             d.deadline,
             d.asset,
@@ -592,19 +592,19 @@ object ApiOrder {
           )
         }
 
-      def toAPI(a: LockDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Lock] = none
+      def toAPI(a: LockDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[Lock] = none
     }
 
     implicit val toApiLockDBAny: ToAPI[AnyOrderDB, Lock, Any] = new ToAPI[AnyOrderDB, Lock, Any] {
 
-      def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[Lock] =
+      def toAPI(d: AnyOrderDB, now: Long)(implicit e: ErgoAddressEncoder): Option[Lock] =
         for {
           deadline <- d.lockDeadline
           asset    <- d.lockAsset
           address = d.redeemer.flatMap(r => formAddress(Redeemer.PublicKeyRedeemer(r)))
         } yield Lock(
           d.orderId,
-          history.OrderStatus.Ledger,
+          history.OrderStatus.Evaluated,
           d.registerTx,
           deadline,
           asset,
@@ -613,7 +613,7 @@ object ApiOrder {
           d.lockEvalType
         )
 
-      def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[Lock] = none
+      def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[Lock] = none
     }
   }
 
@@ -636,11 +636,11 @@ object ApiOrder {
     implicit val toApiLmDeposit: ToAPI[Processed[LmDeposit], ApiOrder, RegisterLmDeposit] =
       new ToAPI[Processed[LmDeposit], ApiOrder, RegisterLmDeposit] {
 
-        def toAPI(o: Processed[LmDeposit])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(o: Processed[LmDeposit], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           Optional[order.Order, LmDepositParams].getOption(o.order).map { params =>
             LmDepositApi(
               o.order.id,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               o.order.poolId,
               params.expectedNumEpochs,
               params.tokens,
@@ -652,13 +652,13 @@ object ApiOrder {
             )
           }
 
-        def toAPI(o: Processed[LmDeposit], c: RegisterLmDeposit)(implicit
+        def toAPI(o: Processed[LmDeposit], c: RegisterLmDeposit, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           o.evaluation.flatMap(_.widen[LmDepositCompoundEvaluation]).map { eval =>
             LmDepositApi(
               o.order.id,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               o.order.poolId,
               c.epochs,
               c.in,
@@ -674,10 +674,10 @@ object ApiOrder {
     implicit val toApiLmDeposit2: ToAPI[Processed[LmDeposit], ApiOrder, Processed.Any] =
       new ToAPI[Processed[LmDeposit], ApiOrder, Processed.Any] {
 
-        def toAPI(a: Processed[LmDeposit])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-          toApiLmDeposit.toAPI(a)
+        def toAPI(a: Processed[LmDeposit], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+          toApiLmDeposit.toAPI(a, now)
 
-        def toAPI(x: Processed[LmDeposit], c: Processed.Any)(implicit
+        def toAPI(x: Processed[LmDeposit], c: Processed.Any, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           for {
@@ -690,7 +690,7 @@ object ApiOrder {
                 .orElse(y.evaluation.flatMap(_.widen[LmDepositCompoundEvaluation]))
             LmDepositApi(
               x.order.id,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               x.order.poolId,
               params.expectedNumEpochs,
               params.tokens,
@@ -708,10 +708,10 @@ object ApiOrder {
 
     implicit val toApiLmDepositDB: ToAPI[LmDepositDB, LmDepositApi, Any] = new ToAPI[LmDepositDB, LmDepositApi, Any] {
 
-      def toAPI(d: LmDepositDB)(implicit e: ErgoAddressEncoder): Option[LmDepositApi] =
+      def toAPI(d: LmDepositDB, now: Long)(implicit e: ErgoAddressEncoder): Option[LmDepositApi] =
         LmDepositApi(
           d.orderId,
-          history.OrderStatus.Ledger,
+          history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
           d.poolId,
           d.expectedNumEpochs,
           d.input,
@@ -722,19 +722,19 @@ object ApiOrder {
           d.evaluateTx
         ).some
 
-      def toAPI(a: LmDepositDB, c: Any)(implicit e: ErgoAddressEncoder): Option[LmDepositApi] = none
+      def toAPI(a: LmDepositDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[LmDepositApi] = none
     }
 
     implicit val toApiLmDepositDBAny: ToAPI[AnyOrderDB, LmDepositApi, Any] = new ToAPI[AnyOrderDB, LmDepositApi, Any] {
 
-      def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[LmDepositApi] =
+      def toAPI(d: AnyOrderDB, now: Long)(implicit e: ErgoAddressEncoder): Option[LmDepositApi] =
         for {
           expectedNumEpochs <- d.lmDepositExpectedNumEpochs
           input             <- d.lmDepositInput
           poolId            <- d.poolId
         } yield LmDepositApi(
           d.orderId,
-          history.OrderStatus.Ledger,
+          history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
           poolId,
           expectedNumEpochs,
           input,
@@ -745,7 +745,7 @@ object ApiOrder {
           d.executedTx
         )
 
-      def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[LmDepositApi] = none
+      def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[LmDepositApi] = none
     }
   }
 
@@ -766,11 +766,11 @@ object ApiOrder {
     implicit val toApiCompound: ToAPI[Processed[Compound], ApiOrder, RegisterCompound] =
       new ToAPI[Processed[Compound], ApiOrder, RegisterCompound] {
 
-        def toAPI(o: Processed[Compound])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(o: Processed[Compound], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           Prism[Compound, CompoundV1].getOption(o.order).map { o1 =>
             LmCompoundApi(
               o.order.id,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               o.order.poolId,
               o1.params.vLq,
               o1.params.tmp,
@@ -780,13 +780,13 @@ object ApiOrder {
             )
           }
 
-        def toAPI(o: Processed[Compound], c: RegisterCompound)(implicit
+        def toAPI(o: Processed[Compound], c: RegisterCompound, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           Prism[Compound, CompoundV1].getOption(o.order).map { o1 =>
             LmCompoundApi(
               o.order.id,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               o.order.poolId,
               o1.params.vLq,
               o1.params.tmp,
@@ -800,10 +800,10 @@ object ApiOrder {
     implicit val toApiCompound2: ToAPI[Processed[Compound], ApiOrder, Processed.Any] =
       new ToAPI[Processed[Compound], ApiOrder, Processed.Any] {
 
-        def toAPI(a: Processed[Compound])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-          toApiCompound.toAPI(a)
+        def toAPI(a: Processed[Compound], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+          toApiCompound.toAPI(a, now)
 
-        def toAPI(x: Processed[Compound], c: Processed.Any)(implicit
+        def toAPI(x: Processed[Compound], c: Processed.Any, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           for {
@@ -811,7 +811,7 @@ object ApiOrder {
             y  <- c.wined[Compound]
           } yield LmCompoundApi(
             x.order.id,
-            history.OrderStatus.Mempool,
+            history.OrderStatus.Pending,
             x.order.poolId,
             x1.params.vLq,
             x1.params.tmp,
@@ -827,10 +827,10 @@ object ApiOrder {
     implicit val toApiCompoundDB: ToAPI[LmCompoundDB, LmCompoundApi, Any] =
       new ToAPI[LmCompoundDB, LmCompoundApi, Any] {
 
-        def toAPI(d: LmCompoundDB)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] =
+        def toAPI(d: LmCompoundDB, now: Long)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] =
           LmCompoundApi(
             d.orderId,
-            history.OrderStatus.Ledger,
+            history.OrderStatus.status(d.registerTx, d.evaluateTx, None, now),
             d.poolId,
             d.vLq,
             d.tmp,
@@ -839,13 +839,13 @@ object ApiOrder {
             d.evaluateTx
           ).some
 
-        def toAPI(a: LmCompoundDB, c: Any)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] = none
+        def toAPI(a: LmCompoundDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] = none
       }
 
     implicit val toApiLmCompoundDBAny: ToAPI[AnyOrderDB, LmCompoundApi, Any] =
       new ToAPI[AnyOrderDB, LmCompoundApi, Any] {
 
-        def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] =
+        def toAPI(d: AnyOrderDB, now: Long)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] =
           for {
             vLq    <- d.lmCompoundVLq
             key    <- d.lmCompoundBundleKeyId
@@ -853,7 +853,7 @@ object ApiOrder {
             tmp = d.lmCompoundTmp
           } yield LmCompoundApi(
             d.orderId,
-            history.OrderStatus.Ledger,
+            history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
             poolId,
             vLq,
             tmp,
@@ -862,7 +862,7 @@ object ApiOrder {
             d.executedTx
           )
 
-        def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] = none
+        def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] = none
       }
   }
 
@@ -885,11 +885,11 @@ object ApiOrder {
     implicit val toApiLmRedeem: ToAPI[Processed[LmRedeem], ApiOrder, RegisterLmRedeem] =
       new ToAPI[Processed[LmRedeem], ApiOrder, RegisterLmRedeem] {
 
-        def toAPI(o: Processed[LmRedeem])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+        def toAPI(o: Processed[LmRedeem], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
           Prism[LmRedeem, LmRedeemV1].getOption(o.order).map { o1 =>
             LmRedeemApi(
               o.order.id,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               none,
               o1.bundleKeyId,
               o1.expectedLq,
@@ -901,13 +901,13 @@ object ApiOrder {
             )
           }
 
-        def toAPI(o: Processed[LmRedeem], c: RegisterLmRedeem)(implicit
+        def toAPI(o: Processed[LmRedeem], c: RegisterLmRedeem, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           o.evaluation.flatMap(_.widen[LmRedeemEvaluation]).map { eval =>
             LmRedeemApi(
               o.order.id,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               eval.poolId.some,
               c.bundleKeyId,
               c.expectedLq,
@@ -923,10 +923,10 @@ object ApiOrder {
     implicit val toApiLmRedeem2: ToAPI[Processed[LmRedeem], ApiOrder, Processed.Any] =
       new ToAPI[Processed[LmRedeem], ApiOrder, Processed.Any] {
 
-        def toAPI(a: Processed[LmRedeem])(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-          toApiLmRedeem.toAPI(a)
+        def toAPI(a: Processed[LmRedeem], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
+          toApiLmRedeem.toAPI(a, now)
 
-        def toAPI(x: Processed[LmRedeem], c: Processed.Any)(implicit
+        def toAPI(x: Processed[LmRedeem], c: Processed.Any, now: Long)(implicit
           e: ErgoAddressEncoder
         ): Option[ApiOrder] =
           for {
@@ -939,7 +939,7 @@ object ApiOrder {
                 .orElse(y.evaluation.flatMap(_.widen[LmRedeemEvaluation]))
             LmRedeemApi(
               x.order.id,
-              history.OrderStatus.Mempool,
+              history.OrderStatus.Pending,
               eval.map(_.poolId),
               x1.bundleKeyId,
               x1.expectedLq,
@@ -958,10 +958,10 @@ object ApiOrder {
     implicit val toApiLmRedeemDB: ToAPI[LmRedeemsDB, LmRedeemApi, Any] =
       new ToAPI[LmRedeemsDB, LmRedeemApi, Any] {
 
-        def toAPI(d: LmRedeemsDB)(implicit e: ErgoAddressEncoder): Option[LmRedeemApi] =
+        def toAPI(d: LmRedeemsDB, now: Long)(implicit e: ErgoAddressEncoder): Option[LmRedeemApi] =
           LmRedeemApi(
             d.orderId,
-            history.OrderStatus.Ledger,
+            history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
             d.poolId,
             d.bundleKeyId,
             d.expectedLq,
@@ -972,20 +972,20 @@ object ApiOrder {
             d.evaluateTx
           ).some
 
-        def toAPI(a: LmRedeemsDB, c: Any)(implicit e: ErgoAddressEncoder): Option[LmRedeemApi] = none
+        def toAPI(a: LmRedeemsDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[LmRedeemApi] = none
       }
 
     implicit val toApiLmRedeemDBAny: ToAPI[AnyOrderDB, LmRedeemApi, Any] =
       new ToAPI[AnyOrderDB, LmRedeemApi, Any] {
 
-        def toAPI(d: AnyOrderDB)(implicit e: ErgoAddressEncoder): Option[LmRedeemApi] =
+        def toAPI(d: AnyOrderDB, now: Long)(implicit e: ErgoAddressEncoder): Option[LmRedeemApi] =
           for {
             lmRedeemExpectedLq  <- d.lmRedeemExpectedLq
             lmRedeemBundleKeyId <- d.lmRedeemBundleKeyId
             poolId = d.poolId
           } yield LmRedeemApi(
             d.orderId,
-            history.OrderStatus.Ledger,
+            history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
             poolId,
             lmRedeemBundleKeyId,
             lmRedeemExpectedLq,
@@ -996,7 +996,7 @@ object ApiOrder {
             d.executedTx
           )
 
-        def toAPI(a: AnyOrderDB, c: Any)(implicit e: ErgoAddressEncoder): Option[LmRedeemApi] = none
+        def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[LmRedeemApi] = none
       }
   }
 

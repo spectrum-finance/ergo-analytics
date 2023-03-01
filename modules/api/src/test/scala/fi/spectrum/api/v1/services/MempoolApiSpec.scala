@@ -56,7 +56,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val expected = LmDepositApi(
       registerOrder.order.id,
-      OrderStatus.Mempool,
+      OrderStatus.Pending,
       SelfHosted.pool.poolId,
       LM.deposit.params.expectedNumEpochs,
       LM.deposit.params.tokens,
@@ -94,7 +94,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val expected = LmDepositApi(
       registerOrder.order.id,
-      OrderStatus.Mempool,
+      OrderStatus.Pending,
       SelfHosted.pool.poolId,
       LM.deposit.params.expectedNumEpochs,
       LM.deposit.params.tokens,
@@ -142,7 +142,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val expected = LmDepositApi(
       registerOrder.order.id,
-      OrderStatus.Mempool,
+      OrderStatus.Pending,
       SelfHosted.pool.poolId,
       LM.deposit.params.expectedNumEpochs,
       LM.deposit.params.tokens,
@@ -180,7 +180,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val expected = LmCompoundApi(
       registerOrder.order.id,
-      OrderStatus.Mempool,
+      OrderStatus.Pending,
       Compound.compoundLastEpoch.poolId,
       Compound.compoundLastEpoch.params.vLq,
       Compound.compoundLastEpoch.params.tmp,
@@ -220,7 +220,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val expected = LmCompoundApi(
       registerOrder.order.id,
-      OrderStatus.Mempool,
+      OrderStatus.Pending,
       Compound.compoundNotLastEpoch.poolId,
       Compound.compoundNotLastEpoch.params.vLq,
       Compound.compoundNotLastEpoch.params.tmp,
@@ -267,7 +267,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val expected = LmCompoundApi(
       registerOrder.order.id,
-      OrderStatus.Mempool,
+      OrderStatus.Pending,
       Compound.compoundNotLastEpoch.poolId,
       Compound.compoundNotLastEpoch.params.vLq,
       Compound.compoundNotLastEpoch.params.tmp,
@@ -300,7 +300,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val expected = LmRedeemApi(
       registerOrder.order.id,
-      OrderStatus.Mempool,
+      OrderStatus.Pending,
       none,
       LM.redeem.bundleKeyId,
       LM.redeem.expectedLq,
@@ -341,7 +341,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val expected = LmRedeemApi(
       registerOrder.order.id,
-      OrderStatus.Mempool,
+      OrderStatus.Pending,
       SelfHosted.pool.poolId.some,
       LM.redeem.bundleKeyId,
       LM.redeem.expectedLq,
@@ -393,7 +393,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
     val expected = LmRedeemApi(
       registerOrder.order.id,
-      OrderStatus.Mempool,
+      OrderStatus.Pending,
       SelfHosted.pool.poolId.some,
       LM.redeem.bundleKeyId,
       LM.redeem.expectedLq,
