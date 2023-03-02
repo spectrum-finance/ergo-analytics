@@ -73,6 +73,11 @@ object SConstant {
     val splitHead  = split.headOption.map(_.drop(1)).getOrElse("")
     val splitTail  = split.lastOption.map(_.dropRight(1)).getOrElse("")
     val splitTotal = split.drop(1).dropRight(1).prepended(splitHead).appended(splitTail).toList
+    println(s"parseSInt: ${value}")
+    println(s"split: ${split.toList}")
+    println(s"splitHead: ${splitHead.toList}")
+    println(s"splitTail: ${splitTail.toList}")
+    println(s"splitTotal: ${splitTotal.toList}")
     IntsConstant(List.from(splitTotal).map(_.toInt))
   }
 }
