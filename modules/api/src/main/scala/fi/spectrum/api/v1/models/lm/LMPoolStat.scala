@@ -6,7 +6,7 @@ import fi.spectrum.core.domain.order.PoolId
 import sttp.tapir.Schema
 
 @derive(encoder, decoder)
-final case class LMPoolStat(poolId: PoolId, compoundedReward: BigDecimal, yearProfit: Option[BigDecimal])
+final case class LMPoolStat(poolId: PoolId, compoundedReward: String, yearProfit: Option[String])
 
 object LMPoolStat {
   implicit val lmPoolStatsSchema: Schema[LMPoolStat] = Schema.derived

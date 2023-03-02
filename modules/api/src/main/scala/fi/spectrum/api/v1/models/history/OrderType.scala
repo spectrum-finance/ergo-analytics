@@ -16,7 +16,6 @@ object OrderType extends Enum[OrderType] with CirceEnum[OrderType] {
   case object LmRedeem extends OrderType
   case object AmmDeposit extends OrderType
   case object LmDeposit extends OrderType
-  case object LmCompound extends OrderType
   case object Lock extends OrderType
 
   val values: immutable.IndexedSeq[OrderType] = findValues

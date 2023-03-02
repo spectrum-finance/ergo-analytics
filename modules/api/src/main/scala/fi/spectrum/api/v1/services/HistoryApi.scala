@@ -55,8 +55,6 @@ object HistoryApi {
         case Some(OrderType.Lock) => history.getLocks(paging, tw, request).map(_.flatMap(_.toApi[Lock](now)))
         case Some(OrderType.LmDeposit) =>
           history.getLmDeposits(paging, tw, request).map(_.flatMap(_.toApi[LmDepositApi](now)))
-        case Some(OrderType.LmCompound) =>
-          history.getLmCompounds(paging, tw, request).map(_.flatMap(_.toApi[LmCompoundApi](now)))
         case Some(OrderType.LmRedeem) =>
           history.getLmRedeems(paging, tw, request).map(_.flatMap(_.toApi[LmRedeemApi](now)))
         case None => history.getAnyOrders(paging, tw, request).map(_.flatMap(_.toApi[ApiOrder](now)))

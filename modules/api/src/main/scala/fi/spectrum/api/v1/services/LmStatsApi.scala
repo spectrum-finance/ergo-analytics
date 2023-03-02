@@ -6,6 +6,7 @@ import cats.{Functor, Monad}
 import fi.spectrum.api.db.models.lm.{UserCompound, UserInterest}
 import fi.spectrum.api.db.repositories.LM
 import fi.spectrum.api.services.{Height, LMSnapshots, LmStats}
+import fi.spectrum.api.v1.models.AssetAmountApi
 import fi.spectrum.api.v1.models.lm._
 import fi.spectrum.core.domain.Address
 import fi.spectrum.core.domain.address._
@@ -76,20 +77,17 @@ object LmStatsApi {
                     val allocRem =
                       pool.reward.amount - BigDecimal(pool.programBudget) * epochsToCompound / pool.epochNum - 1L
                     val reward = allocRem * releasedTMP / actualTMP - 1L
-                    UserNextStakeReward(
-                      compound.poolId,
-                      reward.setScale(0, RoundingMode.HALF_UP)
-                    ).some
+                    (compound.poolId, reward.setScale(0, RoundingMode.HALF_UP)).some
                   case _ => none
                 }
               }
-              .groupBy(_.poolId)
+              .groupBy(_._1)
               .map { case (id, value) =>
-                UserNextStakeReward(id, value.map(_.nextReward).sum)
+                UserNextStakeReward(id, value.map(_._2).sum.toString())
               }
               .toList
             val userInterests = userInterest.map { interest =>
-              UserCompoundResult(interest.poolId, interest.reward)
+              UserCompoundResult(interest.poolId, AssetAmountApi.fromAssetAmount(interest.reward))
             }
 
             UserLmStats(userStakes, userInterests)

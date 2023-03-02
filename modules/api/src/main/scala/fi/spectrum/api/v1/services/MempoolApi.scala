@@ -8,7 +8,6 @@ import fi.spectrum.api.services.Network
 import fi.spectrum.api.v1.models.history.ApiOrder.AmmDepositApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.AmmRedeemApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.LmDepositApi._
-import fi.spectrum.api.v1.models.history.ApiOrder.LmCompoundApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.LmRedeemApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.Swap._
 import fi.spectrum.api.v1.models.history.ApiOrder._
@@ -72,9 +71,6 @@ object MempoolApi {
                       .orElseF(x.wined[Order.Swap].traverse(s => h.swapRegister(s.order.id).flatMapIn(s.toApi(_, now))))
                       .orElseF(
                         x.wined[LmDeposit].traverse(s => h.lmDepositRegister(s.order.id).flatMapIn(s.toApi(_, now)))
-                      )
-                      .orElseF(
-                        x.wined[Compound].traverse(s => h.lmCompoundRegister(s.order.id).flatMapIn(s.toApi(_, now)))
                       )
                       .orElseF(
                         x.wined[LmRedeem].traverse(s => h.lmRedeemRegister(s.order.id).flatMapIn(s.toApi(_, now)))

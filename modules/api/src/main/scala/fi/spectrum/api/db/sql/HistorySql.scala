@@ -4,26 +4,10 @@ import cats.syntax.list._
 import doobie._
 import doobie.implicits._
 import doobie.util.log.LogHandler
-import fi.spectrum.api.db.models.OrderDB.{
-  AmmDepositDB,
-  AmmRedeemDB,
-  AnyOrderDB,
-  LmCompoundDB,
-  LmDepositDB,
-  LmRedeemsDB,
-  LockDB,
-  SwapDB
-}
-import fi.spectrum.api.db.models.{
-  RegisterCompound,
-  RegisterDeposit,
-  RegisterLmDeposit,
-  RegisterLmRedeem,
-  RegisterRedeem,
-  RegisterSwap
-}
-import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
-import fi.spectrum.api.v1.models.history.{HistoryApiQuery, OrderStatusApi, TokenPair}
+import fi.spectrum.api.db.models.OrderDB._
+import fi.spectrum.api.db.models._
+import fi.spectrum.api.v1.endpoints.models.TimeWindow
+import fi.spectrum.api.v1.models.history.{OrderStatusApi, TokenPair}
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.core.domain.{PubKey, TokenId, TxId}
 
@@ -34,40 +18,17 @@ final class HistorySql(implicit lh: LogHandler) {
          |SELECT
          |	sum(x.y)
          |FROM (
-         |	SELECT
-         |		count(1) AS y
-         |	FROM
-         |		swaps where ${in(list)}
+         |	SELECT count(1) AS y FROM swaps where ${in(list)}
          |	UNION
-         |	SELECT
-         |		count(1) AS y
-         |	FROM
-         |		deposits where ${in(list)}
+         |	SELECT count(1) AS y FROM deposits where ${in(list)}
          |	UNION
-         |	SELECT
-         |		count(1) AS y
-         |	FROM
-         |		lq_locks where ${in(list)}
+         |	SELECT count(1) AS y FROM lq_locks where ${in(list)}
          |	UNION
-         |	SELECT
-         |		count(1) AS y
-         |	FROM
-         |		redeems where ${in(list)}
+         |	SELECT count(1) AS y FROM redeems where ${in(list)}
          |UNION
-         |	SELECT
-         |		count(1) AS y
-         |	FROM
-         |		lm_redeems where ${in2(list)}
+         |	SELECT count(1) AS y FROM lm_redeems where ${in2(list)}
          |UNION
-         |	SELECT
-         |		count(1) AS y
-         |	FROM
-         |		lm_deposits where ${in2(list)}
-         |UNION
-         |	SELECT
-         |		count(1) AS y
-         |	FROM
-         |		lm_compound where ${in(list)}
+         |	SELECT count(1) AS y FROM lm_deposits where ${in2(list)}
          |) AS x
        """.stripMargin.query[Long]
 
@@ -87,11 +48,6 @@ final class HistorySql(implicit lh: LogHandler) {
          |select bundle_key_id, expected_lq_id, expected_lq_amount, registered_transaction_id,
          |registered_transaction_timestamp from lm_redeems where order_id=$orderId
          |""".stripMargin.query[RegisterLmRedeem]
-
-  def lmCompoundRegister(orderId: OrderId): Query0[RegisterCompound] =
-    sql"""
-         |select registered_transaction_id, registered_transaction_timestamp from lm_compound where order_id=$orderId
-         |""".stripMargin.query[RegisterCompound]
 
   def redeemRegister(orderId: OrderId): Query0[RegisterRedeem] =
     sql"""
@@ -147,11 +103,6 @@ final class HistorySql(implicit lh: LogHandler) {
          |	NULL::bigint AS lock_amount,
          |	NULL AS lock_evaluation_transaction_id,
          |	NULL AS lock_evaluation_lock_type,
-         |	NULL AS lm_compound_v_lq_id,
-         |	NULL::bigint AS lm_compound_v_lq_amount,
-         |	NULL AS lm_compound_tmp_id,
-         |	NULL::bigint AS lm_compound_tmp_amount,
-         |	NULL AS lm_compound_bundle_key_id,
          |	NULL::integer AS lm_deposits_expected_num_epochs,
          |	NULL AS lm_deposits_input_id,
          |	NULL::bigint AS lm_deposits_input_amount,
@@ -209,11 +160,6 @@ final class HistorySql(implicit lh: LogHandler) {
          |	NULL::bigint AS lock_amount,
          |	NULL AS lock_evaluation_transaction_id,
          |	NULL AS lock_evaluation_lock_type,
-         |	NULL AS lm_compound_v_lq_id,
-         |	NULL::bigint AS lm_compound_v_lq_amount,
-         |	NULL AS lm_compound_tmp_id,
-         |	NULL::bigint AS lm_compound_tmp_amount,
-         |	NULL AS lm_compound_bundle_key_id,
          |	NULL::integer AS lm_deposits_expected_num_epochs,
          |	NULL AS lm_deposits_input_id,
          |	NULL::bigint AS lm_deposits_input_amount,
@@ -272,11 +218,6 @@ final class HistorySql(implicit lh: LogHandler) {
          |	NULL::bigint AS lock_amount,
          |	NULL AS lock_evaluation_transaction_id,
          |	NULL AS lock_evaluation_lock_type,
-         |	NULL AS lm_compound_v_lq_id,
-         |	NULL::bigint AS lm_compound_v_lq_amount,
-         |	NULL AS lm_compound_tmp_id,
-         |	NULL::bigint AS lm_compound_tmp_amount,
-         |	NULL AS lm_compound_bundle_key_id,
          |	NULL::integer AS lm_deposits_expected_num_epochs,
          |	NULL AS lm_deposits_input_id,
          |	NULL::bigint AS lm_deposits_input_amount,
@@ -334,11 +275,6 @@ final class HistorySql(implicit lh: LogHandler) {
          |	amount::bigint AS lock_amount,
          |	evaluation_transaction_id AS lock_evaluation_transaction_id,
          |	evaluation_lock_type AS lock_evaluation_lock_type,
-         |	NULL AS lm_compound_v_lq_id,
-         |	NULL::bigint AS lm_compound_v_lq_amount,
-         |	NULL AS lm_compound_tmp_id,
-         |	NULL::bigint AS lm_compound_tmp_amount,
-         |	NULL AS lm_compound_bundle_key_id,
          |	NULL::integer AS lm_deposits_expected_num_epochs,
          |	NULL AS lm_deposits_input_id,
          |	NULL::bigint AS lm_deposits_input_amount,
@@ -362,63 +298,6 @@ final class HistorySql(implicit lh: LogHandler) {
          |	NULL
          |	FROM lq_locks
          |    ${orderCondition(addresses, tw, None)} ${txIdLock(txId)} ${lockTokens(pair, tokens)}
-         |UNION
-         |SELECT
-         |	order_id,
-         |	pool_id,
-         |	'compound',
-         |	NULL AS swap_base_id,
-         |	NULL AS swap_base_amount,
-         |	NULL AS swap_min_quote_id,
-         |	NULL AS swap_min_quote_amount,
-         |	NULL AS swap_quote_amount,
-         |	NULL AS deposit_input_id_x,
-         |	NULL AS deposit_input_amount_x,
-         |	NULL AS deposit_input_id_y,
-         |	NULL AS deposit_input_amount_y,
-         |	NULL AS deposit_output_id_lp,
-         |	NULL AS deposit_output_amount_lp,
-         |	NULL AS deposit_actual_input_amount_x,
-         |	NULL AS deposit_actual_input_amount_y,
-         |	NULL AS redeem_lp_id,
-         |	NULL::bigint AS redeem_lp_amount,
-         |	NULL AS redeem_output_id_x,
-         |	NULL::bigint AS redeem_output_amount_x,
-         |	NULL AS redeem_output_id_y,
-         |	NULL::bigint AS redeem_output_amount_y,
-         |	NULL::integer AS lock_deadline,
-         |	NULL AS lock_token_id,
-         |	NULL::bigint AS lock_amount,
-         |	NULL AS lock_evaluation_transaction_id,
-         |	NULL AS lock_evaluation_lock_type,
-         |	v_lq_id AS lm_compound_v_lq_id,
-         |	v_lq_amount::bigint AS lm_compound_v_lq_amount,
-         |	tmp_id AS lm_compound_tmp_id,
-         |	tmp_amount::bigint AS lm_compound_tmp_amount,
-         |	bundle_key_id AS lm_compound_bundle_key_id,
-         |	NULL::integer AS lm_deposits_expected_num_epochs,
-         |	NULL AS lm_deposits_input_id,
-         |	NULL::bigint AS lm_deposits_input_amount,
-         |	NULL AS lm_deposits_lp_id,
-         |	NULL::bigint AS lm_deposits_lp_amount,
-         |	NULL AS lm_deposits_compound_id,
-         |	NULL AS lm_redeems_bundle_key_id,
-         |	NULL AS lm_redeems_expected_lq_id,
-         |	NULL::bigint AS lm_redeems_expected_lq_amount,
-         |	NULL AS lm_redeems_out_id,
-         |	NULL::bigint AS lm_redeems_out_amount,
-         |	NULL AS lm_redeems_box_id,
-         |	NULL,
-         |	NULL,
-         |	redeemer,
-         |	registered_transaction_id,
-         |	registered_transaction_timestamp,
-         |	executed_transaction_id,
-         |	executed_transaction_timestamp,
-         |	NULL,
-         |	NULL
-         |	FROM lm_compound
-         |    ${orderCondition(addresses, tw, None)} ${txIdCompound(txId)}
          |UNION
          |SELECT
          |	order_id,
@@ -448,11 +327,6 @@ final class HistorySql(implicit lh: LogHandler) {
          |	NULL::bigint AS lock_amount,
          |	NULL AS lock_evaluation_transaction_id,
          |	NULL AS lock_evaluation_lock_type,
-         |	NULL AS lm_compound_v_lq_id,
-         |	NULL::bigint AS lm_compound_v_lq_amount,
-         |	NULL AS lm_compound_tmp_id,
-         |	NULL::bigint AS lm_compound_tmp_amount,
-         |	NULL AS lm_compound_bundle_key_id,
          |	expected_num_epochs::integer AS lm_deposits_expected_num_epochs,
          |	input_id AS lm_deposits_input_id,
          |	input_amount::bigint AS lm_deposits_input_amount,
@@ -505,11 +379,6 @@ final class HistorySql(implicit lh: LogHandler) {
          |	NULL::bigint AS lock_amount,
          |	NULL AS lock_evaluation_transaction_id,
          |	NULL AS lock_evaluation_lock_type,
-         |	NULL AS lm_compound_v_lq_id,
-         |	NULL::bigint AS lm_compound_v_lq_amount,
-         |	NULL AS lm_compound_tmp_id,
-         |	NULL::bigint AS lm_compound_tmp_amount,
-         |	NULL AS lm_compound_bundle_key_id,
          |	null::integer AS lm_deposits_expected_num_epochs,
          |	null AS lm_deposits_input_id,
          |	null::bigint AS lm_deposits_input_amount,
@@ -600,34 +469,6 @@ final class HistorySql(implicit lh: LogHandler) {
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
        """.stripMargin.query[LmDepositDB]
-
-  def getLmCompound(
-    addresses: List[PubKey],
-    offset: Int,
-    limit: Int,
-    tw: TimeWindow,
-    status: Option[OrderStatusApi],
-    txId: Option[TxId]
-  ): doobie.Query0[LmCompoundDB] =
-    sql"""
-         |SELECT
-         |	order_id,
-         |	pool_id,
-         |	v_lq_id,
-         |	v_lq_amount,
-         |	tmp_id,
-         |	tmp_amount,
-         |	bundle_key_id,
-         |	registered_transaction_id,
-         |	registered_transaction_timestamp,
-         |	executed_transaction_id,
-         |	executed_transaction_timestamp
-         |FROM
-         |	lm_compound
-         |${orderCondition(addresses, tw, status)} ${txIdCompound(txId)}
-         |ORDER BY registered_transaction_timestamp DESC
-         |OFFSET $offset LIMIT $limit;
-       """.stripMargin.query[LmCompoundDB]
 
   def getSwaps(
     addresses: List[PubKey],
@@ -816,15 +657,6 @@ final class HistorySql(implicit lh: LogHandler) {
       .map { id =>
         Fragment.const(
           s"and (registered_transaction_id='$id' or executed_transaction_id='$id' or refunded_transaction_id='$id')"
-        )
-      }
-      .getOrElse(Fragment.empty)
-
-  private def txIdCompound(txId: Option[TxId]): Fragment =
-    txId
-      .map { id =>
-        Fragment.const(
-          s"and (registered_transaction_id='$id' or executed_transaction_id='$id')"
         )
       }
       .getOrElse(Fragment.empty)

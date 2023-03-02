@@ -7,13 +7,11 @@ import derevo.derive
 import fi.spectrum.api.classes.ToAPI
 import fi.spectrum.api.db.models.OrderDB._
 import fi.spectrum.api.db.models._
-import fi.spectrum.api.v1.models.history
+import fi.spectrum.api.v1.models.{history, AssetAmountApi}
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.address._
 import fi.spectrum.core.domain.analytics.OrderEvaluation._
 import fi.spectrum.core.domain.analytics.Processed
-import fi.spectrum.core.domain.order.Order.Compound
-import fi.spectrum.core.domain.order.Order.Compound.CompoundV1
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
 import fi.spectrum.core.domain.order.Order.Lock.LockV1
 import fi.spectrum.core.domain.order.Order.Redeem.LmRedeem.LmRedeemV1
@@ -47,7 +45,6 @@ object ApiOrder {
         .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap.toAPI(_, now)))
         .orElse(a.wined[order.Order.Lock].flatMap(Lock.toApiLock.toAPI(_, now)))
         .orElse(a.wined[LmDeposit].flatMap(LmDepositApi.toApiLmDeposit.toAPI(_, now)))
-        .orElse(a.wined[order.Order.Compound].flatMap(LmCompoundApi.toApiCompound.toAPI(_, now)))
         .orElse(a.wined[LmRedeem].flatMap(LmRedeemApi.toApiLmRedeem.toAPI(_, now)))
 
     def toAPI(a: Processed.Any, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
@@ -64,7 +61,6 @@ object ApiOrder {
           .orElse(a.wined[AmmRedeem].flatMap(AmmRedeemApi.toApiRedeem2.toAPI(_, c, now)))
           .orElse(a.wined[order.Order.Swap].flatMap(Swap.toApiSwap2.toAPI(_, c, now)))
           .orElse(a.wined[LmDeposit].flatMap(LmDepositApi.toApiLmDeposit2.toAPI(_, c, now)))
-          .orElse(a.wined[order.Order.Compound].flatMap(LmCompoundApi.toApiCompound2.toAPI(_, c, now)))
           .orElse(a.wined[LmRedeem].flatMap(LmRedeemApi.toApiLmRedeem2.toAPI(_, c, now)))
     }
 
@@ -77,7 +73,6 @@ object ApiOrder {
         .orElse(Swap.toApSwapDBAny.toAPI(a, now))
         .orElse(Lock.toApiLockDBAny.toAPI(a, now))
         .orElse(LmDepositApi.toApiLmDepositDBAny.toAPI(a, now))
-        .orElse(LmCompoundApi.toApiLmCompoundDBAny.toAPI(a, now))
         .orElse(LmRedeemApi.toApiLmRedeemDBAny.toAPI(a, now))
 
     def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] = none
@@ -88,11 +83,11 @@ object ApiOrder {
     id: OrderId,
     poolId: PoolId,
     status: history.OrderStatus,
-    inputX: AssetAmount,
-    inputY: AssetAmount,
-    actualX: Option[Long],
-    actualY: Option[Long],
-    outputLp: Option[AssetAmount],
+    inputX: AssetAmountApi,
+    inputY: AssetAmountApi,
+    actualX: Option[String],
+    actualY: Option[String],
+    outputLp: Option[AssetAmountApi],
     feeType: String,
     feeAmount: Long,
     address: Option[Address],
@@ -112,8 +107,8 @@ object ApiOrder {
               o.order.id,
               o.order.poolId,
               history.OrderStatus.Pending,
-              params.inX,
-              params.inY,
+              AssetAmountApi.fromAssetAmount(params.inX),
+              AssetAmountApi.fromAssetAmount(params.inY),
               none,
               none,
               none,
@@ -134,11 +129,11 @@ object ApiOrder {
               o.order.id,
               o.order.poolId,
               history.OrderStatus.Pending,
-              c.inX,
-              c.inY,
-              eval.actualX.some,
-              eval.actualY.some,
-              eval.outputLP.some,
+              AssetAmountApi.fromAssetAmount(c.inX),
+              AssetAmountApi.fromAssetAmount(c.inY),
+              s"${eval.actualX}".some,
+              s"${eval.actualY}".some,
+              AssetAmountApi.fromAssetAmount(eval.outputLP).some,
               o.order.fee.show,
               o.order.fee.amount,
               address.formAddress(o.order.redeemer),
@@ -170,11 +165,11 @@ object ApiOrder {
               x.order.id,
               x.order.poolId,
               history.OrderStatus.Pending,
-              params.inX,
-              params.inY,
-              eval.map(_.actualX),
-              eval.map(_.actualY),
-              eval.map(_.outputLP),
+              AssetAmountApi.fromAssetAmount(params.inX),
+              AssetAmountApi.fromAssetAmount(params.inY),
+              eval.map(s => s"${s.actualX}"),
+              eval.map(s => s"${s.actualY}"),
+              eval.map(s => AssetAmountApi.fromAssetAmount(s.outputLP)),
               x.order.fee.show,
               x.order.fee.amount,
               address.formAddress(x.order.redeemer),
@@ -196,11 +191,11 @@ object ApiOrder {
             d.orderId,
             d.poolId,
             history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
-            d.inputX,
-            d.inputY,
-            d.actualX,
-            d.actualY,
-            d.outputLp,
+            AssetAmountApi.fromAssetAmount(d.inputX),
+            AssetAmountApi.fromAssetAmount(d.inputY),
+            d.actualX.map(s => s"$s"),
+            d.actualY.map(s => s"$s"),
+            d.outputLp.map(AssetAmountApi.fromAssetAmount),
             d.fee.show,
             d.fee.amount,
             a.some,
@@ -226,11 +221,11 @@ object ApiOrder {
           d.orderId,
           poolId,
           history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
-          inX,
-          inY,
-          d.depositActualX,
-          d.depositActualY,
-          d.depositLp,
+          AssetAmountApi.fromAssetAmount(inX),
+          AssetAmountApi.fromAssetAmount(inY),
+          d.depositActualX.map(s => s"$s"),
+          d.depositActualY.map(s => s"$s"),
+          d.depositLp.map(AssetAmountApi.fromAssetAmount),
           fee.show,
           fee.amount,
           address,
@@ -248,9 +243,9 @@ object ApiOrder {
     id: OrderId,
     poolId: PoolId,
     status: history.OrderStatus,
-    lp: AssetAmount,
-    outX: Option[AssetAmount],
-    outY: Option[AssetAmount],
+    lp: AssetAmountApi,
+    outX: Option[AssetAmountApi],
+    outY: Option[AssetAmountApi],
     feeType: String,
     feeAmount: Long,
     address: Option[Address],
@@ -270,7 +265,7 @@ object ApiOrder {
               o.order.id,
               o.order.poolId,
               history.OrderStatus.Pending,
-              params.lp,
+              AssetAmountApi.fromAssetAmount(params.lp),
               none,
               none,
               o.order.fee.show,
@@ -290,9 +285,9 @@ object ApiOrder {
               o.order.id,
               o.order.poolId,
               history.OrderStatus.Pending,
-              c.lp,
-              eval.outputX.some,
-              eval.outputY.some,
+              AssetAmountApi.fromAssetAmount(c.lp),
+              AssetAmountApi.fromAssetAmount(eval.outputX).some,
+              AssetAmountApi.fromAssetAmount(eval.outputY).some,
               o.order.fee.show,
               o.order.fee.amount,
               address.formAddress(o.order.redeemer),
@@ -324,9 +319,9 @@ object ApiOrder {
               x.order.id,
               x.order.poolId,
               history.OrderStatus.Pending,
-              params.lp,
-              eval.map(_.outputX),
-              eval.map(_.outputY),
+              AssetAmountApi.fromAssetAmount(params.lp),
+              eval.map(_.outputX).map(AssetAmountApi.fromAssetAmount),
+              eval.map(_.outputY).map(AssetAmountApi.fromAssetAmount),
               x.order.fee.show,
               x.order.fee.amount,
               address.formAddress(x.order.redeemer),
@@ -348,9 +343,9 @@ object ApiOrder {
             d.id,
             d.poolId,
             history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
-            d.lp,
-            d.outX,
-            d.outY,
+            AssetAmountApi.fromAssetAmount(d.lp),
+            d.outX.map(AssetAmountApi.fromAssetAmount),
+            d.outY.map(AssetAmountApi.fromAssetAmount),
             d.fee.show,
             d.fee.amount,
             a.some,
@@ -375,9 +370,9 @@ object ApiOrder {
           d.orderId,
           poolId,
           history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
-          lp,
-          d.redeemX,
-          d.redeemY,
+          AssetAmountApi.fromAssetAmount(lp),
+          d.redeemX.map(AssetAmountApi.fromAssetAmount),
+          d.redeemY.map(AssetAmountApi.fromAssetAmount),
           fee.show,
           fee.amount,
           address,
@@ -395,9 +390,9 @@ object ApiOrder {
     id: OrderId,
     poolId: PoolId,
     status: history.OrderStatus,
-    base: AssetAmount,
-    minQuote: AssetAmount,
-    quote: Option[Long],
+    base: AssetAmountApi,
+    minQuote: AssetAmountApi,
+    quote: Option[String],
     feeType: Option[String],
     feeAmount: Option[Long],
     address: Option[Address],
@@ -417,8 +412,8 @@ object ApiOrder {
               o.order.id,
               o.order.poolId,
               history.OrderStatus.Pending,
-              params.base,
-              params.minQuote,
+              AssetAmountApi.fromAssetAmount(params.base),
+              AssetAmountApi.fromAssetAmount(params.minQuote),
               none,
               none,
               none,
@@ -437,9 +432,9 @@ object ApiOrder {
               o.order.id,
               o.order.poolId,
               history.OrderStatus.Pending,
-              c.base,
-              c.minQuote,
-              eval.output.amount.some,
+              AssetAmountApi.fromAssetAmount(c.base),
+              AssetAmountApi.fromAssetAmount(c.minQuote),
+              s"${eval.output.amount}".some,
               eval.fee.show.some,
               eval.fee.amount.some,
               address.formAddress(o.order.redeemer),
@@ -471,9 +466,9 @@ object ApiOrder {
               x.order.id,
               x.order.poolId,
               history.OrderStatus.Pending,
-              params.base,
-              params.minQuote,
-              eval.map(_.output.amount),
+              AssetAmountApi.fromAssetAmount(params.base),
+              AssetAmountApi.fromAssetAmount(params.minQuote),
+              eval.map(_.output.amount).map(s => s"$s"),
               eval.map(_.fee.show),
               eval.map(_.fee.amount),
               address.formAddress(x.order.redeemer),
@@ -495,9 +490,9 @@ object ApiOrder {
             d.id,
             d.poolId,
             history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
-            d.base,
-            d.minQuote,
-            d.quote,
+            AssetAmountApi.fromAssetAmount(d.base),
+            AssetAmountApi.fromAssetAmount(d.minQuote),
+            d.quote.map(s => s"$s"),
             d.fee.map(_.show),
             d.fee.map(_.amount),
             a.some,
@@ -522,9 +517,9 @@ object ApiOrder {
           d.orderId,
           poolId,
           history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
-          base,
-          minQuote,
-          d.swapQuote,
+          AssetAmountApi.fromAssetAmount(base),
+          AssetAmountApi.fromAssetAmount(minQuote),
+          d.swapQuote.map(s => s"$s"),
           d.fee.map(_.show),
           d.fee.map(_.amount),
           address,
@@ -543,7 +538,7 @@ object ApiOrder {
     status: history.OrderStatus,
     registerTx: TxData,
     deadline: Int,
-    asset: AssetAmount,
+    asset: AssetAmountApi,
     address: Option[Address],
     evalTxId: Option[TxId],
     evalType: Option[String]
@@ -561,7 +556,7 @@ object ApiOrder {
               history.OrderStatus.Pending,
               TxData(o.state.txId, o.state.timestamp),
               lock.deadline,
-              lock.amount,
+              AssetAmountApi.fromAssetAmount(lock.amount),
               address.formAddress(o.order.redeemer),
               none,
               none
@@ -585,7 +580,7 @@ object ApiOrder {
             history.OrderStatus.Evaluated,
             d.registerTx,
             d.deadline,
-            d.asset,
+            AssetAmountApi.fromAssetAmount(d.asset),
             a.some,
             d.evalTxId,
             d.evalType
@@ -607,7 +602,7 @@ object ApiOrder {
           history.OrderStatus.Evaluated,
           d.registerTx,
           deadline,
-          asset,
+          AssetAmountApi.fromAssetAmount(asset),
           address,
           d.lockEvalTxId,
           d.lockEvalType
@@ -623,8 +618,8 @@ object ApiOrder {
     status: history.OrderStatus,
     poolId: PoolId,
     expectedNumEpochs: Int,
-    input: AssetAmount,
-    out: Option[AssetAmount],
+    input: AssetAmountApi,
+    out: Option[AssetAmountApi],
     compoundId: Option[TokenId],
     registerTx: TxData,
     refundTx: Option[TxData],
@@ -643,7 +638,7 @@ object ApiOrder {
               history.OrderStatus.Pending,
               o.order.poolId,
               params.expectedNumEpochs,
-              params.tokens,
+              AssetAmountApi.fromAssetAmount(params.tokens),
               none,
               none,
               TxData(o.state.txId, o.state.timestamp),
@@ -661,8 +656,8 @@ object ApiOrder {
               history.OrderStatus.Pending,
               o.order.poolId,
               c.epochs,
-              c.in,
-              eval.tokens.some,
+              AssetAmountApi.fromAssetAmount(c.in),
+              AssetAmountApi.fromAssetAmount(eval.tokens).some,
               TokenId.unsafeFromString(eval.bundle.id.value).some,
               TxData(c.info.id, c.info.timestamp),
               if (o.state.status.in(WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none,
@@ -693,8 +688,8 @@ object ApiOrder {
               history.OrderStatus.Pending,
               x.order.poolId,
               params.expectedNumEpochs,
-              params.tokens,
-              eval.map(_.tokens),
+              AssetAmountApi.fromAssetAmount(params.tokens),
+              eval.map(_.tokens).map(AssetAmountApi.fromAssetAmount),
               eval.map(_.bundle.id).map(r => TokenId.unsafeFromString(r.value)),
               mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
               mkTxData(x.state, WaitingRefund).orElse(mkTxData(y.state, WaitingRefund)),
@@ -714,8 +709,8 @@ object ApiOrder {
           history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
           d.poolId,
           d.expectedNumEpochs,
-          d.input,
-          d.lp,
+          AssetAmountApi.fromAssetAmount(d.input),
+          d.lp.map(AssetAmountApi.fromAssetAmount),
           d.compoundId,
           d.registerTx,
           d.refundTx,
@@ -737,8 +732,8 @@ object ApiOrder {
           history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
           poolId,
           expectedNumEpochs,
-          input,
-          d.lmDepositLp,
+          AssetAmountApi.fromAssetAmount(input),
+          d.lmDepositLp.map(AssetAmountApi.fromAssetAmount),
           d.lmDepositCompoundId,
           d.registerTx,
           d.refundedTx,
@@ -750,130 +745,13 @@ object ApiOrder {
   }
 
   @derive(encoder, decoder, loggable)
-  final case class LmCompoundApi(
-    id: OrderId,
-    status: history.OrderStatus,
-    poolId: PoolId,
-    vLq: AssetAmount,
-    tmp: Option[AssetAmount],
-    compoundId: TokenId,
-    registerTx: TxData,
-    evaluateTx: Option[TxData]
-  ) extends ApiOrder
-
-  object LmCompoundApi extends LmCompoundApiInstances {
-
-    implicit val toApiCompound: ToAPI[Processed[Compound], ApiOrder, RegisterCompound] =
-      new ToAPI[Processed[Compound], ApiOrder, RegisterCompound] {
-
-        def toAPI(o: Processed[Compound], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-          Prism[Compound, CompoundV1].getOption(o.order).map { o1 =>
-            LmCompoundApi(
-              o.order.id,
-              history.OrderStatus.Pending,
-              o.order.poolId,
-              o1.params.vLq,
-              o1.params.tmp,
-              o1.params.bundleKeyId,
-              TxData(o.state.txId, o.state.timestamp),
-              none
-            )
-          }
-
-        def toAPI(o: Processed[Compound], c: RegisterCompound, now: Long)(implicit
-          e: ErgoAddressEncoder
-        ): Option[ApiOrder] =
-          Prism[Compound, CompoundV1].getOption(o.order).map { o1 =>
-            LmCompoundApi(
-              o.order.id,
-              history.OrderStatus.Pending,
-              o.order.poolId,
-              o1.params.vLq,
-              o1.params.tmp,
-              o1.params.bundleKeyId,
-              TxData(c.info.id, c.info.timestamp),
-              if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
-            )
-          }
-      }
-
-    implicit val toApiCompound2: ToAPI[Processed[Compound], ApiOrder, Processed.Any] =
-      new ToAPI[Processed[Compound], ApiOrder, Processed.Any] {
-
-        def toAPI(a: Processed[Compound], now: Long)(implicit e: ErgoAddressEncoder): Option[ApiOrder] =
-          toApiCompound.toAPI(a, now)
-
-        def toAPI(x: Processed[Compound], c: Processed.Any, now: Long)(implicit
-          e: ErgoAddressEncoder
-        ): Option[ApiOrder] =
-          for {
-            x1 <- Prism[Compound, CompoundV1].getOption(x.order)
-            y  <- c.wined[Compound]
-          } yield LmCompoundApi(
-            x.order.id,
-            history.OrderStatus.Pending,
-            x.order.poolId,
-            x1.params.vLq,
-            x1.params.tmp,
-            x1.params.bundleKeyId,
-            mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
-            mkTxData(x.state, WaitingEvaluation).orElse(mkTxData(y.state, WaitingEvaluation))
-          )
-      }
-  }
-
-  trait LmCompoundApiInstances {
-
-    implicit val toApiCompoundDB: ToAPI[LmCompoundDB, LmCompoundApi, Any] =
-      new ToAPI[LmCompoundDB, LmCompoundApi, Any] {
-
-        def toAPI(d: LmCompoundDB, now: Long)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] =
-          LmCompoundApi(
-            d.orderId,
-            history.OrderStatus.status(d.registerTx, d.evaluateTx, None, now),
-            d.poolId,
-            d.vLq,
-            d.tmp,
-            d.bundleKeyId,
-            d.registerTx,
-            d.evaluateTx
-          ).some
-
-        def toAPI(a: LmCompoundDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] = none
-      }
-
-    implicit val toApiLmCompoundDBAny: ToAPI[AnyOrderDB, LmCompoundApi, Any] =
-      new ToAPI[AnyOrderDB, LmCompoundApi, Any] {
-
-        def toAPI(d: AnyOrderDB, now: Long)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] =
-          for {
-            vLq    <- d.lmCompoundVLq
-            key    <- d.lmCompoundBundleKeyId
-            poolId <- d.poolId
-            tmp = d.lmCompoundTmp
-          } yield LmCompoundApi(
-            d.orderId,
-            history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
-            poolId,
-            vLq,
-            tmp,
-            key,
-            d.registerTx,
-            d.executedTx
-          )
-
-        def toAPI(a: AnyOrderDB, c: Any, now: Long)(implicit e: ErgoAddressEncoder): Option[LmCompoundApi] = none
-      }
-  }
-
-  @derive(encoder, decoder, loggable)
   final case class LmRedeemApi(
     id: OrderId,
     status: history.OrderStatus,
     poolId: Option[PoolId],
     bundleKeyId: TokenId,
-    expectedLq: AssetAmount,
-    out: Option[AssetAmount],
+    expectedLq: AssetAmountApi,
+    out: Option[AssetAmountApi],
     boxId: Option[TokenId],
     registerTx: TxData,
     refundTx: Option[TxData],
@@ -892,7 +770,7 @@ object ApiOrder {
               history.OrderStatus.Pending,
               none,
               o1.bundleKeyId,
-              o1.expectedLq,
+              AssetAmountApi.fromAssetAmount(o1.expectedLq),
               none,
               none,
               TxData(o.state.txId, o.state.timestamp),
@@ -910,8 +788,8 @@ object ApiOrder {
               history.OrderStatus.Pending,
               eval.poolId.some,
               c.bundleKeyId,
-              c.expectedLq,
-              eval.out.some,
+              AssetAmountApi.fromAssetAmount(c.expectedLq),
+              AssetAmountApi.fromAssetAmount(eval.out).some,
               eval.boxId.some.map(r => TokenId.unsafeFromString(r.value)),
               TxData(c.info.id, c.info.timestamp),
               if (o.state.status.in(WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none,
@@ -942,8 +820,8 @@ object ApiOrder {
               history.OrderStatus.Pending,
               eval.map(_.poolId),
               x1.bundleKeyId,
-              x1.expectedLq,
-              eval.map(_.out),
+              AssetAmountApi.fromAssetAmount(x1.expectedLq),
+              eval.map(_.out).map(AssetAmountApi.fromAssetAmount),
               eval.map(_.boxId).map(r => TokenId.unsafeFromString(r.value)),
               mkTxData(x.state, WaitingRegistration).getOrElse(TxData(y.state.txId, y.state.timestamp)),
               mkTxData(x.state, WaitingRefund).orElse(mkTxData(y.state, WaitingRefund)),
@@ -964,8 +842,8 @@ object ApiOrder {
             history.OrderStatus.status(d.registerTx, d.evaluateTx, d.refundTx, now),
             d.poolId,
             d.bundleKeyId,
-            d.expectedLq,
-            d.out,
+            AssetAmountApi.fromAssetAmount(d.expectedLq),
+            d.out.map(AssetAmountApi.fromAssetAmount),
             d.boxId,
             d.registerTx,
             d.refundTx,
@@ -988,8 +866,8 @@ object ApiOrder {
             history.OrderStatus.status(d.registerTx, d.executedTx, d.refundedTx, now),
             poolId,
             lmRedeemBundleKeyId,
-            lmRedeemExpectedLq,
-            d.lmRedeemOut,
+            AssetAmountApi.fromAssetAmount(lmRedeemExpectedLq),
+            d.lmRedeemOut.map(AssetAmountApi.fromAssetAmount),
             d.lmRedeemBoxId,
             d.registerTx,
             d.refundedTx,
