@@ -45,7 +45,7 @@ final class LmAnalyticsSql(implicit lg: LogHandler) {
          |FROM
          |	lm_compound
          |WHERE
-         |	executed_transaction_id IS NULL
+         |	executed_transaction_id IS NULL and tmp_id IS NOT NULL
          |	AND ${Fragments.in(fr"redeemer", addresses)}
        """.stripMargin.query
 
