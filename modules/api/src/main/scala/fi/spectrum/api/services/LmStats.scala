@@ -72,7 +72,7 @@ object LmStats {
               }).value
             }
           yearProfit.map { profit =>
-            LMPoolStat(pool.poolId, compoundedReward.toString(), profit.map(_.toString()))
+            LMPoolStat(pool.poolId, compoundedReward, profit)
           }
         }
         .flatMap(cache.set)
