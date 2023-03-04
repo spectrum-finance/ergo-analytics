@@ -10,6 +10,8 @@ import fi.spectrum.parser.amm.order.legacy.v1.N2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.legacy.v1.T2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.legacy.v2.N2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.legacy.v2.T2TAmmOrderParser._
+import fi.spectrum.parser.amm.order.legacy.v3.T2TAmmOrderParser._
+import fi.spectrum.parser.amm.order.legacy.v3.N2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.v1.N2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.v1.T2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.v2.N2TAmmOrderParser._

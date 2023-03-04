@@ -50,8 +50,7 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
       poolId,
       PublicKeyRedeemer(redeemer),
       params,
-      Version.LegacyV1,
-
+      Version.LegacyV1
     )
 
   private def swapBuyV0(box: Output, tree: ErgoTree): Option[Swap] =
@@ -75,8 +74,7 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
       poolId,
       PublicKeyRedeemer(redeemer),
       params,
-      Version.LegacyV1,
-
+      Version.LegacyV1
     )
 
   def deposit(box: Output, tree: Values.ErgoTree): Option[AmmDeposit] =
@@ -96,8 +94,7 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.LegacyV1,
-
+          Version.LegacyV1
         ),
         none
       )
@@ -119,8 +116,7 @@ class N2TAmmOrderParser extends AmmOrderParser[LegacyV1, N2T] {
           poolId,
           PublicKeyRedeemer(redeemer),
           params,
-          Version.LegacyV1,
-
+          Version.LegacyV1
         ),
         none
       )

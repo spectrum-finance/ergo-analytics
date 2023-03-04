@@ -39,6 +39,7 @@ object AmmDepositDB {
     processed.order match {
       case deposit: AmmDepositV3       => processed.widen(deposit).toDB
       case deposit: AmmDepositV1       => processed.widen(deposit).toDB
+      case deposit: AmmDepositLegacyV3 => processed.widen(deposit).toDB
       case deposit: AmmDepositLegacyV2 => processed.widen(deposit).toDB
       case deposit: AmmDepositLegacyV1 => processed.widen(deposit).toDB
     }
@@ -136,6 +137,32 @@ object AmmDepositDB {
         deposit.poolId,
         processed.poolBoxId,
         none,
+        deposit.params.inX,
+        deposit.params.inY,
+        depositEval.map(_.outputLP),
+        depositEval.map(_.actualX),
+        depositEval.map(_.actualY),
+        deposit.fee,
+        deposit.redeemer.value.some,
+        ProtocolVersion.init,
+        deposit.version,
+        none,
+        if (processed.state.status.in(Registered)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
+        if (processed.state.status.in(Refunded)) txInfo.some else none
+      )
+    }
+
+  implicit val ___LegacyV3: ToDB[Processed[AmmDepositLegacyV3], AmmDepositDB] =
+    processed => {
+      val deposit = processed.order
+      val depositEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmDepositEvaluation].getOption)
+      val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
+      AmmDepositDB(
+        deposit.id,
+        deposit.poolId,
+        processed.poolBoxId,
+        deposit.maxMinerFee.some,
         deposit.params.inX,
         deposit.params.inY,
         depositEval.map(_.outputLP),

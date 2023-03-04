@@ -8,9 +8,11 @@ import fi.spectrum.core.domain.order.Order._
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.analytics.Version.LegacyV2
 import fi.spectrum.core.domain.order.Order.Deposit.AmmDeposit
+import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem.RedeemLegacyV2
+import fi.spectrum.core.domain.order.Order.Swap.SwapLegacyV2
 import fi.spectrum.core.domain.order._
 import fi.spectrum.core.domain.transaction.Output
-import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, PubKey}
+import fi.spectrum.core.domain.{AssetAmount, ErgoTreeTemplate, PubKey, TokenId}
 import fi.spectrum.parser.amm.order.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType.T2T
 import fi.spectrum.parser.syntax._
@@ -18,7 +20,33 @@ import fi.spectrum.parser.templates.T2T._
 import sigmastate.Values
 
 class T2TAmmOrderParser extends AmmOrderParser[LegacyV2, T2T] {
-  def swap(box: Output, tree: Values.ErgoTree): Option[Swap] = none
+
+  def swap(box: Output, tree: Values.ErgoTree): Option[Swap] =
+    Either
+      .cond(
+        ErgoTreeTemplate.fromBytes(tree.template) == swapLegacyV2,
+        for {
+          poolId       <- tree.constants.parseBytea(14).map(PoolId.fromBytes)
+          maxMinerFee  <- tree.constants.parseLong(21)
+          inAmount     <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
+          outId        <- tree.constants.parseBytea(2).map(TokenId.fromBytes)
+          minOutAmount <- tree.constants.parseLong(15)
+          outAmount = AssetAmount(outId, minOutAmount)
+          dexFeePerTokenNum   <- tree.constants.parseLong(16)
+          dexFeePerTokenDenom <- tree.constants.parseLong(17)
+          redeemer            <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
+          params = SwapParams(inAmount, outAmount, dexFeePerTokenNum, dexFeePerTokenDenom)
+        } yield SwapLegacyV2(
+          box,
+          poolId,
+          PublicKeyRedeemer(redeemer),
+          params,
+          maxMinerFee,
+          Version.LegacyV2
+        ),
+        none
+      )
+      .merge
 
   def deposit(box: Output, tree: Values.ErgoTree): Option[AmmDeposit] =
     Either
@@ -43,7 +71,29 @@ class T2TAmmOrderParser extends AmmOrderParser[LegacyV2, T2T] {
       )
       .merge
 
-  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] = none
+  def redeem(box: Output, tree: Values.ErgoTree): Option[Redeem] =
+    Either
+      .cond(
+        ErgoTreeTemplate.fromBytes(tree.template) == redeemLegacyV2,
+        for {
+          poolId      <- tree.constants.parseBytea(13).map(PoolId.fromBytes)
+          maxMinerFee <- tree.constants.parseLong(19)
+          inLP        <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
+          dexFee      <- tree.constants.parseLong(15)
+          redeemer    <- tree.constants.parsePk(0).map(pk => PubKey.fromBytes(pk.pkBytes))
+          params = RedeemParams(inLP)
+        } yield RedeemLegacyV2(
+          box,
+          ERG(dexFee),
+          poolId,
+          PublicKeyRedeemer(redeemer),
+          params,
+          maxMinerFee,
+          Version.LegacyV2
+        ),
+        none
+      )
+      .merge
 }
 
 object T2TAmmOrderParser {

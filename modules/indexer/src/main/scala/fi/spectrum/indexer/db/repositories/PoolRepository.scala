@@ -1,14 +1,10 @@
 package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.BoxId
-import fi.spectrum.core.domain.analytics.OrderEvaluation
-import fi.spectrum.indexer.db.classes.{DeleteRepository, NonUpdatableRepository}
+import fi.spectrum.indexer.db.classes.DeleteRepository
 import fi.spectrum.indexer.db.models.PoolDB
 
-class PoolRepository
-  extends Repository[PoolDB, BoxId, OrderEvaluation]
-  with DeleteRepository[PoolDB, BoxId]
-  with NonUpdatableRepository[PoolDB] {
+class PoolRepository extends Repository[PoolDB, BoxId] with DeleteRepository[PoolDB, BoxId] {
 
   val field: String = "pool_state_id"
 

@@ -6,7 +6,7 @@ import fi.spectrum.core.domain.order.PoolId
 import sttp.tapir.Schema
 
 @derive(encoder, decoder)
-final case class UserNextStakeReward(poolId: PoolId, nextReward: BigDecimal)
+final case class UserNextStakeReward(poolId: PoolId, nextReward: String)
 
 object UserNextStakeReward {
   implicit val userNextStakeRewardSchema: Schema[UserNextStakeReward] = Schema.derived

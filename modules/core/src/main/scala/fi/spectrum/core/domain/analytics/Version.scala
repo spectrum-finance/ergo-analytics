@@ -17,6 +17,7 @@ object Version extends Enum[Version] with CirceEnum[Version] with Lowercase {
   type V3       = V3.type
   type LegacyV1 = LegacyV1.type
   type LegacyV2 = LegacyV2.type
+  type LegacyV3 = LegacyV3.type
 
   case object V1 extends Version
 
@@ -27,6 +28,8 @@ object Version extends Enum[Version] with CirceEnum[Version] with Lowercase {
   case object LegacyV1 extends Version
 
   case object LegacyV2 extends Version
+
+  case object LegacyV3 extends Version
 
   val values: IndexedSeq[Version] = findValues
 
@@ -46,6 +49,7 @@ object Version extends Enum[Version] with CirceEnum[Version] with Lowercase {
   implicit val decodeV3: Decoder[V3]             = decoderEnum[V3](V3)
   implicit val decodeLegacyV1: Decoder[LegacyV1] = decoderEnum[LegacyV1](LegacyV1)
   implicit val decodeLegacyV2: Decoder[LegacyV2] = decoderEnum[LegacyV2](LegacyV2)
+  implicit val decodeLegacyV3: Decoder[LegacyV3] = decoderEnum[LegacyV3](LegacyV3)
 
   def decoderEnum[B <: Version](b: B): Decoder[B] = Decoder[String].emap { s: String =>
     Version.withNameInsensitiveEither(s) match {

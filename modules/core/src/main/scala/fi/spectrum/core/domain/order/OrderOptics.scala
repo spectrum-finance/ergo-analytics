@@ -27,6 +27,7 @@ object OrderOptics {
   val swapV2       = swapPrism >> GenSubset[Swap, SwapV2]
   val swapV3       = swapPrism >> GenSubset[Swap, SwapV3]
   val swapLegacyV1 = swapPrism >> GenSubset[Swap, SwapLegacyV1]
+  val swapLegacyV2 = swapPrism >> GenSubset[Swap, SwapLegacyV2]
 
   val redeemV1       = redeemPrism >> GenSubset[Redeem, RedeemV1]
   val redeemV3       = redeemPrism >> GenSubset[Redeem, RedeemV3]
@@ -38,24 +39,28 @@ object OrderOptics {
     (swapV1 >> GenContains[SwapV1](_.params.minQuote)) orElse
     (swapV2 >> GenContains[SwapV2](_.params.minQuote)) orElse
     (swapV3 >> GenContains[SwapV3](_.params.minQuote)) orElse
-    (swapLegacyV1 >> GenContains[SwapLegacyV1](_.params.minQuote))
+    (swapLegacyV1 >> GenContains[SwapLegacyV1](_.params.minQuote)) orElse
+    (swapLegacyV2 >> GenContains[SwapLegacyV2](_.params.minQuote))
   }
 
   implicit val optionalDepositParams: Optional[Order, AmmDepositParams] = {
     (depositPrism >> GenSubset[Deposit, AmmDepositV1] >> GenContains[AmmDepositV1](_.params)) orElse
     (depositPrism >> GenSubset[Deposit, AmmDepositV3] >> GenContains[AmmDepositV3](_.params)) orElse
     (depositPrism >> GenSubset[Deposit, AmmDepositLegacyV1] >> GenContains[AmmDepositLegacyV1](_.params)) orElse
-    (depositPrism >> GenSubset[Deposit, AmmDepositLegacyV2] >> GenContains[AmmDepositLegacyV2](_.params))
+    (depositPrism >> GenSubset[Deposit, AmmDepositLegacyV2] >> GenContains[AmmDepositLegacyV2](_.params)) orElse
+    (depositPrism >> GenSubset[Deposit, AmmDepositLegacyV3] >> GenContains[AmmDepositLegacyV3](_.params))
   }
 
   implicit val optionalRedeemParams: Optional[Order, RedeemParams] = {
     (redeemPrism >> GenSubset[Redeem, RedeemLegacyV1] >> GenContains[RedeemLegacyV1](_.params)) orElse
+    (redeemPrism >> GenSubset[Redeem, RedeemLegacyV2] >> GenContains[RedeemLegacyV2](_.params)) orElse
     (redeemPrism >> GenSubset[Redeem, RedeemV1] >> GenContains[RedeemV1](_.params)) orElse
     (redeemPrism >> GenSubset[Redeem, RedeemV3] >> GenContains[RedeemV3](_.params))
   }
 
   implicit val optionalSwapParams: Optional[Order, SwapParams] = {
     (swapPrism >> GenSubset[Swap, SwapLegacyV1] >> GenContains[SwapLegacyV1](_.params)) orElse
+    (swapPrism >> GenSubset[Swap, SwapLegacyV2] >> GenContains[SwapLegacyV2](_.params)) orElse
     (swapPrism >> GenSubset[Swap, SwapV1] >> GenContains[SwapV1](_.params)) orElse
     (swapPrism >> GenSubset[Swap, SwapV2] >> GenContains[SwapV2](_.params)) orElse
     (swapPrism >> GenSubset[Swap, SwapV3] >> GenContains[SwapV3](_.params))
