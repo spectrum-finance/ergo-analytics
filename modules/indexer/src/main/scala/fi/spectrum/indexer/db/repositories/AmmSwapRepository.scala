@@ -4,13 +4,13 @@ import doobie.{ConnectionIO, Update}
 import doobie.util.log.LogHandler
 import fi.spectrum.core.domain.analytics.OrderEvaluation.SwapEvaluation
 import fi.spectrum.core.domain.order.{Fee, OrderId}
-import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
+import fi.spectrum.indexer.db.classes.{DeleteRepository, RefundRepository}
 import fi.spectrum.indexer.db.models.{SwapDB, UpdateEvaluatedTx}
 
 final class AmmSwapRepository
-  extends Repository[SwapDB, OrderId, SwapEvaluation]
+  extends OrderRepository[SwapDB, SwapEvaluation, OrderId]
   with DeleteRepository[SwapDB, OrderId]
-  with UpdateRepository[SwapDB] {
+  with RefundRepository[SwapDB] {
 
   val tableName: String = "swaps"
 

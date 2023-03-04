@@ -78,6 +78,17 @@ object Order {
       object AmmDepositV1
 
       @derive(encoder, decoder, loggable)
+      final case class AmmDepositLegacyV3(
+        box: Output,
+        fee: ERG,
+        poolId: PoolId,
+        redeemer: PublicKeyRedeemer,
+        params: AmmDepositParams,
+        maxMinerFee: Long,
+        version: LegacyV3
+      ) extends AmmDeposit
+
+      @derive(encoder, decoder, loggable)
       final case class AmmDepositLegacyV2(
         box: Output,
         fee: ERG,
@@ -163,6 +174,17 @@ object Order {
         params: RedeemParams,
         version: LegacyV1
       ) extends AmmRedeem
+
+      @derive(encoder, decoder, loggable)
+      final case class RedeemLegacyV2(
+        box: Output,
+        fee: ERG,
+        poolId: PoolId,
+        redeemer: PublicKeyRedeemer,
+        params: RedeemParams,
+        maxMinerFee: Long,
+        version: LegacyV2
+      ) extends AmmRedeem
     }
 
     @derive(encoder, decoder, loggable)
@@ -229,6 +251,16 @@ object Order {
       redeemer: PublicKeyRedeemer,
       params: SwapParams,
       version: LegacyV1
+    ) extends Swap
+
+    @derive(encoder, decoder, loggable)
+    final case class SwapLegacyV2(
+      box: Output,
+      poolId: PoolId,
+      redeemer: PublicKeyRedeemer,
+      params: SwapParams,
+      maxMinerFee: Long,
+      version: LegacyV2
     ) extends Swap
   }
 

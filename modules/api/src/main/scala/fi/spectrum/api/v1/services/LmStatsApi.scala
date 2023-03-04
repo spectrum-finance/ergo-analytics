@@ -1,10 +1,12 @@
 package fi.spectrum.api.v1.services
 
 import cats.data.NonEmptyList
+import cats.syntax.option._
 import cats.{Functor, Monad}
-import fi.spectrum.api.db.models.lm.{UserDeposit, UserInterest}
+import fi.spectrum.api.db.models.lm.{UserCompound, UserInterest}
 import fi.spectrum.api.db.repositories.LM
 import fi.spectrum.api.services.{Height, LMSnapshots, LmStats}
+import fi.spectrum.api.v1.models.AssetAmountApi
 import fi.spectrum.api.v1.models.lm._
 import fi.spectrum.core.domain.Address
 import fi.spectrum.core.domain.address._
@@ -15,7 +17,6 @@ import tofu.logging.{Logging, Logs}
 import tofu.syntax.doobie.txr._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
-import cats.syntax.option._
 import tofu.time.Clock
 
 import scala.math.BigDecimal.RoundingMode
@@ -56,8 +57,8 @@ object LmStatsApi {
     def userLmStats(addresses: List[Address]): F[UserLmStats] =
       NonEmptyList.fromList(addresses.flatMap(formPKRedeemer)) match {
         case Some(value) =>
-          def query: D[(List[UserDeposit], List[UserInterest])] = for {
-            userStake    <- lm.userDeposit(value.map(_.value.ergoTree))
+          def query: D[(List[UserCompound], List[UserInterest])] = for {
+            userStake    <- lm.userCompounds(value.map(_.value))
             userInterest <- lm.userInterest(value)
           } yield (userStake, userInterest)
 
@@ -66,21 +67,31 @@ object LmStatsApi {
             lmPools                   <- lmSnapshots.get
             height                    <- height.getCurrent
           } yield {
-            val userStakes = userStake.flatMap { deposit =>
-              lmPools.find(_.poolId == deposit.poolId).flatMap {
-                case pool if pool.lastBlockHeight > height =>
-                  val relation       = BigDecimal(deposit.lq.amount) / pool.lq.amount
-                  val rewardForEpoch = BigDecimal(pool.initialRewardAmount) / pool.epochNum
-                  UserNextStakeReward(
-                    deposit.poolId,
-                    (rewardForEpoch * relation).setScale(0, RoundingMode.HALF_UP)
-                  ).some
-                case _ => none
+            val userStakes = userStake
+              .flatMap { compound =>
+                lmPools.find(_.poolId == compound.poolId).flatMap {
+                  case pool if pool.lastBlockHeight > height =>
+                    val epochsToCompound = pool.epochNum - (pool.epochIndex.getOrElse(pool.epochNum) + 1)
+                    val releasedTMP      = compound.tmp.amount - epochsToCompound * compound.vLq.amount
+                    val actualTMP        = 0x7fffffffffffffffL - pool.tmp.amount - (pool.lq.amount - 1L) * epochsToCompound
+                    val allocRem =
+                      pool.reward.amount - BigDecimal(pool.programBudget) * epochsToCompound / pool.epochNum - 1L
+                    val reward = allocRem * releasedTMP / actualTMP - 1L
+                    (compound.poolId, reward.setScale(0, RoundingMode.HALF_UP)).some
+                  case _ => none
+                }
               }
-            }
+              .groupBy(_._1)
+              .map { case (id, value) =>
+                UserNextStakeReward(id, value.map(_._2).sum.toString())
+              }
+              .toList
             val userInterests = userInterest.map { interest =>
-              UserCompoundResult(interest.poolId, interest.reward)
+              UserCompoundResult(interest.poolId, AssetAmountApi.fromAssetAmount(interest.reward))
             }
+
+            println(userStakes)
+            println(userInterests)
 
             UserLmStats(userStakes, userInterests)
           }

@@ -72,16 +72,16 @@ object PersistBundle {
 
   def make[D[_]: LiftConnectionIO: FlatMap](implicit elh: EmbeddableLogHandler[D]): PersistBundle[D] =
     PersistBundle(
-      Persist.makeUpdatable[D, Order.Swap, SwapEvaluation, SwapDB],
-      Persist.makeUpdatable[D, AmmDeposit, AmmDepositEvaluation, AmmDepositDB],
-      Persist.makeUpdatable[D, LmDeposit, LmDepositCompoundEvaluation, LmDepositDB],
-      Persist.makeUpdatable[D, Compound, LmDepositCompoundEvaluation, LmCompoundDB],
-      Persist.makeUpdatable[D, AmmRedeem, AmmRedeemEvaluation, AmmRedeemDB],
-      Persist.makeUpdatable[D, LmRedeem, LmRedeemEvaluation, LmRedeemDB],
-      Persist.makeUpdatable[D, Order.Lock, OrderEvaluation, LockDB],
-      Persist.makeNonUpdatable[D, Processed.Any, OffChainFee, OffChainFeeDB, OrderId],
-      Persist.makeNonUpdatable[D, Pool, AmmPool, PoolDB, BoxId],
-      Persist.makeNonUpdatable[D, Pool, LmPool, LmPoolDB, BoxId],
-      Persist.makeNonUpdatable[D, Block, Block, BlockDB, BlockId]
+      Persist.makeOrderRepo[D, Order.Swap, SwapEvaluation, SwapDB],
+      Persist.makeOrderRepo[D, AmmDeposit, AmmDepositEvaluation, AmmDepositDB],
+      Persist.makeOrderRepo[D, LmDeposit, LmDepositCompoundEvaluation, LmDepositDB],
+      Persist.makeOrderRepo[D, Compound, LmDepositCompoundEvaluation, LmCompoundDB],
+      Persist.makeOrderRepo[D, AmmRedeem, AmmRedeemEvaluation, AmmRedeemDB],
+      Persist.makeOrderRepo[D, LmRedeem, LmRedeemEvaluation, LmRedeemDB],
+      Persist.makeLockRepo[D, Order.Lock],
+      Persist.makeRepo[D, Processed.Any, OffChainFee, OffChainFeeDB, OrderId],
+      Persist.makeRepo[D, Pool, AmmPool, PoolDB, BoxId],
+      Persist.makeRepo[D, Pool, LmPool, LmPoolDB, BoxId],
+      Persist.makeRepo[D, Block, Block, BlockDB, BlockId]
     )
 }

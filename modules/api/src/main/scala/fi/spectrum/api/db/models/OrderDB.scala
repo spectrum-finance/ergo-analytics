@@ -83,17 +83,6 @@ object OrderDB {
   ) extends OrderDB
 
   @derive(show, encoder, decoder, loggable)
-  final case class LmCompoundDB(
-    orderId: OrderId,
-    poolId: PoolId,
-    vLq: AssetAmount,
-    tmp: Option[AssetAmount],
-    bundleKeyId: TokenId,
-    registerTx: TxData,
-    evaluateTx: Option[TxData]
-  ) extends OrderDB
-
-  @derive(show, encoder, decoder, loggable)
   final case class LmRedeemsDB(
     orderId: OrderId,
     poolId: Option[PoolId],
@@ -126,9 +115,6 @@ object OrderDB {
     lockAsset: Option[AssetAmount],
     lockEvalTxId: Option[TxId],
     lockEvalType: Option[String],
-    lmCompoundVLq: Option[AssetAmount],
-    lmCompoundTmp: Option[AssetAmount],
-    lmCompoundBundleKeyId: Option[TokenId],
     lmDepositExpectedNumEpochs: Option[Int],
     lmDepositInput: Option[AssetAmount],
     lmDepositLp: Option[AssetAmount],

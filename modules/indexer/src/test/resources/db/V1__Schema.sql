@@ -195,6 +195,8 @@ create table if not exists public.lm_compound
     v_lq_amount                      bigint            not null,
     tmp_id                           public.hash32type not null,
     tmp_amount                       bigint            not null,
+    interest_id                      public.hash32type,
+    interest_amount                  bigint,
     bundle_key_id                    public.hash32type not null,
     redeemer                         public.pubkey     not null,
     version                          text              not null,

@@ -2,15 +2,15 @@ package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmRedeemEvaluation
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.db.classes.{DeleteRepository, UpdateRepository}
+import fi.spectrum.indexer.db.classes.{DeleteRepository, RefundRepository}
 import fi.spectrum.indexer.db.models.{AmmRedeemDB, UpdateEvaluatedTx}
 import doobie.{ConnectionIO, Update}
 import doobie.util.log.LogHandler
 
 final class AmmRedeemRepository
-  extends Repository[AmmRedeemDB, OrderId, AmmRedeemEvaluation]
+  extends OrderRepository[AmmRedeemDB, AmmRedeemEvaluation, OrderId]
   with DeleteRepository[AmmRedeemDB, OrderId]
-  with UpdateRepository[AmmRedeemDB] {
+  with RefundRepository[AmmRedeemDB] {
 
   val executed: String   = "executed_transaction_id"
   val executedTs: String = "executed_transaction_timestamp"

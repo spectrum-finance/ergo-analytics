@@ -2,7 +2,7 @@ package fi.spectrum.parser.evaluation
 
 import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.OrderEvaluation._
-import fi.spectrum.core.domain.analytics.Version.{LegacyV1, V1, V2}
+import fi.spectrum.core.domain.analytics.Version.{LegacyV1, LegacyV2, V1, V2}
 import fi.spectrum.core.domain.analytics.{OffChainFee, OrderEvaluation, Processed}
 import fi.spectrum.core.domain.order.Fee.{ERG, SPF}
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
@@ -56,14 +56,14 @@ object OffChainFeeParser {
           }
 
           val (feeOpt, needCalculate) = order.order match {
-            case deposit: AmmDeposit                             => deposit.fee.some -> false
-            case redeem: AmmRedeem                               => redeem.fee.some  -> false
-            case swap: Swap if swap.version.in(LegacyV1, V1, V2) => ERG(0).some      -> false
-            case _: Swap                                         => SPF(0).some      -> true
-            case _: Lock                                         => none             -> false
-            case _: LmDeposit                                    => none             -> true
-            case _: LmRedeem                                     => none             -> true
-            case _: Compound                                     => none             -> true
+            case deposit: AmmDeposit                                       => deposit.fee.some -> false
+            case redeem: AmmRedeem                                         => redeem.fee.some  -> false
+            case swap: Swap if swap.version.in(LegacyV2, LegacyV1, V1, V2) => ERG(0).some      -> false
+            case _: Swap                                                   => SPF(0).some      -> true
+            case _: Lock                                                   => none             -> false
+            case _: LmDeposit                                              => none             -> true
+            case _: LmRedeem                                               => none             -> true
+            case _: Compound                                               => none             -> true
           }
 
           val pkOpt = address.collect { case address: P2PKAddress => PubKey.fromBytes(address.pubkeyBytes) }

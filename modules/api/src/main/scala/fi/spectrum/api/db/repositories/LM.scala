@@ -4,9 +4,9 @@ import cats.data.NonEmptyList
 import cats.tagless.syntax.functorK._
 import cats.{FlatMap, Functor, Monad}
 import doobie.ConnectionIO
-import fi.spectrum.api.db.models.lm.{LmPoolSnapshot, UserDeposit, UserInterest}
+import fi.spectrum.api.db.models.lm.{LmPoolSnapshot, UserCompound, UserDeposit, UserInterest}
 import fi.spectrum.api.db.sql.LmAnalyticsSql
-import fi.spectrum.core.domain.SErgoTree
+import fi.spectrum.core.domain.{PubKey, SErgoTree}
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.graphite.Metrics
 import tofu.doobie.LiftConnectionIO
@@ -20,6 +20,7 @@ import tofu.time.Clock
 trait LM[F[_]] {
   def lmPoolsSnapshots: F[List[LmPoolSnapshot]]
   def userDeposit(trees: NonEmptyList[SErgoTree]): F[List[UserDeposit]]
+  def userCompounds(keys: NonEmptyList[PubKey]): F[List[UserCompound]]
   def userInterest(addresses: NonEmptyList[PublicKeyRedeemer]): F[List[UserInterest]]
 }
 
@@ -46,6 +47,9 @@ object LM {
     def lmPoolsSnapshots: ConnectionIO[List[LmPoolSnapshot]] =
       sql.lmPoolSnapshots.to[List]
 
+    def userCompounds(keys: NonEmptyList[PubKey]): ConnectionIO[List[UserCompound]] =
+      sql.userCompounds(keys).to[List]
+
     def userDeposit(trees: NonEmptyList[SErgoTree]): ConnectionIO[List[UserDeposit]] =
       sql.userDeposit(trees).to[List]
 
@@ -57,6 +61,9 @@ object LM {
 
     def lmPoolsSnapshots: Mid[F, List[LmPoolSnapshot]] =
       processMetric(_, s"db.lm.snapshots")
+
+    def userCompounds(keys: NonEmptyList[PubKey]): Mid[F, List[UserCompound]] =
+      processMetric(_, s"db.lm.compounds")
 
     def userDeposit(trees: NonEmptyList[SErgoTree]): Mid[F, List[UserDeposit]] =
       processMetric(_, s"db.lm.deposit")
@@ -72,6 +79,13 @@ object LM {
         _ <- info"lmPoolsSnapshots()"
         r <- _
         _ <- info"lmPoolsSnapshots() -> ${r.length}"
+      } yield r
+
+    def userCompounds(keys: NonEmptyList[PubKey]): Mid[F, List[UserCompound]] =
+      for {
+        _ <- info"userCompounds()"
+        r <- _
+        _ <- info"userCompounds() -> ${r.length}"
       } yield r
 
     def userDeposit(trees: NonEmptyList[SErgoTree]): Mid[F, List[UserDeposit]] =

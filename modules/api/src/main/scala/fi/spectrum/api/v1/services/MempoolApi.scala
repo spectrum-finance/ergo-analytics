@@ -8,7 +8,6 @@ import fi.spectrum.api.services.Network
 import fi.spectrum.api.v1.models.history.ApiOrder.AmmDepositApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.AmmRedeemApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.LmDepositApi._
-import fi.spectrum.api.v1.models.history.ApiOrder.LmCompoundApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.LmRedeemApi._
 import fi.spectrum.api.v1.models.history.ApiOrder.Swap._
 import fi.spectrum.api.v1.models.history.ApiOrder._
@@ -25,6 +24,8 @@ import tofu.logging.Logs
 import tofu.syntax.doobie.txr._
 import tofu.syntax.foption._
 import tofu.syntax.monadic._
+import tofu.syntax.time.now.millis
+import tofu.time.Clock
 
 trait MempoolApi[F[_]] {
   def ordersByAddress(addresses: List[Address]): F[List[ApiOrder]]
@@ -32,7 +33,7 @@ trait MempoolApi[F[_]] {
 
 object MempoolApi {
 
-  def make[I[_]: Functor, F[_]: Monad, D[_]: Monad](implicit
+  def make[I[_]: Functor, F[_]: Monad, D[_]: Monad: Clock](implicit
     history: History[D],
     network: Network[F],
     txr: Txr[F, D],
@@ -41,7 +42,7 @@ object MempoolApi {
   ): I[MempoolApi[F]] =
     logs.forService[MempoolApi[F]].map(implicit __ => new Live[F, D])
 
-  final private class Live[F[_]: Monad, D[_]: Monad](implicit
+  final private class Live[F[_]: Monad, D[_]: Monad: Clock](implicit
     h: History[D],
     network: Network[F],
     txr: Txr[F, D],
@@ -59,18 +60,25 @@ object MempoolApi {
               .toList
               .map {
                 case x :: Nil if x.state.status.in(WaitingRegistration, Registered) => // process register
-                  x.toApi.pure[D]
+                  millis.map(now => x.toApi(now))
                 case x :: Nil => // query db for register order
-                  x.wined[AmmDeposit]
-                    .traverse(d => h.depositRegister(d.order.id).flatMapIn(d.toApi(_)))
-                    .orElseF(x.wined[AmmRedeem].traverse(r => h.redeemRegister(r.order.id).flatMapIn(r.toApi(_))))
-                    .orElseF(x.wined[Order.Swap].traverse(s => h.swapRegister(s.order.id).flatMapIn(s.toApi(_))))
-                    .orElseF(x.wined[LmDeposit].traverse(s => h.lmDepositRegister(s.order.id).flatMapIn(s.toApi(_))))
-                    .orElseF(x.wined[Compound].traverse(s => h.lmCompoundRegister(s.order.id).flatMapIn(s.toApi(_))))
-                    .orElseF(x.wined[LmRedeem].traverse(s => h.lmRedeemRegister(s.order.id).flatMapIn(s.toApi(_))))
-                    .map(_.flatten)
+                  millis.flatMap { now =>
+                    x.wined[AmmDeposit]
+                      .traverse(d => h.depositRegister(d.order.id).flatMapIn(d.toApi(_, now)))
+                      .orElseF(
+                        x.wined[AmmRedeem].traverse(r => h.redeemRegister(r.order.id).flatMapIn(r.toApi(_, now)))
+                      )
+                      .orElseF(x.wined[Order.Swap].traverse(s => h.swapRegister(s.order.id).flatMapIn(s.toApi(_, now))))
+                      .orElseF(
+                        x.wined[LmDeposit].traverse(s => h.lmDepositRegister(s.order.id).flatMapIn(s.toApi(_, now)))
+                      )
+                      .orElseF(
+                        x.wined[LmRedeem].traverse(s => h.lmRedeemRegister(s.order.id).flatMapIn(s.toApi(_, now)))
+                      )
+                      .map(_.flatten)
+                  }
                 case x :: y :: Nil => // process as completed order
-                  x.toApi(y).pure[D]
+                  millis.map(x.toApi(y, _))
                 case _ => // nothing to process
                   noneF[D, ApiOrder]
               }

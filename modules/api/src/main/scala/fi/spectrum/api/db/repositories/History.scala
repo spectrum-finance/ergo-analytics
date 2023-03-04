@@ -26,14 +26,12 @@ trait History[F[_]] {
   def redeemRegister(orderId: OrderId): F[Option[RegisterRedeem]]
   def depositRegister(orderId: OrderId): F[Option[RegisterDeposit]]
   def lmDepositRegister(orderId: OrderId): F[Option[RegisterLmDeposit]]
-  def lmCompoundRegister(orderId: OrderId): F[Option[RegisterCompound]]
   def lmRedeemRegister(orderId: OrderId): F[Option[RegisterLmRedeem]]
   def getAnyOrders(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[AnyOrderDB]]
   def getSwaps(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[SwapDB]]
   def getAmmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[AmmDepositDB]]
   def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LmDepositDB]]
   def getAmmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[AmmRedeemDB]]
-  def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LmCompoundDB]]
   def getLmRedeems(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LmRedeemsDB]]
   def getLocks(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[List[LockDB]]
   def addressCount(list: List[Address]): F[Long]
@@ -77,9 +75,6 @@ object History {
     def redeemRegister(orderId: OrderId): ConnectionIO[Option[RegisterRedeem]] =
       sql.redeemRegister(orderId).option
 
-    def lmCompoundRegister(orderId: OrderId): ConnectionIO[Option[RegisterCompound]] =
-      sql.lmCompoundRegister(orderId).option
-
     def depositRegister(orderId: OrderId): ConnectionIO[Option[RegisterDeposit]] =
       sql.depositRegister(orderId).option
 
@@ -107,11 +102,6 @@ object History {
     def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[LmDepositDB]] = {
       val keys = request.addresses.flatMap(formPKRedeemer).map(_.value)
       sql.getLmDeposits(keys, paging.offset, paging.limit, tw, request.orderStatus, request.txId).to[List]
-    }
-
-    def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[LmCompoundDB]] = {
-      val keys = request.addresses.flatMap(formPKRedeemer).map(_.value)
-      sql.getLmCompound(keys, paging.offset, paging.limit, tw, request.orderStatus, request.txId).to[List]
     }
 
     def getSwaps(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): ConnectionIO[List[SwapDB]] = {
@@ -184,9 +174,6 @@ object History {
     def lmDepositRegister(orderId: OrderId): Mid[F, Option[RegisterLmDeposit]] =
       processMetric(_, s"db.history.mempool.lm.deposit")
 
-    def lmCompoundRegister(orderId: OrderId): Mid[F, Option[RegisterCompound]] =
-      processMetric(_, s"db.history.mempool.lm.compound}")
-
     def redeemRegister(orderId: OrderId): Mid[F, Option[RegisterRedeem]] =
       processMetric(_, s"db.history.mempool.redeem")
 
@@ -213,9 +200,6 @@ object History {
 
     def getLmDeposits(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmDepositDB]] =
       processMetric(_, s"db.history.lm.deposit")
-
-    def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmCompoundDB]] =
-      processMetric(_, s"db.history.lm.compound")
 
     def lmRedeemRegister(orderId: OrderId): Mid[F, Option[RegisterLmRedeem]] =
       processMetric(_, s"db.history.lm.redeem")
@@ -296,25 +280,11 @@ object History {
         _ <- info"getLmDeposits(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.orderId)}"
       } yield r
 
-    def getLmCompounds(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): Mid[F, List[LmCompoundDB]] =
-      for {
-        _ <- info"getLmCompounds(paging=$paging, tw=$tw, request=$request)"
-        r <- _
-        _ <- info"getLmCompounds(paging=$paging, tw=$tw, request=$request) -> ${r.map(_.orderId)}"
-      } yield r
-
     def lmDepositRegister(orderId: OrderId): Mid[F, Option[RegisterLmDeposit]] =
       for {
         _ <- trace"lmDepositRegister(orderId=$orderId)"
         r <- _
         _ <- trace"lmDepositRegister(orderId=$orderId) -> $r"
-      } yield r
-
-    def lmCompoundRegister(orderId: OrderId): Mid[F, Option[RegisterCompound]] =
-      for {
-        _ <- trace"lmCompoundRegister(orderId=$orderId)"
-        r <- _
-        _ <- trace"lmCompoundRegister(orderId=$orderId) -> $r"
       } yield r
 
     def lmRedeemRegister(orderId: OrderId): Mid[F, Option[RegisterLmRedeem]] =
