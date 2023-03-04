@@ -40,6 +40,7 @@ object SwapDB {
       case swap: SwapV2       => processed.widen(swap).toDB
       case swap: SwapV1       => processed.widen(swap).toDB
       case swap: SwapLegacyV1 => processed.widen(swap).toDB
+      case swap: SwapLegacyV2 => processed.widen(swap).toDB
     }
   }
 
@@ -142,6 +143,31 @@ object SwapDB {
         swap.redeemer.value.some,
         ProtocolVersion(1),
         swap.version,
+        none,
+        if (processed.state.status.in(Registered)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
+        if (processed.state.status.in(Refunded)) txInfo.some else none
+      )
+    }
+
+  implicit val ___LegacyV2: ToDB[Processed[SwapLegacyV2], SwapDB] =
+    processed => {
+      val swapEval = processed.evaluation.flatMap(Subset[OrderEvaluation, SwapEvaluation].getOption)
+      val txInfo   = TxInfo(processed.state.txId, processed.state.timestamp)
+      SwapDB(
+        processed.order.id,
+        processed.order.poolId,
+        processed.poolBoxId,
+        processed.order.maxMinerFee.some,
+        processed.order.params.base,
+        processed.order.params.minQuote,
+        swapEval.map(_.output.amount),
+        processed.order.params.dexFeePerTokenNum,
+        processed.order.params.dexFeePerTokenDenom,
+        processed.offChainFee.map(_.fee),
+        processed.order.redeemer.value.some,
+        ProtocolVersion(1),
+        processed.order.version,
         none,
         if (processed.state.status.in(Registered)) txInfo.some else none,
         if (processed.state.status.in(Evaluated)) txInfo.some else none,

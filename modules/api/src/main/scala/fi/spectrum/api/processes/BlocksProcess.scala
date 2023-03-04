@@ -39,7 +39,7 @@ object BlocksProcess {
     S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad,
     C[_]: Functor: Foldable
   ](implicit
-    events: BlocksConsumer[S, F],
+//    events: BlocksConsumer[S, F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     fees24H: Fees24H[F],
@@ -71,7 +71,7 @@ object BlocksProcess {
     S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad,
     C[_]: Functor: Foldable
   ](height: Int)(implicit
-    events: BlocksConsumer[S, F],
+//    events: BlocksConsumer[S, F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     assets: Assets[F],
@@ -84,34 +84,34 @@ object BlocksProcess {
   ) extends BlocksProcess[S] {
 
     def run: S[Unit] =
-      eval(BlocksProcessConfig.access)
-        .flatMap { config =>
-          events.stream
-            .groupWithin(config.blocksBatchSize, config.blocksGroupTime)
-            .evalMap { batch =>
-              for {
-                _ <- info"Got next block event: ${batch.toList.map(_.message.map(_.id))}"
-                _ <- Monad[F].whenA(batch.toList.lastOption.flatMap(_.message).exists(_.height > height)) {
-                       val lastHeight = batch.toList.lastOption.flatMap(_.message).map(_.height).getOrElse(0)
-                       for {
-                         assetsL      <- assets.update
-                         snapshotsL   <- snapshots.update(assetsL)
-                         volumesL     <- volumes24H.update(assetsL)
-                         feesL        <- fees24H.update(snapshotsL)
-                         _            <- poolsStats.update(snapshotsL, volumesL, feesL)
-                         newHeight    <- heightService.update(lastHeight)
-                         lmSnapshotsL <- lMSnapshots.update
-                         _            <- lmStats.update(snapshotsL, newHeight, lmSnapshotsL)
-                         _            <- caching.invalidateAll
-                       } yield ()
-                     }
-                _ <- batch.toList.lastOption.traverse(_.commit)
-                blocks       = batch.toList.map(_.message.map(_.id))
-                latestHeight = batch.toList.lastOption.flatMap(_.message).map(_.height)
-                _ <-
-                  info"Block $blocks processed successfully. height is: $latestHeight. Height on app start is: $height"
-              } yield ()
-            }
-        }
+      eval(BlocksProcessConfig.access).void
+//        .flatMap { config =>
+//          events.stream
+//            .groupWithin(config.blocksBatchSize, config.blocksGroupTime)
+//            .evalMap { batch =>
+//              for {
+//                _ <- info"Got next block event: ${batch.toList.map(_.message.map(_.id))}"
+//                _ <- Monad[F].whenA(batch.toList.lastOption.flatMap(_.message).exists(_.height > height)) {
+//                       val lastHeight = batch.toList.lastOption.flatMap(_.message).map(_.height).getOrElse(0)
+//                       for {
+//                         assetsL      <- assets.update
+//                         snapshotsL   <- snapshots.update(assetsL)
+//                         volumesL     <- volumes24H.update(assetsL)
+//                         feesL        <- fees24H.update(snapshotsL)
+//                         _            <- poolsStats.update(snapshotsL, volumesL, feesL)
+//                         newHeight    <- heightService.update(lastHeight)
+//                         lmSnapshotsL <- lMSnapshots.update
+//                         _            <- lmStats.update(snapshotsL, newHeight, lmSnapshotsL)
+//                         _            <- caching.invalidateAll
+//                       } yield ()
+//                     }
+//                _ <- batch.toList.lastOption.traverse(_.commit)
+//                blocks       = batch.toList.map(_.message.map(_.id))
+//                latestHeight = batch.toList.lastOption.flatMap(_.message).map(_.height)
+//                _ <-
+//                  info"Block $blocks processed successfully. height is: $latestHeight. Height on app start is: $height"
+//              } yield ()
+//            }
+//        }
   }
 }

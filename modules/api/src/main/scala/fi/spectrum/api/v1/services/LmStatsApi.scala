@@ -90,6 +90,9 @@ object LmStatsApi {
               UserCompoundResult(interest.poolId, AssetAmountApi.fromAssetAmount(interest.reward))
             }
 
+            println(userStakes)
+            println(userInterests)
+
             UserLmStats(userStakes, userInterests)
           }
 
