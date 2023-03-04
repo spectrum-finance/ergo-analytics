@@ -68,11 +68,18 @@ object SConstant {
       case _                  => UnresolvedConstant(value)
     }
 
-  private def parseSInt(value: String): IntsConstant = {
-    val split      = value.split(",")
-    val splitHead  = split.headOption.map(_.drop(1)).getOrElse("")
-    val splitTail  = split.lastOption.map(_.dropRight(1)).getOrElse("")
-    val splitTotal = split.drop(1).dropRight(1).prepended(splitHead).appended(splitTail).toList
-    IntsConstant(List.from(splitTotal).map(_.toInt))
+  def parseSInt(value: String): IntsConstant = {
+    val split = value.split(",")
+    if (split.length == 1) {
+      val splitHeadTail = split.headOption.map(_.drop(1).dropRight(1)).getOrElse("")
+      if (splitHeadTail.isEmpty) IntsConstant(List.empty)
+      else IntsConstant(List.from(List(splitHeadTail)).map(_.toInt))
+    } else {
+      val splitHead  = split.headOption.map(_.drop(1)).getOrElse("")
+      val splitTail  = split.lastOption.map(_.dropRight(1)).getOrElse("")
+      val splitTotal = split.drop(1).dropRight(1).prepended(splitHead).appended(splitTail).toList
+      IntsConstant(List.from(splitTotal).map(_.toInt))
+    }
+
   }
 }

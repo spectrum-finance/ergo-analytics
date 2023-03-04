@@ -263,7 +263,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
         .toDB(result.asInstanceOf[Processed[Order.Lock]])
 
     def run = for {
-      _      <- repo.locks.insert(result).trans
+      r      <- repo.locks.insert(result).trans
       result <- sql"select * from lq_locks where order_id=${result.order.id}".query[LockDB].option.trans
     } yield result.get shouldEqual expected
     run.unsafeRunSync()

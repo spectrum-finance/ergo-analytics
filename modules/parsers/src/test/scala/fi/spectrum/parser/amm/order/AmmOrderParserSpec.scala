@@ -12,6 +12,8 @@ import fi.spectrum.parser.amm.order.legacy.v1.{N2T => LV1N2T, T2T => LV1T2T}
 import fi.spectrum.parser.amm.order.legacy.v2.{N2T => LV2N2T, T2T => LV2T2T}
 import fi.spectrum.parser.amm.order.legacy.v2.N2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.legacy.v2.T2TAmmOrderParser._
+import fi.spectrum.parser.amm.order.legacy.v3.T2TAmmOrderParser._
+import fi.spectrum.parser.amm.order.legacy.v3.N2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.v1.N2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.v1.T2TAmmOrderParser._
 import fi.spectrum.parser.amm.order.v1.{N2T => V1N2T, T2T => V1T2T}

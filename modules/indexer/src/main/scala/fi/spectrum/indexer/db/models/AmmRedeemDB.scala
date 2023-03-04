@@ -6,7 +6,7 @@ import fi.spectrum.core.domain.analytics.AnalyticsOptics._
 import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmRedeemEvaluation
 import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed, Version}
 import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem
-import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem.{RedeemLegacyV1, RedeemV1, RedeemV3}
+import fi.spectrum.core.domain.order.Order.Redeem.AmmRedeem.{RedeemLegacyV1, RedeemLegacyV2, RedeemV1, RedeemV3}
 import fi.spectrum.core.domain.order.OrderStatus.{Evaluated, Refunded, Registered}
 import fi.spectrum.core.domain.order.{Fee, Order, OrderId, PoolId, Redeemer}
 import fi.spectrum.indexer.classes.syntax._
@@ -37,6 +37,7 @@ object AmmRedeemDB {
     processed.order match {
       case redeem: RedeemV3       => processed.widen(redeem).toDB
       case redeem: RedeemV1       => processed.widen(redeem).toDB
+      case redeem: RedeemLegacyV2 => processed.widen(redeem).toDB
       case redeem: RedeemLegacyV1 => processed.widen(redeem).toDB
     }
   }
@@ -103,6 +104,30 @@ object AmmRedeemDB {
         redeem.poolId,
         processed.poolBoxId,
         none,
+        redeem.params.lp,
+        redeemEval.map(_.outputX),
+        redeemEval.map(_.outputY),
+        redeem.fee,
+        redeem.redeemer.value.some,
+        ProtocolVersion(1),
+        redeem.version,
+        none,
+        if (processed.state.status.in(Registered)) txInfo.some else none,
+        if (processed.state.status.in(Evaluated)) txInfo.some else none,
+        if (processed.state.status.in(Refunded)) txInfo.some else none
+      )
+    }
+
+  implicit val ___LegacyV2: ToDB[Processed[RedeemLegacyV2], AmmRedeemDB] =
+    processed => {
+      val redeem = processed.order
+      val redeemEval = processed.evaluation.flatMap(Subset[OrderEvaluation, AmmRedeemEvaluation].getOption)
+      val txInfo = TxInfo(processed.state.txId, processed.state.timestamp)
+      AmmRedeemDB(
+        redeem.id,
+        redeem.poolId,
+        processed.poolBoxId,
+        redeem.maxMinerFee.some,
         redeem.params.lp,
         redeemEval.map(_.outputX),
         redeemEval.map(_.outputY),

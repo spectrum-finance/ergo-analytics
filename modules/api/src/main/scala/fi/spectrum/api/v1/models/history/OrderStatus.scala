@@ -10,14 +10,18 @@ import sttp.tapir.{Schema, Validator}
 import tofu.logging.Loggable
 
 import scala.collection.immutable
+import scala.concurrent.duration.DurationInt
 
 sealed trait OrderStatus extends EnumEntry
 
 @derive(encoder, decoder)
 object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
 
-  case object Mempool extends OrderStatus
-  case object Ledger extends OrderStatus
+  case object Pending extends OrderStatus
+  case object Register extends OrderStatus
+  case object Evaluated extends OrderStatus
+  case object Refunded extends OrderStatus
+  case object NeedRefund extends OrderStatus
 
   val values: immutable.IndexedSeq[OrderStatus] = findValues
 
@@ -32,4 +36,15 @@ object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
 
   implicit val put: Put[OrderStatus] =
     Put[String].contramap[OrderStatus](_.entryName)
+
+  def status(register: TxData, eval: Option[TxData], refund: Option[TxData], currentTimestamp: Long) =
+    if (eval.isEmpty && refund.isEmpty && currentTimestamp - register.ts > 10.minutes.toMillis)
+      NeedRefund
+    else {
+      (eval, refund) match {
+        case (Some(_), None) => Evaluated
+        case (None, Some(_)) => Refunded
+        case _               => Register
+      }
+    }
 }
