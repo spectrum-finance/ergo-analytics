@@ -8,7 +8,7 @@ import fi.spectrum.indexer.db.models.{UpdateLock, UpdateRefundedTx}
 
 /** Describes the way to update T order status
   */
-trait UpdateRepository[T] extends InsertRepository[T] {
+trait RefundRepository[T] extends InsertRepository[T] {
 
   val refunded: String   = "refunded_transaction_id"
   val refundedTs: String = "refunded_transaction_timestamp"
@@ -23,8 +23,4 @@ trait UpdateRepository[T] extends InsertRepository[T] {
     Update[OrderId](s"update $tableName set $refunded=null, $refundedTs=null where $orderId=?")
       .toUpdate0(delete)
       .run
-
-  def updateLock(update: UpdateLock)(implicit lh: LogHandler): ConnectionIO[Int] = 0.pure[ConnectionIO]
-
-  def deleteLockUpdate(orderId: OrderId)(implicit lh: LogHandler): ConnectionIO[Int] = 0.pure[ConnectionIO]
 }
