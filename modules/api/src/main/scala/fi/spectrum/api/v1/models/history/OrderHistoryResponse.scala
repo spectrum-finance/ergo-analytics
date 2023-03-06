@@ -9,5 +9,10 @@ import tofu.logging.derivation.loggable
 final case class OrderHistoryResponse(orders: List[ApiOrder], total: Long)
 
 object OrderHistoryResponse {
-  implicit val schema: Schema[OrderHistoryResponse] = Schema.derived
+
+  implicit val schema: Schema[OrderHistoryResponse] =
+    Schema
+      .derived[OrderHistoryResponse]
+      .modify(_.orders)(_.description("Order list"))
+      .modify(_.total)(_.description("Total orders num"))
 }
