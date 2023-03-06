@@ -603,7 +603,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |SELECT
          |	order_id,
 	     |	transaction_id,
-         |	timestamp
+         |	timestamp,
          |	deadline,
          |	token_id,
          |	amount,

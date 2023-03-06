@@ -601,7 +601,7 @@ object ApiOrder {
         d.address.flatMap(r => formAddress(PublicKeyRedeemer(r))).map { a =>
           Lock(
             d.id,
-            history.OrderStatus.Evaluated,
+            if (d.evalType.isEmpty) history.OrderStatus.Register else  history.OrderStatus.Evaluated,
             d.registerTx,
             d.deadline,
             AssetAmountApi.fromAssetAmount(d.asset),
@@ -623,7 +623,7 @@ object ApiOrder {
           address = d.redeemer.flatMap(r => formAddress(Redeemer.PublicKeyRedeemer(r)))
         } yield Lock(
           d.orderId,
-          history.OrderStatus.Evaluated,
+          if (d.lockEvalType.isEmpty) history.OrderStatus.Register else  history.OrderStatus.Evaluated,
           d.registerTx,
           deadline,
           AssetAmountApi.fromAssetAmount(asset),
