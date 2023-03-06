@@ -4,6 +4,7 @@ import cats.Monad
 import cats.data.OptionT
 import cats.effect.{Ref, Sync}
 import cats.syntax.traverse._
+import cats.syntax.either._
 import fi.spectrum.api.currencies.UsdUnits
 import fi.spectrum.api.db.models.amm.PoolSnapshot
 import fi.spectrum.api.db.models.lm.LmPoolSnapshot
@@ -67,10 +68,8 @@ object LmStats {
                   val raw = (programBlocksLeft * 2.minutes).toDays
                   if (raw == 0) 1 else raw
                 }
-                val interestsRelation = {
-                  val raw = rewardUds.value / (xUsd.value + yUsd.value)
-                  if (raw == BigDecimal(0)) BigDecimal(1) else raw
-                }
+                val interestsRelation =
+                  Either.catchNonFatal(rewardUds.value / (xUsd.value + yUsd.value)).getOrElse(BigDecimal(1))
                 (interestsRelation / days * 365 * 100).setScale(0, RoundingMode.HALF_UP)
               }).value
             }
