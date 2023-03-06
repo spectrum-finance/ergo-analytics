@@ -58,7 +58,7 @@ object OffChainFeeParser {
           val (feeOpt, needCalculate) = order.order match {
             case deposit: AmmDeposit                                       => deposit.fee.some -> false
             case redeem: AmmRedeem                                         => redeem.fee.some  -> false
-            case swap: Swap if swap.version.in(LegacyV2, LegacyV1, V1, V2) => ERG(0).some      -> false
+            case swap: Swap if swap.version.in(LegacyV2, LegacyV1, V1, V2) => ERG(0).some      -> true
             case _: Swap                                                   => SPF(0).some      -> true
             case _: Lock                                                   => none             -> false
             case _: LmDeposit                                              => none             -> true
@@ -80,8 +80,16 @@ object OffChainFeeParser {
                 else s.some
 
               fee.map(OffChainFee(poolId, order.order.id, box.boxId, pk, _))
-            case (Some(ERG(_)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>
-              OffChainFee(poolId, order.order.id, box.boxId, pk, ERG(box.value)).some
+            case (Some(ERG(erg)), Some(pk)) if !orderRedeemer && !predefinedErgoTrees.contains(template) =>
+              def fee: Option[ERG] =
+                if (needCalculate) eval.flatMap(_.widen[SwapEvaluation]).flatMap { eval =>
+                  Optional[Order, SwapParams].getOption(order.order).map { params =>
+                    val fee = BigDecimal(params.dexFeePerTokenNum) / params.dexFeePerTokenDenom * eval.output.amount
+                    ERG(fee.toLong)
+                  }
+                }
+                else ERG(erg).some
+              fee.map(OffChainFee(poolId, order.order.id, box.boxId, pk, _))
             case (_, Some(pk)) if needCalculate && !orderRedeemer && !predefinedErgoTrees.contains(template) =>
               def validDeposit: Boolean = order.wined[LmDeposit].exists {
                 _.evaluation.flatMap(_.widen[LmDepositCompoundEvaluation]).map(_.boxId).contains(box.boxId)
@@ -95,8 +103,8 @@ object OffChainFeeParser {
                 _.evaluation.flatMap(_.widen[LmRedeemEvaluation]).map(_.boxId).contains(box.boxId)
               }
 
-              if (!validDeposit && !validCompound && !validRedeem)
-                OffChainFee(poolId, order.order.id, box.boxId, pk, ERG(box.value)).some
+              if (!validDeposit && !validCompound && !validRedeem) none
+//                OffChainFee(poolId, order.order.id, box.boxId, pk, ERG(box.value)).some
               else none
             case _ => none
           }
