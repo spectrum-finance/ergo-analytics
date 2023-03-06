@@ -67,7 +67,10 @@ object LmStats {
                   val raw = (programBlocksLeft * 2.minutes).toDays
                   if (raw == 0) 1 else raw
                 }
-                val interestsRelation = rewardUds.value / (xUsd.value + yUsd.value)
+                val interestsRelation = {
+                  val raw = rewardUds.value / (xUsd.value + yUsd.value)
+                  if (raw == BigDecimal(0)) BigDecimal(1) else raw
+                }
                 (interestsRelation / days * 365 * 100).setScale(0, RoundingMode.HALF_UP)
               }).value
             }
