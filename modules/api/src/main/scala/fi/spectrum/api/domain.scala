@@ -13,13 +13,23 @@ object domain {
   @derive(encoder, decoder)
   final case class TotalValueLocked(value: BigDecimal, units: FiatUnits)
 
-  implicit val schemaTvl: Schema[TotalValueLocked] = Schema.derived
+  implicit def schemaTotalValueLocked: Schema[TotalValueLocked] =
+    Schema
+      .derived[TotalValueLocked]
+      .description("Total amount locked")
+      .modify(_.value)(_.description("Locked amount"))
 
   @derive(encoder, decoder)
   final case class Volume(value: BigDecimal, units: FiatUnits, window: TimeWindow)
 
   object Volume {
-    implicit val schemaVolume: Schema[Volume]               = Schema.derived
+
+    implicit val schemaVolume: Schema[Volume] =
+      Schema
+        .derived[Volume]
+        .description("Trading volume within given time window")
+        .modify(_.value)(_.description("Trading amount"))
+
     def empty(units: FiatUnits, window: TimeWindow): Volume = Volume(BigDecimal(0), units, window)
   }
 

@@ -11,5 +11,8 @@ import sttp.tapir.Schema
 final case class UserCompoundResult(poolId: PoolId, reward: AssetAmountApi)
 
 object UserCompoundResult {
-  implicit val userCompoundResultSchema: Schema[UserCompoundResult] = Schema.derived
+
+  implicit def userCompoundResultSchema: Schema[UserCompoundResult] = Schema
+    .derived[UserCompoundResult]
+    .modify(_.poolId)(_.description("Id of corresponding pool"))
 }

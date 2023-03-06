@@ -31,5 +31,10 @@ object CryptoUnits {
 final case class FiatUnits(currency: Currency) extends ValueUnits[Currency]
 
 object FiatUnits {
-  implicit val schema: Schema[FiatUnits] = Schema.derived
+
+  implicit val schema: Schema[FiatUnits] =
+    Schema
+      .derived[FiatUnits]
+      .description("Amount currency. Keeps both currency id and decimals")
+      .modify(_.currency)(_.description("Amount currency"))
 }

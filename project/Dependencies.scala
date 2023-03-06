@@ -22,7 +22,8 @@ object Dependencies {
     val retry        = "3.1.0"
     val fs2IO        = "3.5.0"
     val tapir        = "1.0.0"
-    val tapirOpenapi = "0.20.2"
+    val openapi      = "0.2.1"
+    val tapirOpenapi = "1.0.0-M9"
     val tapirRedoc   = "0.19.0-M4"
     val scodecCore   = "1.11.7"
     val scodecBits   = "1.1.21"
@@ -71,12 +72,13 @@ object Dependencies {
 
   val tapir =
     List(
-      "com.softwaremill.sttp.tapir" %% "tapir-core"               % Version.tapir,
-      "com.softwaremill.sttp.tapir" %% "tapir-json-circe"         % Version.tapir,
-      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server"      % Version.tapir,
-      "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs"       % Version.tapir,
-      "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % Version.tapirOpenapi,
-      "com.softwaremill.sttp.tapir" %% "tapir-redoc-http4s"       % Version.tapirRedoc
+      "com.softwaremill.sttp.tapir"   %% "tapir-core"               % Version.tapir,
+      "com.softwaremill.sttp.tapir"   %% "tapir-json-circe"         % Version.tapir,
+      "com.softwaremill.sttp.tapir"   %% "tapir-http4s-server"      % Version.tapir,
+      "com.softwaremill.sttp.tapir"   %% "tapir-openapi-docs"       % Version.tapir,
+      "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"       % Version.openapi,
+      "com.softwaremill.sttp.tapir"   %% "tapir-openapi-circe-yaml" % Version.tapirOpenapi,
+      "com.softwaremill.sttp.tapir"   %% "tapir-redoc-http4s"       % Version.tapirRedoc
     )
 
   val http4s = List(
