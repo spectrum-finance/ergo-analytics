@@ -671,7 +671,9 @@ final class HistorySql(implicit lh: LogHandler) {
       .getOrElse(Fragment.empty)
 
   def in = (in: List[PubKey]) => in.toNel.map(Fragments.in(fr"redeemer", _)).getOrElse(Fragment.empty)
-  def in2 = (in: List[PubKey]) => in.toNel.map(Fragments.in(fr"redeemer_ergo_tree", _)).getOrElse(Fragment.empty)
+
+  def in2 = (in: List[PubKey]) =>
+    in.map(_.ergoTree).toNel.map(Fragments.in(fr"redeemer_ergo_tree", _)).getOrElse(Fragment.empty)
 
   def lockTokens(pair: Option[TokenPair], tokens: Option[List[TokenId]]): Fragment =
     if (pair.isEmpty && tokens.isEmpty) Fragment.const("and true") else Fragment.const("and false")
