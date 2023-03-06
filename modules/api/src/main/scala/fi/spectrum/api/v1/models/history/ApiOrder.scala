@@ -7,7 +7,7 @@ import derevo.derive
 import fi.spectrum.api.classes.ToAPI
 import fi.spectrum.api.db.models.OrderDB._
 import fi.spectrum.api.db.models._
-import fi.spectrum.api.v1.models.{history, AssetAmountApi}
+import fi.spectrum.api.v1.models.{AssetAmountApi, history}
 import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.address._
 import fi.spectrum.core.domain.analytics.OrderEvaluation._
@@ -20,7 +20,7 @@ import fi.spectrum.core.domain.order.OrderOptics._
 import fi.spectrum.core.domain.order.OrderStatus._
 import fi.spectrum.core.domain.order.Redeemer.PublicKeyRedeemer
 import fi.spectrum.core.domain.order._
-import glass.classic.{Optional, Prism}
+import glass.classic.{Equality, Optional, Prism}
 import org.ergoplatform.ErgoAddressEncoder
 import sttp.tapir.Schema
 import io.circe.syntax._
@@ -162,8 +162,8 @@ object ApiOrder {
               o.order.fee.amount,
               address.formAddress(o.order.redeemer),
               TxData(c.info.id, c.info.timestamp),
-              if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none,
-              if (o.state.status.in(WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none
+              if (o.state.status.in(Evaluated, WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none,
+              if (o.state.status.in(Refunded,WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none
             )
           }
       }
@@ -316,8 +316,8 @@ object ApiOrder {
               o.order.fee.amount,
               address.formAddress(o.order.redeemer),
               TxData(c.info.id, c.info.timestamp),
-              if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none,
-              if (o.state.status.in(WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none
+              if (o.state.status.in(Evaluated, WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none,
+              if (o.state.status.in(Refunded,WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none
             )
           }
       }
@@ -463,8 +463,8 @@ object ApiOrder {
               eval.fee.amount.some,
               address.formAddress(o.order.redeemer),
               TxData(c.info.id, c.info.timestamp),
-              if (o.state.status.in(WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none,
-              if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
+              if (o.state.status.in(Refunded, WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none,
+              if (o.state.status.in(Evaluated, WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
             )
           }
       }
@@ -684,8 +684,8 @@ object ApiOrder {
               AssetAmountApi.fromAssetAmount(eval.tokens).some,
               TokenId.unsafeFromString(eval.bundle.id.value).some,
               TxData(c.info.id, c.info.timestamp),
-              if (o.state.status.in(WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none,
-              if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
+              if (o.state.status.in(Refunded, WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none,
+              if (o.state.status.in(Evaluated, WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
             )
           }
       }
@@ -816,8 +816,8 @@ object ApiOrder {
               AssetAmountApi.fromAssetAmount(eval.out).some,
               eval.boxId.some.map(r => TokenId.unsafeFromString(r.value)),
               TxData(c.info.id, c.info.timestamp),
-              if (o.state.status.in(WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none,
-              if (o.state.status.in(WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
+              if (o.state.status.in(Refunded, WaitingRefund)) TxData(o.state.txId, o.state.timestamp).some else none,
+              if (o.state.status.in(Evaluated, WaitingEvaluation)) TxData(o.state.txId, o.state.timestamp).some else none
             )
           }
       }
