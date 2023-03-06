@@ -6,20 +6,18 @@ import cats.syntax.applicative._
 import cats.syntax.either._
 import cats.syntax.option._
 import cats.syntax.semigroupk._
-import fi.spectrum.api.v1.endpoints.{AmmStatsEndpoints, DocsEndpoints, LmStatsEndpoints}
+import fi.spectrum.api.v1.endpoints.{AmmStatsEndpoints, DocsEndpoints, HistoryEndpoints, LmStatsEndpoints}
 import fi.spectrum.common.http.{HttpError, VersionPrefix}
 import org.http4s.HttpRoutes
 import sttp.apispec.Tag
-import sttp.tapir.apispec.{Tag => TapirTag}
+import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
-import sttp.tapir.openapi.circe.yaml.TapirOpenAPICirceYaml
-import sttp.tapir.openapi.{Info, OpenAPI}
 import sttp.tapir.redoc.http4s.RedocHttp4s
 import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
 
 final class DocsRoutes[F[_]: Concurrent: Async](implicit
   opts: Http4sServerOptions[F]
-) extends TapirOpenAPICirceYaml {
+) {
 
   private val endpoints = DocsEndpoints
   import endpoints._
@@ -30,25 +28,21 @@ final class DocsRoutes[F[_]: Concurrent: Async](implicit
 
   val ammStatsEndpoints = new AmmStatsEndpoints
   val lmStatsEndpoints  = new LmStatsEndpoints
+  val historyEndpoints  = new HistoryEndpoints
 
   private def allEndpoints =
-    ammStatsEndpoints.endpoints ++ lmStatsEndpoints.endpoints
+    ammStatsEndpoints.endpoints ++ lmStatsEndpoints.endpoints ++ historyEndpoints.endpoints
 
   private def tags =
-    Tag(ammStatsEndpoints.PathPrefix, "AMM Statistics".some) ::
-    Tag(lmStatsEndpoints.PathPrefix, "LM Statistics".some) :: Nil
-
-  private val openapi =
-    OpenAPIDocsInterpreter()
-      .toOpenAPI(allEndpoints, "ErgoDEX API v1", "1.0")
-      .tags(tags)
+    Tag(ammStatsEndpoints.PathPrefix, "AMM Api".some) ::
+    Tag(lmStatsEndpoints.PathPrefix, "LM Api".some) ::
+    Tag(historyEndpoints.PathPrefix, "History Api".some) :: Nil
 
   private val docsAsYaml =
-    OpenAPI(
-      openapi.openapi,
-      Info(openapi.info.title, openapi.info.version),
-      openapi.tags.map(t => TapirTag(t.name, t.description))
-    ).toYaml
+    OpenAPIDocsInterpreter()
+      .toOpenAPI(allEndpoints, "Spectrum finance API v1", "1.0")
+      .tags(tags)
+      .toYaml
 
   private def openApiSpecR: HttpRoutes[F] =
     interpreter.toRoutes(

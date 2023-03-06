@@ -221,7 +221,10 @@ package object domain {
 
   object Address {
 
-    implicit val schema: Schema[Address] = Schema.schemaForString.map(fromString[Try](_).toOption)(_.unwrapped)
+    implicit def schemaAddress: Schema[Address] =
+      Schema
+        .schemaForString.map(fromString[Try](_).toOption)(_.unwrapped)
+        .encodedExample(Address.fromStringUnsafe("9hq9xb918tK1QdktqrAkBLkMXXxTFU4DbNUxYd855ECCvZrTd2y"))
 
     implicit val show: Show[Address]         = _.value.value
     implicit val loggable: Loggable[Address] = Loggable.show

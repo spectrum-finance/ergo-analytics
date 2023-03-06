@@ -2,6 +2,7 @@ package fi.spectrum.api.v1.models.amm
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import io.circe.syntax.EncoderOps
 import sttp.tapir.Schema
 import tofu.logging.derivation.loggable
 
@@ -15,7 +16,12 @@ case class PoolSlippage(
 }
 
 object PoolSlippage {
-  implicit val schema: Schema[PoolSlippage] = Schema.derived
+
+  implicit def schema: Schema[PoolSlippage] =
+    Schema
+      .derived[PoolSlippage]
+      .modify(_.slippagePercent)(_.description("Price change percentage"))
+      .encodedExample(PoolSlippage(BigDecimal(10.5)).asJson)
 
   val defaultScale = 3
 

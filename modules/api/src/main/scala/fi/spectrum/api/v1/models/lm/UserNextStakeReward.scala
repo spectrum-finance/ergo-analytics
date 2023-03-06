@@ -9,5 +9,8 @@ import sttp.tapir.Schema
 final case class UserNextStakeReward(poolId: PoolId, nextReward: String)
 
 object UserNextStakeReward {
-  implicit val userNextStakeRewardSchema: Schema[UserNextStakeReward] = Schema.derived
+
+  implicit val userNextStakeRewardSchema: Schema[UserNextStakeReward] = Schema
+    .derived[UserNextStakeReward]
+    .modify(_.poolId)(_.description("Id of corresponding pool"))
 }
