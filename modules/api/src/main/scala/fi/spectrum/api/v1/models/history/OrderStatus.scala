@@ -44,7 +44,7 @@ object OrderStatus extends Enum[OrderStatus] with CirceEnum[OrderStatus] {
       (eval, refund) match {
         case (Some(_), None) => Evaluated
         case (None, Some(_)) => Refunded
-        case _               => Register
+        case _               => Pending
       }
     }
 }
