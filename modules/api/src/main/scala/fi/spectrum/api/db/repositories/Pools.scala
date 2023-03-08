@@ -86,7 +86,7 @@ object Pools {
       sql.getPoolVolumes(id, window).option
 
     def fees(pool: PoolSnapshot, window: TimeWindow): ConnectionIO[Option[PoolFeesSnapshot]] =
-      sql.getPoolFees(pool, window).option.flatMapIn(_.tooPoolFeesSnapshot(pool))
+      sql.getPoolFees(pool, window).option.flatMapIn(_.toPoolFeesSnapshot(pool))
 
     def trace(id: PoolId, depth: Int, currHeight: Int): ConnectionIO[List[PoolTraceDB]] =
       sql.getPoolTrace(id, depth, currHeight).to[List]
