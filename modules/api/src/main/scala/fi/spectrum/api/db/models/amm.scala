@@ -12,9 +12,6 @@ object amm {
   @derive(loggable)
   final case class PoolInfo(firstSwapTimestamp: Long)
 
-  final case class SwapInfo(asset: FullAsset, numTxs: Int)
-  final case class DepositInfo(assetX: FullAsset, assetY: FullAsset, numTxs: Int)
-
   final case class AssetInfo(
     id: TokenId,
     ticker: Option[Ticker],

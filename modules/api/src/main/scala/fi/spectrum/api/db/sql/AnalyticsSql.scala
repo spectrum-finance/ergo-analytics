@@ -36,54 +36,26 @@ final class AnalyticsSql(implicit lg: LogHandler) {
   def getPoolVolumes(tw: TimeWindow): Query0[PoolVolumeSnapshotDB] = {
     val fragment = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
-         |SELECT DISTINCT ON (p.pool_id)
+         |select
          |	p.pool_id,
-         |	p.x_id,
-         |	sx.tx,
-         |	p.y_id,
-         |	sx.ty
-         |FROM
-         |	pools p
-         |	LEFT JOIN (
-         |		SELECT
-         |			s.pool_id,
-         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
-         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
-         |		FROM
-         |			swaps s
-         |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id and $fragment
-         |		GROUP BY
-         |			s.pool_id) AS sx ON sx.pool_id = p.pool_id
-         |WHERE
-         |	sx.pool_id IS NOT NULL
+         |	cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
+         |	cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
+         |from swaps s left join pools p on (s.pool_state_id=p.pool_state_id)
+         |where p.pool_id is not null and $fragment
+         |group by p.pool_id;
          """.stripMargin.query[PoolVolumeSnapshotDB]
   }
 
   def getPoolVolumes(id: PoolId, tw: TimeWindow): Query0[PoolVolumeSnapshotDB] = {
     val fragment = mkTimestamp(tw, "s.executed_transaction_timestamp")
     sql"""
-         |SELECT DISTINCT ON (p.pool_id)
+         |select
          |	p.pool_id,
-         |	p.x_id,
-         |	sx.tx,
-         |	p.y_id,
-         |	sx.ty
-         |FROM
-         |	pools p
-         |	LEFT JOIN (
-         |		SELECT
-         |			s.pool_id,
-         |			cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
-         |			cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
-         |		FROM
-         |			swaps s
-         |			LEFT JOIN pools p ON p.pool_state_id = s.pool_state_id
-         |		WHERE
-         |			s.pool_id = $id and $fragment
-         |		GROUP BY
-         |			s.pool_id) AS sx ON sx.pool_id = p.pool_id
-         |WHERE
-         |	sx.pool_id IS NOT NULL
+         |	cast(sum(CASE WHEN (s.base_id = p.y_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS tx,
+         |	cast(sum(CASE WHEN (s.base_id = p.x_id) THEN s.quote_amount ELSE 0 END) AS BIGINT) AS ty
+         |from swaps s left join pools p on (s.pool_state_id=p.pool_state_id)
+         |where p.pool_id is not null and s.pool_id = $id and $fragment
+         |group by p.pool_id;
          """.stripMargin.query[PoolVolumeSnapshotDB]
   }
 

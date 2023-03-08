@@ -5,7 +5,7 @@ import cats.effect.Ref
 import cats.effect.kernel.Sync
 import derevo.derive
 import fi.spectrum.api.db.models.PoolVolumeSnapshotDB
-import fi.spectrum.api.db.models.amm.{AssetInfo, PoolVolumeSnapshot}
+import fi.spectrum.api.db.models.amm.{AssetInfo, PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.repositories.Pools
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import tofu.doobie.transactor.Txr
@@ -20,7 +20,7 @@ import tofu.time.Clock
 
 @derive(representableK)
 trait Volumes24H[F[_]] {
-  def update(assets: List[AssetInfo]): F[List[PoolVolumeSnapshot]]
+  def update(snapshots: List[PoolSnapshot]): F[List[PoolVolumeSnapshot]]
 
   def get: F[List[PoolVolumeSnapshot]]
 }
@@ -44,18 +44,20 @@ object Volumes24H {
     pools: Pools[D]
   ) extends Volumes24H[F] {
 
-    def update(assets: List[AssetInfo]): F[List[PoolVolumeSnapshot]] = for {
+    def update(snapshots: List[PoolSnapshot]): F[List[PoolVolumeSnapshot]] = for {
       timestamp <- millis
       volumes   <- pools.volumes(TimeWindow(Some(timestamp - day), Some(timestamp))).trans
-      res = volumes.map(_.toPoolVolumeSnapshot2(assets))
-      _         <- cache.set(res)
+      res = volumes.flatMap(_.toPoolVolumeSnapshot(snapshots))
+      _ <- cache.set(res)
     } yield res
 
     def get: F[List[PoolVolumeSnapshot]] = cache.get
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Volumes24H[Mid[F, *]] {
-    def update(assets: List[AssetInfo]): Mid[F, List[PoolVolumeSnapshot]] = trace"It's time to update volumes!" >> _
+
+    def update(snapshots: List[PoolSnapshot]): Mid[F, List[PoolVolumeSnapshot]] =
+      trace"It's time to update volumes!" >> _
 
     def get: Mid[F, List[PoolVolumeSnapshot]] = trace"Get current volumes" >> _
   }

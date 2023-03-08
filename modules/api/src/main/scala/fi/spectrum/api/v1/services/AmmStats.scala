@@ -175,7 +175,7 @@ object AmmStats {
             } yield (info, vol, feesSnap)).value
           (for {
             (info, volDB, feesSnap) <- OptionT(queryPoolStats.trans)
-            vol = volDB.map(_.toPoolVolumeSnapshot(poolSnapshots))
+            vol = volDB.flatMap(_.toPoolVolumeSnapshot(poolSnapshots))
             pool    <- OptionT.fromOption[F](maybePool)
             lockedX <- OptionT(solver.convert(pool.lockedX, UsdUnits, poolSnapshots))
             lockedY <- OptionT(solver.convert(pool.lockedY, UsdUnits, poolSnapshots))
@@ -273,7 +273,7 @@ object AmmStats {
           .trans
           .flatMap(volumes => snapshots.get.map(volumes -> _))
           .map { case (volumesDB, snapshots) =>
-            val volumes = volumesDB.map(_.toPoolVolumeSnapshot(snapshots))
+            val volumes = volumesDB.flatMap(_.toPoolVolumeSnapshot(snapshots))
             snapshots.flatMap { snapshot =>
               val currentOpt = volumes
                 .find(_.poolId == snapshot.id)

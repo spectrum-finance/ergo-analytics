@@ -5,7 +5,7 @@ import cats.syntax.option._
 
 final case class PoolFeesSnapshotDB(feesByX: Option[Long], feesByY: Option[Long]) {
 
-  def tooPoolFeesSnapshot(pool: PoolSnapshot): Option[PoolFeesSnapshot] =
+  def toPoolFeesSnapshot(pool: PoolSnapshot): Option[PoolFeesSnapshot] =
     if (feesByX.isEmpty && feesByY.isEmpty) None
     else
       PoolFeesSnapshot(
