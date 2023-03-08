@@ -1,31 +1,19 @@
 package fi.spectrum.api.processes
 
+import cats.syntax.foldable._
+import cats.syntax.traverse._
 import cats.{Foldable, Functor, Monad, Parallel}
 import fi.spectrum.api.configs.BlocksProcessConfig
-import fi.spectrum.api.services.{
-  Assets,
-  Fees24H,
-  Height,
-  LMSnapshots,
-  LmStats,
-  Network,
-  PoolsStats24H,
-  Snapshots,
-  Volumes24H
-}
+import fi.spectrum.api.services._
 import fi.spectrum.cache.middleware.HttpResponseCaching
 import fi.spectrum.streaming.kafka.BlocksConsumer
 import tofu.lift.Lift
 import tofu.logging.{Logging, Logs}
 import tofu.streams.{Evals, Temporal}
+import tofu.syntax.lift._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
-import tofu.syntax.lift._
 import tofu.syntax.streams.all._
-import cats.syntax.foldable._
-import cats.syntax.traverse._
-import cats.syntax.parallel._
-import fi.spectrum.api.Main.F
 
 trait BlocksProcess[S[_]] {
   def run: S[Unit]
@@ -56,7 +44,7 @@ object BlocksProcess {
     for {
       assetsL      <- assets.update.lift[I]
       poolsL       <- snapshots.update(assetsL).lift[I]
-      volumesL     <- volumes24H.update(assetsL).lift[I]
+      volumesL     <- volumes24H.update(poolsL).lift[I]
       feesL        <- fees24H.update(poolsL).lift[I]
       _            <- poolsStats.update(poolsL, volumesL, feesL).lift[I]
       height       <- network.getCurrentNetworkHeight.lift[I]
@@ -96,7 +84,7 @@ object BlocksProcess {
                        for {
                          assetsL      <- assets.update
                          snapshotsL   <- snapshots.update(assetsL)
-                         volumesL     <- volumes24H.update(assetsL)
+                         volumesL     <- volumes24H.update(snapshotsL)
                          feesL        <- fees24H.update(snapshotsL)
                          _            <- poolsStats.update(snapshotsL, volumesL, feesL)
                          newHeight    <- heightService.update(lastHeight)
