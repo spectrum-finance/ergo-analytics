@@ -308,7 +308,8 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
         None,
         None,
         None
-      )
+      ),
+      List.empty
     ).trans.unsafeRunSync()
 
     println(result)
