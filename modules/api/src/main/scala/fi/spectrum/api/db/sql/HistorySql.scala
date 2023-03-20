@@ -69,7 +69,8 @@ final class HistorySql(implicit lh: LogHandler) {
     status: Option[OrderStatusApi],
     txId: Option[TxId],
     tokens: Option[List[TokenId]],
-    pair: Option[TokenPair]
+    pair: Option[TokenPair],
+    skipOrders: List[OrderId]
   ): Query0[AnyOrderDB] = {
     sql"""
          |SELECT
@@ -125,7 +126,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	refunded_transaction_id,
          |	refunded_transaction_timestamp
          |FROM
-         |	swaps ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
+         |	swaps ${orderCondition(addresses, tw, status, skipOrders)} ${txIdF(txId)} ${tokensIn(
       tokens,
       pair,
       "base_id",
@@ -183,7 +184,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	refunded_transaction_timestamp
          |FROM
          |	deposits
-         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
+         |	    ${orderCondition(addresses, tw, status, skipOrders)} ${txIdF(txId)} ${tokensIn(
       tokens,
       pair,
       "input_id_x",
@@ -240,7 +241,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	refunded_transaction_id,
          |	refunded_transaction_timestamp
          |	FROM redeems
-         |	    ${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(
+         |	    ${orderCondition(addresses, tw, status, skipOrders)} ${txIdF(txId)} ${tokensIn(
       tokens,
       pair,
       "output_id_x",
@@ -297,7 +298,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	NULL,
          |	NULL
          |	FROM lq_locks
-         |    ${orderCondition(addresses, tw, None)} ${txIdLock(txId)} ${lockTokens(pair, tokens)}
+         |    ${orderCondition(addresses, tw, None, skipOrders)} ${txIdLock(txId)} ${lockTokens(pair, tokens)}
          |UNION
          |SELECT
          |	order_id,
@@ -349,7 +350,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	refunded_transaction_id,
          |	refunded_transaction_timestamp
          |	FROM lm_deposits
-         |    ${orderCondition2(addresses, tw, None)} ${txIdF(txId)}
+         |    ${orderCondition2(addresses, tw, None, skipOrders)} ${txIdF(txId)}
 	     |UNION
          |SELECT
          |	order_id,
@@ -401,7 +402,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	refunded_transaction_id,
          |	refunded_transaction_timestamp
          |	FROM lm_redeems
-         |    ${orderCondition2(addresses, tw, None)} ${txIdF(txId)}
+         |    ${orderCondition2(addresses, tw, None, skipOrders)} ${txIdF(txId)}
          |) AS x
          |ORDER BY x.registered_transaction_timestamp DESC 
          |OFFSET $offset LIMIT $limit;
@@ -414,7 +415,8 @@ final class HistorySql(implicit lh: LogHandler) {
     limit: Int,
     tw: TimeWindow,
     status: Option[OrderStatusApi],
-    txId: Option[TxId]
+    txId: Option[TxId],
+    skipOrders: List[OrderId]
   ): doobie.Query0[LmRedeemsDB] =
     sql"""
          |SELECT
@@ -434,7 +436,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	lm_redeems
-         |${orderCondition2(addresses, tw, status)} ${txIdF(txId)}
+         |${orderCondition2(addresses, tw, status, skipOrders)} ${txIdF(txId)}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
          """.stripMargin.query[LmRedeemsDB]
@@ -445,7 +447,8 @@ final class HistorySql(implicit lh: LogHandler) {
     limit: Int,
     tw: TimeWindow,
     status: Option[OrderStatusApi],
-    txId: Option[TxId]
+    txId: Option[TxId],
+    skipOrders: List[OrderId]
   ): doobie.Query0[LmDepositDB] =
     sql"""
          |SELECT
@@ -465,7 +468,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	lm_deposits
-         |${orderCondition2(addresses, tw, status)} ${txIdF(txId)}
+         |${orderCondition2(addresses, tw, status, skipOrders)} ${txIdF(txId)}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
        """.stripMargin.query[LmDepositDB]
@@ -478,7 +481,8 @@ final class HistorySql(implicit lh: LogHandler) {
     status: Option[OrderStatusApi],
     txId: Option[TxId],
     tokens: Option[List[TokenId]],
-    pair: Option[TokenPair]
+    pair: Option[TokenPair],
+    skipOrders: List[OrderId]
   ): Query0[SwapDB] =
     sql"""
          |SELECT
@@ -500,7 +504,12 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	swaps
-         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "base_id", "min_quote_id")}
+         |${orderCondition(addresses, tw, status, skipOrders)} ${txIdF(txId)} ${tokensIn(
+      tokens,
+      pair,
+      "base_id",
+      "min_quote_id"
+    )}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
           """.stripMargin.query[SwapDB]
@@ -513,7 +522,8 @@ final class HistorySql(implicit lh: LogHandler) {
     status: Option[OrderStatusApi],
     txId: Option[TxId],
     tokens: Option[List[TokenId]],
-    pair: Option[TokenPair]
+    pair: Option[TokenPair],
+    skipOrders: List[OrderId]
   ): Query0[AmmDepositDB] =
     sql"""
          |SELECT
@@ -538,7 +548,12 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	deposits
-         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "input_id_x", "input_id_y")}
+         |${orderCondition(addresses, tw, status, skipOrders)} ${txIdF(txId)} ${tokensIn(
+      tokens,
+      pair,
+      "input_id_x",
+      "input_id_y"
+    )}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
         """.stripMargin.query[AmmDepositDB]
@@ -551,7 +566,8 @@ final class HistorySql(implicit lh: LogHandler) {
     status: Option[OrderStatusApi],
     txId: Option[TxId],
     tokens: Option[List[TokenId]],
-    pair: Option[TokenPair]
+    pair: Option[TokenPair],
+    skipOrders: List[OrderId]
   ): Query0[AmmRedeemDB] =
     sql"""
          |SELECT
@@ -574,7 +590,12 @@ final class HistorySql(implicit lh: LogHandler) {
          |	executed_transaction_timestamp
          |FROM
          |	redeems
-         |${orderCondition(addresses, tw, status)} ${txIdF(txId)} ${tokensIn(tokens, pair, "output_id_x", "output_id_y")}
+         |${orderCondition(addresses, tw, status, skipOrders)} ${txIdF(txId)} ${tokensIn(
+      tokens,
+      pair,
+      "output_id_x",
+      "output_id_y"
+    )}
          |ORDER BY registered_transaction_timestamp DESC
          |OFFSET $offset LIMIT $limit;
         """.stripMargin.query[AmmRedeemDB]
@@ -597,7 +618,8 @@ final class HistorySql(implicit lh: LogHandler) {
     offset: Int,
     limit: Int,
     tw: TimeWindow,
-    txId: Option[TxId]
+    txId: Option[TxId],
+    skipOrders: List[OrderId]
   ): Query0[LockDB] =
     sql"""
          |SELECT
@@ -612,7 +634,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |	evaluation_lock_type
          |FROM
          |	lq_locks
-         |${orderCondition(addresses, tw, None)} ${txIdLock(txId)}
+         |${orderCondition(addresses, tw, None, skipOrders)} ${txIdLock(txId)}
          |ORDER BY timestamp DESC
          |OFFSET $offset LIMIT $limit;
         """.stripMargin.query[LockDB]
@@ -620,25 +642,29 @@ final class HistorySql(implicit lh: LogHandler) {
   private def orderCondition(
     addresses: List[PubKey],
     tw: TimeWindow,
-    status: Option[OrderStatusApi]
+    status: Option[OrderStatusApi],
+    skipOrders: List[OrderId]
   ): doobie.Fragment =
     Fragments.whereAndOpt(
       addresses.toNel.map(Fragments.in(fr"redeemer", _)),
       tw.from.map(f => Fragment.const(s"registered_transaction_timestamp > $f")),
       tw.to.map(t => Fragment.const(s"registered_transaction_timestamp <= $t")),
-      orderStatus(status)
+      orderStatus(status),
+      skipOrders.toNel.map(Fragments.notIn(fr"order_id", _))
     )
 
   private def orderCondition2(
     addresses: List[PubKey],
     tw: TimeWindow,
-    status: Option[OrderStatusApi]
+    status: Option[OrderStatusApi],
+    skipOrders: List[OrderId]
   ): doobie.Fragment =
     Fragments.whereAndOpt(
       addresses.map(_.ergoTree).toNel.map(Fragments.in(fr"redeemer_ergo_tree", _)),
       tw.from.map(f => Fragment.const(s"registered_transaction_timestamp > $f")),
       tw.to.map(t => Fragment.const(s"registered_transaction_timestamp <= $t")),
-      orderStatus(status)
+      orderStatus(status),
+      skipOrders.toNel.map(Fragments.notIn(fr"order_id", _))
     )
 
   private def orderStatus(status: Option[OrderStatusApi]): Option[Fragment] =

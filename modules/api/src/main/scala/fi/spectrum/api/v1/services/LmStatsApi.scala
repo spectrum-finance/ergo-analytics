@@ -89,10 +89,6 @@ object LmStatsApi {
             val userInterests = userInterest.map { interest =>
               UserCompoundResult(interest.poolId, AssetAmountApi.fromAssetAmount(interest.reward))
             }
-
-            println(userStakes)
-            println(userInterests)
-
             UserLmStats(userStakes, userInterests)
           }
 
