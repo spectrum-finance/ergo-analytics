@@ -3,7 +3,6 @@ package fi.spectrum.api
 import cats.effect.Resource
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
-import doobie.ConnectionIO
 import fi.spectrum.api.configs.ConfigBundle
 import fi.spectrum.api.db.repositories._
 import fi.spectrum.api.models.TraceId

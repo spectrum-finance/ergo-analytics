@@ -7,9 +7,11 @@ import fi.spectrum.api.configs.BlocksProcessConfig
 import fi.spectrum.api.services._
 import fi.spectrum.cache.middleware.HttpResponseCaching
 import fi.spectrum.streaming.kafka.BlocksConsumer
+import tofu.Catches
 import tofu.lift.Lift
 import tofu.logging.{Logging, Logs}
 import tofu.streams.{Evals, Temporal}
+import tofu.syntax.handle._
 import tofu.syntax.lift._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
@@ -24,7 +26,7 @@ object BlocksProcess {
   def make[
     I[_]: Monad,
     F[_]: Monad: BlocksProcessConfig.Has: Parallel,
-    S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad,
+    S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad: Catches,
     C[_]: Functor: Foldable
   ](implicit
     events: BlocksConsumer[S, F],
@@ -56,7 +58,7 @@ object BlocksProcess {
 
   final private class Live[
     F[_]: Monad: Logging: BlocksProcessConfig.Has: Parallel,
-    S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad,
+    S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad: Catches,
     C[_]: Functor: Foldable
   ](height: Int)(implicit
     events: BlocksConsumer[S, F],
@@ -101,5 +103,9 @@ object BlocksProcess {
               } yield ()
             }
         }
+        .handleWith { err: Throwable =>
+          eval(warn"The error ${err.getMessage} occurred in BlocksProcess stream. Going to restore process...") >> run
+        }
+
   }
 }

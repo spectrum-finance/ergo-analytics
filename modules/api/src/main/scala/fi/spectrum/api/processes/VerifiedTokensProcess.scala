@@ -5,11 +5,13 @@ import cats.effect.Temporal
 import fi.spectrum.api.configs.NetworkConfig
 import fi.spectrum.api.services.VerifiedTokens
 import fi.spectrum.graphite.Metrics
+import tofu.Catches
 import tofu.lift.Lift
 import tofu.logging.{Logging, Logs}
 import tofu.streams.Evals
 import tofu.syntax.lift._
 import tofu.syntax.logging._
+import tofu.syntax.handle._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.evals._
 
@@ -21,7 +23,7 @@ trait VerifiedTokensProcess[S[_]] {
 
 object VerifiedTokensProcess {
 
-  def make[I[_]: Monad, F[_]: Temporal: NetworkConfig.Has, S[_]: Monad: Evals[*[_], F]](implicit
+  def make[I[_]: Monad, F[_]: Temporal: NetworkConfig.Has, S[_]: Monad: Evals[*[_], F]: Catches](implicit
     verifiedTokens: VerifiedTokens[F],
     metrics: Metrics[F],
     logs: Logs[I, F],
@@ -32,18 +34,23 @@ object VerifiedTokensProcess {
       config                         <- NetworkConfig.access.lift[I]
     } yield new Live[S, F](config.verifiedTokenListRequestTime)
 
-  final private class Live[S[_]: Monad: Evals[*[_], F], F[_]: Temporal: Logging](requestTime: FiniteDuration)(implicit
+  final private class Live[S[_]: Monad: Evals[*[_], F]: Catches, F[_]: Temporal: Logging](requestTime: FiniteDuration)(
+    implicit
     verifiedTokens: VerifiedTokens[F],
     metrics: Metrics[F]
   ) extends VerifiedTokensProcess[S] {
 
-    def run: S[Unit] = eval {
+    def run: S[Unit] = (eval {
       for {
         _ <- verifiedTokens.update
         _ <- metrics.sendCount("fetch.verified", 1.0)
         _ <- info"Going to sleep $requestTime"
         _ <- Temporal[F].sleep(requestTime)
       } yield ()
-    } >> run
+    } >> run).handleWith { err: Throwable =>
+      eval(
+        warn"The error ${err.getMessage} occurred in VerifiedTokensProcess stream. Going to restore process.."
+      ) >> run
+    }
   }
 }
