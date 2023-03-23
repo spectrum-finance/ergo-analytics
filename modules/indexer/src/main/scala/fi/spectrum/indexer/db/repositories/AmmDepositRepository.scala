@@ -1,16 +1,12 @@
 package fi.spectrum.indexer.db.repositories
 
-import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.db.classes.{DeleteRepository, RefundRepository}
-import fi.spectrum.indexer.db.models.{AmmDepositDB, UpdateEvaluatedTx}
-import doobie.{ConnectionIO, Update}
 import doobie.util.log.LogHandler
+import doobie.{ConnectionIO, Update}
 import fi.spectrum.core.domain.analytics.OrderEvaluation.AmmDepositEvaluation
+import fi.spectrum.core.domain.order.OrderId
+import fi.spectrum.indexer.db.models.{AmmDepositDB, UpdateEvaluatedTx}
 
-final class AmmDepositRepository
-  extends OrderRepository[AmmDepositDB, AmmDepositEvaluation, OrderId]
-  with DeleteRepository[AmmDepositDB, OrderId]
-  with RefundRepository[AmmDepositDB] {
+final class AmmDepositRepository extends OrderRepository[AmmDepositDB, AmmDepositEvaluation, OrderId] {
 
   val tableName: String = "deposits"
 

@@ -4,13 +4,10 @@ import doobie.util.log.LogHandler
 import doobie.{ConnectionIO, Update}
 import fi.spectrum.core.domain.analytics.OrderEvaluation.LmRedeemEvaluation
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.db.classes.{DeleteRepository, RefundRepository}
 import fi.spectrum.indexer.db.models.{LmRedeemDB, UpdateEvaluatedTx}
 
 class LmRedeemRepository
-  extends OrderRepository[LmRedeemDB, LmRedeemEvaluation, OrderId]
-  with DeleteRepository[LmRedeemDB, OrderId]
-  with RefundRepository[LmRedeemDB] {
+  extends OrderRepository[LmRedeemDB, LmRedeemEvaluation, OrderId] {
 
   val tableName: String = "lm_redeems"
 

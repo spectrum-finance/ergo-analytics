@@ -1,12 +1,11 @@
 package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.db.classes.DeleteRepository
+import fi.spectrum.indexer.db.classes.Repository
 import fi.spectrum.indexer.db.models.OffChainFeeDB
 
 final class OffChainFeeRepository
-  extends Repository[OffChainFeeDB, OrderId]
-  with DeleteRepository[OffChainFeeDB, OrderId] {
+  extends Repository[OffChainFeeDB, OrderId] {
 
   val fields: List[String] = List(
     "pool_id",

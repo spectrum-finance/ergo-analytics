@@ -7,7 +7,6 @@ import doobie.implicits._
 import doobie.util.log.LogHandler
 import fi.spectrum.core.domain.TokenId
 import fi.spectrum.indexer.db.models.AssetDB
-import fi.spectrum.indexer.db.repositories.Repository._
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler
 import tofu.higherKind.derived.representableK
