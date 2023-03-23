@@ -10,8 +10,7 @@ import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.{CryptoPriceSolver, FiatPriceSolver}
 import fi.spectrum.api.processes.{BlocksProcess, ErgPriceProcess, VerifiedTokensProcess}
 import fi.spectrum.api.services._
-import fi.spectrum.api.v1.ErrorsMiddleware.ErrorsMiddleware
-import fi.spectrum.api.v1.{ErrorsMiddleware, HttpServer}
+import fi.spectrum.api.v1.HttpServer
 import fi.spectrum.api.v1.services.{AmmStats, HistoryApi, LmStatsApi, LqLocks, MempoolApi}
 import fi.spectrum.cache.Cache
 import fi.spectrum.cache.Cache.Plain
@@ -116,7 +115,6 @@ object Main extends EnvApp[AppContext] {
       implicit0(locks: LqLocks[F])                       = LqLocks.make[F, xa.DB]
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
-      implicit0(errorsMiddleware: ErrorsMiddleware[F]) <- ErrorsMiddleware.make[I, F].toResource
       implicit0(ammStats: AmmStats[F])                 <- AmmStats.make[I, F, xa.DB].toResource
       implicit0(lmStats: LmStatsApi[F])                <- LmStatsApi.make[I, F, xa.DB].toResource
       implicit0(mempool: MempoolApi[F])                <- MempoolApi.make[I, F, xa.DB].toResource
