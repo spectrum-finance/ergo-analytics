@@ -190,7 +190,7 @@ object Network {
       for {
         _ <- info"getMempoolData($addresses)"
         r <- _
-        _ <- info"getMempoolData($addresses) -> ${r.map(a => s"${a.address} -> ${a.orders.length}")}"
+        _ <- info"getMempoolData($addresses) -> ${r.map(_.orders.length)}"
       } yield r
   }
 

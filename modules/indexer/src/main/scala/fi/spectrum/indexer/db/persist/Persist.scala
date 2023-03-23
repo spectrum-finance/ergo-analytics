@@ -12,8 +12,9 @@ import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed}
 import fi.spectrum.core.domain.order.{Order, OrderId, OrderStatus}
 import fi.spectrum.indexer.classes.ToDB
 import fi.spectrum.indexer.classes.syntax._
+import fi.spectrum.indexer.db.classes.Repository
 import fi.spectrum.indexer.db.models.{LockDB, UpdateEvaluatedTx, UpdateLock, UpdateRefundedTx}
-import fi.spectrum.indexer.db.repositories.{LockRepository, OrderRepository, Repository}
+import fi.spectrum.indexer.db.repositories.{LockRepository, OrderRepository}
 import glass.classic.{Lens, Optional, Prism}
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler

@@ -1,10 +1,10 @@
 package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.BoxId
-import fi.spectrum.indexer.db.classes.DeleteRepository
+import fi.spectrum.indexer.db.classes.{DeleteRepository, Repository}
 import fi.spectrum.indexer.db.models.LmPoolDB
 
-class LmPoolRepository extends Repository[LmPoolDB, BoxId] with DeleteRepository[LmPoolDB, BoxId] {
+class LmPoolRepository extends Repository[LmPoolDB, BoxId] {
 
   val field: String = "pool_state_id"
 

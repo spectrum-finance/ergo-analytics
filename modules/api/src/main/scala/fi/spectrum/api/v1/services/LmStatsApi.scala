@@ -104,14 +104,16 @@ object LmStatsApi {
       for {
         _ <- info"lmStatsApi()"
         r <- _
-        _ <- info"lmStatsApi() - ${r.toString}"
+        _ <- info"lmStatsApi() - finished"
+        _ <- trace"lmStatsApi() - ${r.toString}"
       } yield r
 
     def userLmStats(addresses: List[Address]): Mid[F, UserLmStats] =
       for {
         _ <- info"userLmStats()"
         r <- _
-        _ <- info"userLmStats() - ${r.toString}"
+        _ <- info"userLmStats() - finished"
+        _ <- trace"userLmStats() - ${r.toString}"
       } yield r
   }
 }
