@@ -10,6 +10,6 @@ trait DeleteRepository[I] {
   val tableName: String
   val field: String
 
-  def delete(implicit lh: LogHandler, w: Write[I]): Update[I] =
+  final def delete(implicit lh: LogHandler, w: Write[I]): Update[I] =
     Update[I](s"delete from $tableName where $field=?")
 }
