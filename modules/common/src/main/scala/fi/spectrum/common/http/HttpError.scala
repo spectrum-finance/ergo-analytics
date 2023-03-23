@@ -26,7 +26,8 @@ object HttpError {
   case object NoContent extends HttpError
 
   implicit def adaptThrowable[F[_]](implicit
-    F: MonadError[F, Throwable], L: Logging[F]
+    F: MonadError[F, Throwable],
+    L: Logging[F]
   ): AdaptThrowableEitherT[F, HttpError] =
     new AdaptThrowableEitherT[F, HttpError] {
 

@@ -2,6 +2,7 @@ package fi.spectrum.api.v1.services
 
 import cats.data.NonEmptyList
 import cats.syntax.option._
+import cats.syntax.either._
 import cats.{Functor, Monad}
 import fi.spectrum.api.db.models.lm.{UserCompound, UserInterest}
 import fi.spectrum.api.db.repositories.LM
@@ -76,7 +77,8 @@ object LmStatsApi {
                     val actualTMP        = 0x7fffffffffffffffL - pool.tmp.amount - (pool.lq.amount - 1L) * epochsToCompound
                     val allocRem =
                       pool.reward.amount - BigDecimal(pool.programBudget) * epochsToCompound / pool.epochNum - 1L
-                    val reward = allocRem * releasedTMP / actualTMP - 1L
+                    val reward =
+                      Either.catchNonFatal(allocRem * releasedTMP / actualTMP - 1L).toOption.getOrElse(BigDecimal(0))
                     (compound.poolId, reward.setScale(0, RoundingMode.HALF_UP)).some
                   case _ => none
                 }
