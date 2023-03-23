@@ -2,7 +2,7 @@ package fi.spectrum.api.v1.endpoints
 
 import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.history.{ApiOrder, HistoryApiQuery, OrderHistoryResponse}
-import fi.spectrum.common.http.{baseEndpoint, HttpError}
+import fi.spectrum.common.http.{HttpError, baseEndpoint}
 import fi.spectrum.core.domain.Address
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
