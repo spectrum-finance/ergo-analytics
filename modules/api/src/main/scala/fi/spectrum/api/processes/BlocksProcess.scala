@@ -6,6 +6,7 @@ import cats.{Foldable, Functor, Monad, Parallel}
 import fi.spectrum.api.configs.BlocksProcessConfig
 import fi.spectrum.api.services._
 import fi.spectrum.cache.middleware.HttpResponseCaching
+import fi.spectrum.graphite.Metrics
 import fi.spectrum.streaming.kafka.BlocksConsumer
 import tofu.Catches
 import tofu.lift.Lift
@@ -16,6 +17,9 @@ import tofu.syntax.lift._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.all._
+import tofu.syntax.streams.evals.eval
+import tofu.syntax.time.now.millis
+import tofu.time.Clock
 
 trait BlocksProcess[S[_]] {
   def run: S[Unit]
@@ -25,7 +29,7 @@ object BlocksProcess {
 
   def make[
     I[_]: Monad,
-    F[_]: Monad: BlocksProcessConfig.Has: Parallel,
+    F[_]: Clock: Monad: BlocksProcessConfig.Has: Parallel,
     S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad: Catches,
     C[_]: Functor: Foldable
   ](implicit
@@ -41,6 +45,7 @@ object BlocksProcess {
     lMSnapshots: LMSnapshots[F],
     lmStats: LmStats[F],
     lift: Lift[F, I],
+    metrics: Metrics[F],
     logs: Logs[I, F]
   ): I[BlocksProcess[S]] = logs.forService[BlocksProcess[S]].flatMap { implicit __ =>
     for {
@@ -57,7 +62,7 @@ object BlocksProcess {
   }
 
   final private class Live[
-    F[_]: Monad: Logging: BlocksProcessConfig.Has: Parallel,
+    F[_]: Clock: Monad: Logging: BlocksProcessConfig.Has: Parallel,
     S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad: Catches,
     C[_]: Functor: Foldable
   ](height: Int)(implicit
@@ -70,7 +75,8 @@ object BlocksProcess {
     caching: HttpResponseCaching[F],
     heightService: Height[F],
     lMSnapshots: LMSnapshots[F],
-    lmStats: LmStats[F]
+    lmStats: LmStats[F],
+    metrics: Metrics[F]
   ) extends BlocksProcess[S] {
 
     def run: S[Unit] =
@@ -104,7 +110,10 @@ object BlocksProcess {
             }
         }
         .handleWith { err: Throwable =>
-          eval(warn"The error ${err.getMessage} occurred in BlocksProcess stream. Going to restore process...") >> run
+          eval(
+            warn"The error ${err.getMessage} occurred in BlocksProcess stream. Going to restore process..." >>
+            millis.flatMap(ts => metrics.sendTs("warn.BlocksProcess", ts.toDouble))
+          ) >> run
         }
 
   }

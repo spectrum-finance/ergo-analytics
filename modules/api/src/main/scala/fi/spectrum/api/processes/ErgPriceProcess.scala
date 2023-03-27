@@ -14,7 +14,10 @@ import tofu.syntax.lift._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.handle._
+import tofu.syntax.streams.all.eval
 import tofu.syntax.streams.evals._
+import tofu.syntax.time.now.millis
+import tofu.time.Clock
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -24,7 +27,7 @@ trait ErgPriceProcess[S[_]] {
 
 object ErgPriceProcess {
 
-  def make[I[_]: Monad, F[_]: Temporal: NetworkConfig.Has, S[_]: Monad: Evals[*[_], F]: Catches](implicit
+  def make[I[_]: Monad, F[_]: Clock: Temporal: NetworkConfig.Has, S[_]: Monad: Evals[*[_], F]: Catches](implicit
     ergRate: ErgRate[F],
     metrics: Metrics[F],
     logs: Logs[I, F],
@@ -36,8 +39,9 @@ object ErgPriceProcess {
       _                              <- ergRate.update.lift[I]
     } yield new Live[S, F](config.cmcRequestTime)
 
-  final private class Live[S[_]: Monad: Evals[*[_], F]: Catches, F[_]: Temporal: Logging](requestTime: FiniteDuration)(
-    implicit
+  final private class Live[S[_]: Monad: Evals[*[_], F]: Catches, F[_]: Clock: Temporal: Logging](
+    requestTime: FiniteDuration
+  )(implicit
     ergRate: ErgRate[F],
     metrics: Metrics[F]
   ) extends ErgPriceProcess[S] {
@@ -51,7 +55,10 @@ object ErgPriceProcess {
         _    <- Temporal[F].sleep(requestTime)
       } yield ()
     } >> run).handleWith { err: Throwable =>
-      eval(warn"The error ${err.getMessage} occurred in ErgPriceProcess stream. Going to restore process..") >> run
+      eval(
+        warn"The error ${err.getMessage} occurred in ErgPriceProcess stream. Going to restore process.." >>
+        millis.flatMap(ts => metrics.sendTs("warn.ErgPriceProcess", ts.toDouble))
+      ) >> run
     }
   }
 }
