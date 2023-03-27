@@ -82,7 +82,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(graphiteF: GraphiteClient[F])     <- GraphiteClient.make[F, F](config.graphite).mapK(iso.tof)
       implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
       implicit0(metricsF: Metrics[F])          = Metrics.make[F]
-      implicit0(blocksC: BlocksConsumer[S, F]) = makeConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
+      implicit0(blocksC: BlocksConsumer[S, F]) = emptyConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
       implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
       implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
       implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
@@ -115,10 +115,10 @@ object Main extends EnvApp[AppContext] {
       implicit0(locks: LqLocks[F])                       = LqLocks.make[F, xa.DB]
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
-      implicit0(ammStats: AmmStats[F])                 <- AmmStats.make[I, F, xa.DB].toResource
-      implicit0(lmStats: LmStatsApi[F])                <- LmStatsApi.make[I, F, xa.DB].toResource
-      implicit0(mempool: MempoolApi[F])                <- MempoolApi.make[I, F, xa.DB].toResource
-      implicit0(historyApi: HistoryApi[F])             <- HistoryApi.make[I, F, xa.DB].toResource
+      implicit0(ammStats: AmmStats[F])     <- AmmStats.make[I, F, xa.DB].toResource
+      implicit0(lmStats: LmStatsApi[F])    <- LmStatsApi.make[I, F, xa.DB].toResource
+      implicit0(mempool: MempoolApi[F])    <- MempoolApi.make[I, F, xa.DB].toResource
+      implicit0(historyApi: HistoryApi[F]) <- HistoryApi.make[I, F, xa.DB].toResource
       serverProc = HttpServer.make[I, F](config.http)
     } yield List(
       ergProcess.run,
@@ -136,6 +136,14 @@ object Main extends EnvApp[AppContext] {
     implicit val maker: MakeKafkaConsumer[F, K, V] = MakeKafkaConsumer.make[F, K, V]
     Consumer.make[S, F, K, V](conf)
   }
+
+  private def emptyConsumer[
+    K: RecordDeserializer[F, *],
+    V: RecordDeserializer[F, *]
+  ](conf: ConsumerConfig)(implicit
+    context: KafkaConfig.Has[F]
+  ): Aux[K, V, (TopicPartition, OffsetAndMetadata), S, F] =
+    Consumer.empty[S, F, K, V]
 
   private def makeBackend(implicit iso: IsoK[F, I]): Resource[I, SttpBackend[F, Any]] =
     HttpClientFs2Backend
