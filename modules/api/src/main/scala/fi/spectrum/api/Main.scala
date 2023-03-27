@@ -43,10 +43,11 @@ import tofu.doobie.log.EmbeddableLogHandler
 import tofu.doobie.transactor.Txr
 import tofu.fs2Instances._
 import tofu.lift.{IsoK, Unlift}
-import tofu.logging.Logs
+import tofu.logging.{Logging, Logs}
 import tofu.{In, WithContext, WithLocal}
 import zio.ExitCode
 import zio.interop.catz._
+import tofu.syntax.logging._
 
 object Main extends EnvApp[AppContext] {
 
@@ -83,8 +84,17 @@ object Main extends EnvApp[AppContext] {
       implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
       implicit0(metricsF: Metrics[F])          = Metrics.make[F]
       implicit0(blocksC: BlocksConsumer[S, F]) = emptyConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
-      implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
       implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
+      implicit0(logs3: Logs[I, I])             = Logs.sync[I, I]
+      implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
+      implicit0(logging: Logging[I]) <- logs3.forService[Metrics[I]].toResource
+      maxMemory = Runtime.getRuntime.maxMemory()
+      freeMemory = Runtime.getRuntime.freeMemory()
+      totalMemory = Runtime.getRuntime.totalMemory()
+      _ <- {
+        def s = info"MEMORY: maxMemory - ${maxMemory}, freeMemory - $freeMemory, totalMemory - $totalMemory"
+        s
+      }.toResource
       implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
       implicit0(ammStatsMath: AmmStatsMath[F])           <- AmmStatsMath.make[I, F].toResource
       implicit0(asset: Asset[xa.DB])                     <- Asset.make[I, xa.DB].toResource
