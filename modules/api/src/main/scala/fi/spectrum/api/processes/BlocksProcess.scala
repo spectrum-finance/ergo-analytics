@@ -18,8 +18,6 @@ import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.all._
 import tofu.syntax.streams.evals.eval
-import tofu.syntax.time.now.millis
-import tofu.time.Clock
 
 trait BlocksProcess[S[_]] {
   def run: S[Unit]
@@ -29,7 +27,7 @@ object BlocksProcess {
 
   def make[
     I[_]: Monad,
-    F[_]: Clock: Monad: BlocksProcessConfig.Has: Parallel,
+    F[_]: Monad: BlocksProcessConfig.Has: Parallel,
     S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad: Catches,
     C[_]: Functor: Foldable
   ](implicit
@@ -62,7 +60,7 @@ object BlocksProcess {
   }
 
   final private class Live[
-    F[_]: Clock: Monad: Logging: BlocksProcessConfig.Has: Parallel,
+    F[_]: Monad: Logging: BlocksProcessConfig.Has: Parallel,
     S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad: Catches,
     C[_]: Functor: Foldable
   ](height: Int)(implicit
@@ -112,7 +110,7 @@ object BlocksProcess {
         .handleWith { err: Throwable =>
           eval(
             warn"The error ${err.getMessage} occurred in BlocksProcess stream. Going to restore process..." >>
-            millis.flatMap(ts => metrics.sendTs("warn.BlocksProcess", ts.toDouble))
+            metrics.sendCount("warn.blocks.process", 1.0)
           ) >> run
         }
 

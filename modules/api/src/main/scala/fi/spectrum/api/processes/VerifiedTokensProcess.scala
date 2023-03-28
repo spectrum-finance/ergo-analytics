@@ -14,9 +14,6 @@ import tofu.syntax.logging._
 import tofu.syntax.handle._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.evals._
-import tofu.syntax.time.now.millis
-import tofu.time.Clock
-
 import scala.concurrent.duration.FiniteDuration
 
 trait VerifiedTokensProcess[S[_]] {
@@ -25,7 +22,7 @@ trait VerifiedTokensProcess[S[_]] {
 
 object VerifiedTokensProcess {
 
-  def make[I[_]: Monad, F[_]: Clock: Temporal: NetworkConfig.Has, S[_]: Monad: Evals[*[_], F]: Catches](implicit
+  def make[I[_]: Monad, F[_]: Temporal: NetworkConfig.Has, S[_]: Monad: Evals[*[_], F]: Catches](implicit
     verifiedTokens: VerifiedTokens[F],
     metrics: Metrics[F],
     logs: Logs[I, F],
@@ -36,7 +33,7 @@ object VerifiedTokensProcess {
       config                         <- NetworkConfig.access.lift[I]
     } yield new Live[S, F](config.verifiedTokenListRequestTime)
 
-  final private class Live[S[_]: Monad: Evals[*[_], F]: Catches, F[_]: Clock: Temporal: Logging](
+  final private class Live[S[_]: Monad: Evals[*[_], F]: Catches, F[_]: Temporal: Logging](
     requestTime: FiniteDuration
   )(implicit
     verifiedTokens: VerifiedTokens[F],
@@ -53,7 +50,7 @@ object VerifiedTokensProcess {
     } >> run).handleWith { err: Throwable =>
       eval(
         warn"The error ${err.getMessage} occurred in VerifiedTokensProcess stream. Going to restore process.." >>
-        millis.flatMap(ts => metrics.sendTs("warn.VerifiedTokensProcess", ts.toDouble))
+        metrics.sendCount("warn.verified.tokens.process", 1.0)
       ) >> run
     }
   }
