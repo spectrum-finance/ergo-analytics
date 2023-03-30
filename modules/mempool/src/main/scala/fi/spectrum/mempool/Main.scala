@@ -1,15 +1,15 @@
 package fi.spectrum.mempool
 
-import cats.{Monad, MonoidK}
 import cats.effect.kernel.{Async, Clock, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
 import cats.effect.{ExitCode, IO, IOApp}
+import cats.{Monad, MonoidK}
 import dev.profunktor.redis4cats.RedisCommands
 import fi.spectrum.cache.redis.codecs._
 import fi.spectrum.cache.redis.mkRedis
 import fi.spectrum.core.config.ProtocolConfig
-import fi.spectrum.core.domain.{BoxId, TokenId, TxId}
+import fi.spectrum.core.domain.{TokenId, TxId}
 import fi.spectrum.core.storage.OrdersStorage
 import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.graphite.MetricsMiddleware.MetricsMiddleware
@@ -22,10 +22,11 @@ import fi.spectrum.mempool.services.{Mempool, MempoolTx}
 import fi.spectrum.mempool.v1.HttpServer
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
+import fi.spectrum.streaming.domain.ChainSyncEvent._
+import fi.spectrum.streaming.domain.MempoolEvent._
 import fi.spectrum.streaming.domain.{ChainSyncEvent, MempoolEvent}
 import fi.spectrum.streaming.kafka.Consumer._
 import fi.spectrum.streaming.kafka.KafkaDecoder._
-import fi.spectrum.streaming.domain.MempoolEvent._
 import fi.spectrum.streaming.kafka._
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import fi.spectrum.streaming.kafka.serde.json._
@@ -33,6 +34,7 @@ import fi.spectrum.streaming.kafka.serde.string._
 import fs2.Chunk
 import fs2.kafka.RecordDeserializer
 import io.github.oskin1.rocksdb.scodec.TxRocksDB
+import mouse.all._
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.ergoplatform.ErgoAddressEncoder
@@ -44,8 +46,6 @@ import tofu.logging.{Logging, Logs}
 import tofu.streams.{Chunks, Evals, Temporal}
 import tofu.syntax.monadic._
 import tofu.{In, WithContext}
-import mouse.all._
-import ChainSyncEvent._
 
 object Main extends IOApp {
 
@@ -94,8 +94,8 @@ object Main extends IOApp {
       implicit0(logsF: Logging.Make[F]) = Logging.Make.plain[F]
       implicit0(logsFF: Logs[F, F])     = Logs.sync[F, F]
       implicit0(csC: CSConsumer[S, F]) =
-        emptyConsumer[String, Either[Throwable, Option[ChainSyncEvent]]](config.csConsumer)
-      implicit0(mC: MempoolConsumer[S, F]) = emptyConsumer[TxId, Option[MempoolEvent]](config.mempoolConsumer)
+        makeConsumer[String, Either[Throwable, Option[ChainSyncEvent]]](config.csConsumer)
+      implicit0(mC: MempoolConsumer[S, F]) = makeConsumer[TxId, Option[MempoolEvent]](config.mempoolConsumer)
       implicit0(graphiteF: GraphiteClient[F]) <- GraphiteClient.make[F, F](config.graphite)
       implicit0(rocks: TxRocksDB[F])          <- TxRocksDB.make[F, F](config.rocks.path)
       implicit0(metricsF: Metrics[F])                  = Metrics.make[F]

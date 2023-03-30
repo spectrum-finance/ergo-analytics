@@ -83,7 +83,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(graphiteF: GraphiteClient[F])     <- GraphiteClient.make[F, F](config.graphite).mapK(iso.tof)
       implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
       implicit0(metricsF: Metrics[F])          = Metrics.make[F]
-      implicit0(blocksC: BlocksConsumer[S, F]) = emptyConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
+      implicit0(blocksC: BlocksConsumer[S, F]) = makeConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
       implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
       implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
       implicit0(sttp: SttpBackend[F, Any])     <- makeBackend
@@ -96,7 +96,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(lm: LM[xa.DB])                 <- LM.make[I, xa.DB].toResource
       implicit0(redis: Plain[F])               <- mkRedis[Array[Byte], Array[Byte], F](config.redisApiCache).mapK(iso.tof)
       implicit0(redis2: RedisCommands[F, String, String]) <-
-        mkRedis[String, String, F]((config.redisAppCache)).mapK(iso.tof)
+        mkRedis[String, String, F](config.redisAppCache).mapK(iso.tof)
       implicit0(apiCache: Cache[F]) <- Cache.make[I, F].toResource
       implicit0(appCache: AppCache[F]) = AppCache.make[F]
       implicit0(httpRespCache: HttpResponseCaching[F])   <- HttpResponseCaching.make[I, F].toResource
