@@ -16,7 +16,8 @@ import tofu.logging.derivation.loggable
 final case class ConfigBundle(
   @promote postgres: PgConfig,
   http: HttpConfig,
-  @promote redis: RedisConfig,
+  redisApiCache: RedisConfig,
+  redisAppCache: RedisConfig,
   blockConsumer: ConsumerConfig,
   graphite: GraphiteSettings,
   @promote network: NetworkConfig,

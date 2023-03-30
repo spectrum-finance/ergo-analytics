@@ -1,10 +1,9 @@
 package fi.spectrum.api.services
 
 import cats.Monad
-import cats.effect.Ref
 import cats.effect.kernel.Sync
 import fi.spectrum.api.db.models.lm.LmPoolSnapshot
-import fi.spectrum.api.db.repositories.LM
+import fi.spectrum.api.db.repositories.{AppCache, LM}
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.{Mid, RepresentableK}
 import tofu.logging.{Logging, Logs}
@@ -24,26 +23,27 @@ object LMSnapshots {
     tofu.higherKind.derived.genRepresentableK
 
   def make[I[_]: Sync, F[_]: Sync, D[_]](implicit
-    txr: Txr[F, D],
-    lm: LM[D],
-    logs: Logs[I, F]
+                                         txr: Txr[F, D],
+                                         lm: LM[D],
+                                         cache: AppCache[F],
+                                         logs: Logs[I, F]
   ): I[LMSnapshots[F]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[LMSnapshots[F]]
-      cache                          <- Ref.in[I, F, List[LmPoolSnapshot]](List.empty)
-    } yield new Tracing[F] attach new Live[F, D](cache)
+    } yield new Tracing[F] attach new Live[F, D]
 
-  final private class Live[F[_]: Monad, D[_]](cache: Ref[F, List[LmPoolSnapshot]])(implicit
+  final private class Live[F[_]: Monad, D[_]](implicit
     txr: Txr[F, D],
-    lm: LM[D]
+    lm: LM[D],
+    cache: AppCache[F]
   ) extends LMSnapshots[F] {
 
     def update: F[List[LmPoolSnapshot]] = for {
       snapshots <- lm.lmPoolsSnapshots.trans
-      _         <- cache.set(snapshots)
+      _         <- cache.setLmPoolSnapshots(snapshots)
     } yield snapshots
 
-    def get: F[List[LmPoolSnapshot]] = cache.get
+    def get: F[List[LmPoolSnapshot]] = cache.getLmPoolsSnapshots
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends LMSnapshots[Mid[F, *]] {

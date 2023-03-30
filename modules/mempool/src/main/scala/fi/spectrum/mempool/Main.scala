@@ -1,6 +1,6 @@
 package fi.spectrum.mempool
 
-import cats.Monad
+import cats.{Monad, MonoidK}
 import cats.effect.kernel.{Async, Clock, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
@@ -65,7 +65,7 @@ object Main extends IOApp {
   def init[
     S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad: LiftStream[*[_], F]: Temporal[*[_], Chunk],
     F[_]: Async: In[Dispatcher[F], *[_]]: Clock
-  ](configPathOpt: Option[String]): Resource[F, List[S[Unit]]] = {
+  ](configPathOpt: Option[String])(implicit F: MonoidK[S]): Resource[F, List[S[Unit]]] = {
     def makeConsumer[
       K: RecordDeserializer[F, *],
       V: RecordDeserializer[F, *]
@@ -75,6 +75,14 @@ object Main extends IOApp {
       implicit val maker: MakeKafkaConsumer[F, K, V] = MakeKafkaConsumer.make[F, K, V]
       Consumer.make[S, F, K, V](conf)
     }
+
+    def emptyConsumer[
+      K: RecordDeserializer[F, *],
+      V: RecordDeserializer[F, *]
+    ](conf: ConsumerConfig)(implicit
+                            context: KafkaConfig.Has[F], F: MonoidK[S]
+    ): Aux[K, V, (TopicPartition, OffsetAndMetadata), S, F] =
+      Consumer.empty[S, F, K, V]
 
     implicit val serverOptions: Http4sServerOptions[F] = Http4sServerOptions.default[F]
 
@@ -86,8 +94,8 @@ object Main extends IOApp {
       implicit0(logsF: Logging.Make[F]) = Logging.Make.plain[F]
       implicit0(logsFF: Logs[F, F])     = Logs.sync[F, F]
       implicit0(csC: CSConsumer[S, F]) =
-        makeConsumer[String, Either[Throwable, Option[ChainSyncEvent]]](config.csConsumer)
-      implicit0(mC: MempoolConsumer[S, F]) = makeConsumer[TxId, Option[MempoolEvent]](config.mempoolConsumer)
+        emptyConsumer[String, Either[Throwable, Option[ChainSyncEvent]]](config.csConsumer)
+      implicit0(mC: MempoolConsumer[S, F]) = emptyConsumer[TxId, Option[MempoolEvent]](config.mempoolConsumer)
       implicit0(graphiteF: GraphiteClient[F]) <- GraphiteClient.make[F, F](config.graphite)
       implicit0(rocks: TxRocksDB[F])          <- TxRocksDB.make[F, F](config.rocks.path)
       implicit0(metricsF: Metrics[F])                  = Metrics.make[F]

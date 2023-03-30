@@ -1,15 +1,13 @@
 package fi.spectrum.api.services
 
-import cats.{Monad, Parallel}
 import cats.data.OptionT
-import cats.effect.Ref
 import cats.effect.kernel.Sync
-import cats.syntax.traverse._
 import cats.syntax.parallel._
+import cats.{Monad, Parallel}
 import derevo.derive
 import fi.spectrum.api.currencies.UsdUnits
 import fi.spectrum.api.db.models.amm.{PoolFeesSnapshot, PoolSnapshot, PoolVolumeSnapshot}
-import fi.spectrum.api.db.repositories.Pools
+import fi.spectrum.api.db.repositories.{AppCache, Pools}
 import fi.spectrum.api.domain.{Fees, TotalValueLocked, Volume}
 import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
@@ -53,22 +51,23 @@ object PoolsStats24H {
   private val day: Int = 3600000 * 24
 
   def make[I[_]: Sync, F[_]: Sync: Clock: Parallel, D[_]](implicit
+                                                          txr: Txr[F, D],
+                                                          pools: Pools[D],
+                                                          solver: FiatPriceSolver[F],
+                                                          ammMath: AmmStatsMath[F],
+                                                          cache: AppCache[F],
+                                                          logs: Logs[I, F]
+  ): I[PoolsStats24H[F]] =
+    for {
+      implicit0(logging: Logging[F]) <- logs.forService[PoolsStats24H[F]]
+    } yield new Tracing[F] attach new Live[F, D]
+
+  final private class Live[F[_]: Monad: Clock: Parallel, D[_]](implicit
     txr: Txr[F, D],
     pools: Pools[D],
     solver: FiatPriceSolver[F],
     ammMath: AmmStatsMath[F],
-    logs: Logs[I, F]
-  ): I[PoolsStats24H[F]] =
-    for {
-      implicit0(logging: Logging[F]) <- logs.forService[PoolsStats24H[F]]
-      cache                          <- Ref.in[I, F, List[PoolStats]](List.empty)
-    } yield new Tracing[F] attach new Live[F, D](cache)
-
-  final private class Live[F[_]: Monad: Clock: Parallel, D[_]](cache: Ref[F, List[PoolStats]])(implicit
-    txr: Txr[F, D],
-    pools: Pools[D],
-    solver: FiatPriceSolver[F],
-    ammMath: AmmStatsMath[F]
+    cache: AppCache[F]
   ) extends PoolsStats24H[F] {
 
     def update(
@@ -96,7 +95,7 @@ object PoolsStats24H {
           }.parSequence
         }
         .map(_.flatten)
-        .flatMap(cache.set)
+        .flatMap(cache.setPoolsStat24H)
 
     def processPoolVolume(
       vol: Option[PoolVolumeSnapshot],
@@ -125,7 +124,7 @@ object PoolsStats24H {
       case None => OptionT.pure[F](Fees.empty(UsdUnits, window))
     }).value
 
-    def get: F[List[PoolStats]] = cache.get
+    def get: F[List[PoolStats]] = cache.getPoolsStat24H
 
   }
 

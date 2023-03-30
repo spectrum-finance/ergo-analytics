@@ -1,5 +1,6 @@
 package fi.spectrum.api.db.models
 
+import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.api.models.FullAsset
 import fi.spectrum.core.domain.order.PoolId
@@ -20,7 +21,7 @@ object amm {
     def evalDecimals: Int = decimals.getOrElse(0)
   }
 
-  @derive(loggable)
+  @derive(loggable, encoder, decoder)
   final case class PoolSnapshot(
     id: PoolId,
     fee: Int,
@@ -36,13 +37,15 @@ object amm {
       lockedY.withAmount(BigInt(lpIn.amount) * lockedY.amount / supplyLP)
   }
 
-  @derive(loggable)
+  @derive(loggable, encoder, decoder)
   final case class PoolVolumeSnapshot(
     poolId: PoolId,
     volumeByX: FullAsset,
     volumeByY: FullAsset
   )
 
+
+  @derive(encoder, decoder)
   final case class PoolFeesSnapshot(
     poolId: PoolId,
     feesByX: FullAsset,
