@@ -30,10 +30,6 @@ object MempoolEvent {
     RecordDeserializer.lift(Deserializer.string.attempt.map { str =>
       str
         .flatMap(decode[KafkaMempoolEvent](_))
-        .leftMap { err =>
-          println(s"Err: ${err.getMessage} -> ${Either.catchNonFatal(str)}")
-          err
-        }
         .toOption
         .flatMap(fromKafkaEvent)
     })

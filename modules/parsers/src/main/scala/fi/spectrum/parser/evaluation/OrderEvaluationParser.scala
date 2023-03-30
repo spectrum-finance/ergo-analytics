@@ -2,7 +2,7 @@ package fi.spectrum.parser.evaluation
 
 import cats.syntax.option._
 import fi.spectrum.core.domain.analytics.OrderEvaluation._
-import fi.spectrum.core.domain.analytics.{OrderEvaluation, Version}
+import fi.spectrum.core.domain.analytics.{OrderEvaluation, Processed, Version}
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
 import fi.spectrum.core.domain.order.Order.Redeem.{AmmRedeem, LmRedeem}
 import fi.spectrum.core.domain.order.Order._
@@ -24,7 +24,13 @@ import cats.syntax.eq._
   */
 final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implicit e: ErgoAddressEncoder) {
 
-  def parse(order: Order, outputs: List[Output], pool: Pool, nextPool: Pool): Option[OrderEvaluation] = {
+  def parse(
+    order: Order,
+    outputs: List[Output],
+    pool: Pool,
+    nextPool: Pool,
+    processed: List[Processed[Order]]
+  ): Option[OrderEvaluation] = {
     val redeemer = order.redeemer match {
       case Redeemer.ErgoTreeRedeemer(value)  => value
       case Redeemer.PublicKeyRedeemer(value) => value.ergoTree
@@ -34,7 +40,7 @@ final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implici
         order match {
           case _: AmmDeposit => ammDeposit(redeemer, output, pool, nextPool)
           case _: LmDeposit  => lmDepositCompound(outputs)
-          case c: Compound   => lmCompound(c, outputs)
+          case c: Compound   => lmCompound(c, outputs, processed)
           case _: AmmRedeem  => ammRedeem(redeemer, output, pool)
           case _: LmRedeem   => lmRedeem(redeemer, output, pool)
           case _: Swap       => swap(redeemer, order, output)
@@ -90,7 +96,11 @@ final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implici
       output.assets.headOption.map(b => LmRedeemEvaluation(AssetAmount.fromBoxAsset(b), output.boxId, pool.poolId))
     else none
 
-  def lmCompound(order: Compound, outputs: List[Output]): Option[LmDepositCompoundEvaluation] =
+  def lmCompound(
+    order: Compound,
+    outputs: List[Output],
+    processed: List[Processed[Order]]
+  ): Option[LmDepositCompoundEvaluation] =
     outputs
       .flatMap(out => bundleParser.compound(out, ErgoTreeSerializer.default.deserialize(out.ergoTree)))
       .collectFirst { case o if o === order => o }
@@ -100,7 +110,12 @@ final class OrderEvaluationParser(bundleParser: CompoundParser[Version])(implici
             e.fromProposition(ErgoTreeSerializer.default.deserialize(out.ergoTree))
               .toOption
               .collect { case address: P2PKAddress => PubKey.fromBytes(address.pubkeyBytes) }
-              .exists(x => x.value == order.redeemer.hexString && out.boxId != compound.box.boxId)
+              .exists { x =>
+                x.value == order.redeemer.hexString && out.boxId != compound.box.boxId &&
+                !processed.exists(
+                  _.evaluation.flatMap(_.widen[LmDepositCompoundEvaluation]).exists(_.boxId == out.boxId)
+                )
+              }
           }
           .flatMap { out =>
             out.assets.headOption
