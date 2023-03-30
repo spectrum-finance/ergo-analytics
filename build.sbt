@@ -40,6 +40,7 @@ lazy val root = (project in file("."))
 lazy val core = mkModule("core", "core")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(commonSettings)
+  .settings(dependencyOverrides += "org.typelevel" %% "cats-effect-kernel" % Version.ce3)
   .settings(
     libraryDependencies ++= compilerDependencies ++ List(
       ce3,
@@ -81,8 +82,16 @@ lazy val api = mkModule("api", "api")
 //  .settings(dockerEnvVars := Map("""JAVA_OPTS""" -> """-Xms4G -Xmx8G"""))
   .settings(bashScriptExtraDefines += """addJava "-Xms4G"""")
   .settings(bashScriptExtraDefines += """addJava "-Xmx8G"""")
+  .settings(bashScriptExtraDefines += """addJava "-Xms2G"""")
+  .settings(bashScriptExtraDefines += """addJava "-Xmx4G"""")
   .settings(commonSettings)
-  .settings(libraryDependencies ++= compilerDependencies ++ scodec ++ http4s ++ tapir ++ tests ++ List(zioInterop))
+  .settings(
+    libraryDependencies ++=
+      (compilerDependencies ++ scodec ++ http4s
+//        .map(_.exclude("io.circe", "circe-derivation"))
+        ++ tapir ++ tests ++ List(zioInterop))
+  )
+//  .settings(excludeDependencies ++= Seq(ExclusionRule("commons-logging", "commons-logging")))
   .dependsOn(common, graphite, cache)
   .settings(assembly / mainClass := Some("fi.spectrum.api.Main"))
   .settings(nativePackagerSettings("api"))

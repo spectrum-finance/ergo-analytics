@@ -1,8 +1,9 @@
 package fi.spectrum.api
 
-import cats.effect.Resource
+import cats.effect.{IO, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
+import dev.profunktor.redis4cats.RedisCommands
 import fi.spectrum.api.configs.ConfigBundle
 import fi.spectrum.api.db.repositories._
 import fi.spectrum.api.models.TraceId
@@ -11,7 +12,7 @@ import fi.spectrum.api.modules.PriceSolver.{CryptoPriceSolver, FiatPriceSolver}
 import fi.spectrum.api.processes.{BlocksProcess, ErgPriceProcess, VerifiedTokensProcess}
 import fi.spectrum.api.services._
 import fi.spectrum.api.v1.HttpServer
-import fi.spectrum.api.v1.services.{AmmStats, HistoryApi, LmStatsApi, LqLocks, MempoolApi}
+import fi.spectrum.api.v1.services._
 import fi.spectrum.cache.Cache
 import fi.spectrum.cache.Cache.Plain
 import fi.spectrum.cache.middleware.CacheMiddleware.CachingMiddleware
@@ -43,27 +44,25 @@ import tofu.doobie.log.EmbeddableLogHandler
 import tofu.doobie.transactor.Txr
 import tofu.fs2Instances._
 import tofu.lift.{IsoK, Unlift}
-import tofu.logging.{Logging, Logs}
+import tofu.logging.Logs
 import tofu.{In, WithContext, WithLocal}
-import zio.ExitCode
+import cats.effect.{ExitCode, IO, IOApp}
 import zio.interop.catz._
-import tofu.syntax.logging._
 
 object Main extends EnvApp[AppContext] {
 
   implicit val serverOptions: Http4sServerOptions[F] = Http4sServerOptions.default[F]
 
-  override def run(args: List[String]): zio.URIO[Any, zio.ExitCode] =
+  def run(args: List[String]): I[ExitCode] =
     Dispatcher
       .parallel[I]
       .use { dispatcher =>
         implicit val cxt: WithContext[I, Dispatcher[I]] = WithContext.const(dispatcher)
         init(args.headOption).use { case (processes, ctx) =>
           val appF = fs2.Stream(processes: _*).parJoinUnbounded.compile.drain
-          appF.run(ctx) as ExitCode.success
+          appF.run(ctx) as ExitCode.Success
         }
       }
-      .orDie
 
   private def init(
     configPathOpt: Option[String]
@@ -83,28 +82,22 @@ object Main extends EnvApp[AppContext] {
       implicit0(graphiteF: GraphiteClient[F])     <- GraphiteClient.make[F, F](config.graphite).mapK(iso.tof)
       implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
       implicit0(metricsF: Metrics[F])          = Metrics.make[F]
-      implicit0(blocksC: BlocksConsumer[S, F]) = emptyConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
+      implicit0(blocksC: BlocksConsumer[S, F]) = makeConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
       implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
-      implicit0(logs3: Logs[I, I])             = Logs.sync[I, I]
       implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
-      implicit0(logging: Logging[I]) <- logs3.forService[Metrics[I]].toResource
-      maxMemory = Runtime.getRuntime.maxMemory()
-      freeMemory = Runtime.getRuntime.freeMemory()
-      totalMemory = Runtime.getRuntime.totalMemory()
-      _ <- {
-        def s = info"MEMORY: maxMemory - ${maxMemory}, freeMemory - $freeMemory, totalMemory - $totalMemory"
-        s
-      }.toResource
-      implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
-      implicit0(ammStatsMath: AmmStatsMath[F])           <- AmmStatsMath.make[I, F].toResource
-      implicit0(asset: Asset[xa.DB])                     <- Asset.make[I, xa.DB].toResource
-      implicit0(blocks: Blocks[xa.DB])                   <- Blocks.make[I, xa.DB].toResource
-      implicit0(pools: Pools[xa.DB])                     <- Pools.make[I, xa.DB].toResource
-      implicit0(locks: Locks[xa.DB])                     <- Locks.make[I, xa.DB].toResource
-      implicit0(history: History[xa.DB])                 <- History.make[I, xa.DB].toResource
-      implicit0(lm: LM[xa.DB])                           <- LM.make[I, xa.DB].toResource
-      implicit0(redis: Plain[F])                         <- mkRedis[Array[Byte], Array[Byte], F].mapK(iso.tof)
-      implicit0(cache: Cache[F])                         <- Cache.make[I, F].toResource
+      implicit0(sttp: SttpBackend[F, Any])     <- makeBackend
+      implicit0(ammStatsMath: AmmStatsMath[F]) <- AmmStatsMath.make[I, F].toResource
+      implicit0(asset: Asset[xa.DB])           <- Asset.make[I, xa.DB].toResource
+      implicit0(blocks: Blocks[xa.DB])         <- Blocks.make[I, xa.DB].toResource
+      implicit0(pools: Pools[xa.DB])           <- Pools.make[I, xa.DB].toResource
+      implicit0(locks: Locks[xa.DB])           <- Locks.make[I, xa.DB].toResource
+      implicit0(history: History[xa.DB])       <- History.make[I, xa.DB].toResource
+      implicit0(lm: LM[xa.DB])                 <- LM.make[I, xa.DB].toResource
+      implicit0(redis: Plain[F])               <- mkRedis[Array[Byte], Array[Byte], F](config.redisApiCache).mapK(iso.tof)
+      implicit0(redis2: RedisCommands[F, String, String]) <-
+        mkRedis[String, String, F](config.redisAppCache).mapK(iso.tof)
+      implicit0(apiCache: Cache[F]) <- Cache.make[I, F].toResource
+      implicit0(appCache: AppCache[F]) = AppCache.make[F]
       implicit0(httpRespCache: HttpResponseCaching[F])   <- HttpResponseCaching.make[I, F].toResource
       implicit0(network: Network[F])                     <- Network.make[I, F].toResource
       implicit0(assets: Assets[F])                       <- Assets.make[I, F, xa.DB].toResource
