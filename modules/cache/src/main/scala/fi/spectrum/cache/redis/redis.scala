@@ -24,4 +24,16 @@ package object redis {
       redisCmd       <- Redis[F].fromClient(client, codec)
     } yield redisCmd
   }
+
+  def mkRedis[K, V, F[_]: Async](config: RedisConfig)(implicit
+    codec: RedisCodec[K, V]
+  ): Resource[F, RedisCommands[F, K, V]] = {
+    import dev.profunktor.redis4cats.effect.Log.Stdout._
+    for {
+      timeoutOptions <- Sync[F].delay(TimeoutOptions.builder().fixedTimeout(config.timeout.toJava).build()).toResource
+      clientOptions  <- Sync[F].delay(ClientOptions.builder().timeoutOptions(timeoutOptions).build()).toResource
+      client         <- RedisClient[F].withOptions(s"redis://${config.password}@${config.host}:${config.port}", clientOptions)
+      redisCmd       <- Redis[F].fromClient(client, codec)
+    } yield redisCmd
+  }
 }
