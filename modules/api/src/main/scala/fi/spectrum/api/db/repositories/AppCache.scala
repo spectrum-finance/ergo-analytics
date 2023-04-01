@@ -76,7 +76,7 @@ object AppCache {
 
     def getPoolsStat24H: F[List[PoolStats]] =
       cmd
-        .get(keyVolume24)
+        .get(keyPoolStats24)
         .flatMapIn(r => decode[List[PoolStats]](r).toOption)
         .map(_.getOrElse(List.empty))
 
