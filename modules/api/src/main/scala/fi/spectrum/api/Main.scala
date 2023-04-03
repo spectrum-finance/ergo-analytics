@@ -1,6 +1,6 @@
 package fi.spectrum.api
 
-import cats.effect.Resource
+import cats.effect.{IO, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
 import dev.profunktor.redis4cats.RedisCommands
@@ -46,24 +46,23 @@ import tofu.fs2Instances._
 import tofu.lift.{IsoK, Unlift}
 import tofu.logging.Logs
 import tofu.{In, WithContext, WithLocal}
-import zio.ExitCode
+import cats.effect.{ExitCode, IO, IOApp}
 import zio.interop.catz._
 
 object Main extends EnvApp[AppContext] {
 
   implicit val serverOptions: Http4sServerOptions[F] = Http4sServerOptions.default[F]
 
-  override def run(args: List[String]): zio.URIO[Any, zio.ExitCode] =
+  def run(args: List[String]): I[ExitCode] =
     Dispatcher
       .parallel[I]
       .use { dispatcher =>
         implicit val cxt: WithContext[I, Dispatcher[I]] = WithContext.const(dispatcher)
         init(args.headOption).use { case (processes, ctx) =>
           val appF = fs2.Stream(processes: _*).parJoinUnbounded.compile.drain
-          appF.run(ctx) as ExitCode.success
+          appF.run(ctx) as ExitCode.Success
         }
       }
-      .orDie
 
   private def init(
     configPathOpt: Option[String]
