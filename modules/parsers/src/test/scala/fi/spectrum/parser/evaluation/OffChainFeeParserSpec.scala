@@ -30,7 +30,7 @@ class OffChainFeeParserSpec extends AnyPropSpec with Matchers with CatsPlatform 
         0,
         register,
         pool,
-        1
+        1, List.empty
       )
       .unsafeRunSync()
       .get
@@ -51,7 +51,7 @@ class OffChainFeeParserSpec extends AnyPropSpec with Matchers with CatsPlatform 
         0,
         register,
         pool,
-        1
+        1, List.empty
       )
       .unsafeRunSync()
       .get
