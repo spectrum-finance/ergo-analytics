@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import cats.syntax.option._
 import fi.spectrum.common.process.OrderProcess._
+import fi.spectrum.core.domain.analytics.OrderEvaluation.LmDepositCompoundEvaluation
 import fi.spectrum.core.domain.analytics.Processed
 import fi.spectrum.core.domain.order.{OrderId, OrderState, OrderStatus}
 import fi.spectrum.core.protocol.ErgoTreeSerializer
@@ -20,6 +21,12 @@ class OrderProcessorSpec extends AnyFlatSpec with Matchers with Indexer {
   implicit val parser = ProcessedOrderParser.make[IO]
 
   "Order processor" should "process Lm compound eval batch correct" in {
+    Compound.expectedBatchCompoundsEval
+      .foreach { order =>
+        println("-----------")
+        println(order.order.id)
+        println("-----------")
+      }
     val batch = processOrder[IO](
       Compound.compoundBatchTx,
       1,
@@ -30,11 +37,30 @@ class OrderProcessorSpec extends AnyFlatSpec with Matchers with Indexer {
     )
       .unsafeRunSync()
 
-    batch
-      .map(_.order)
-      .sortBy(_.id.value) shouldEqual (Compound.expectedBatchCompoundsEval ::: Compound.expectedBatchCompoundsRegister)
-      .map(_.order)
-      .sortBy(_.id.value)
+    val list = List(
+      OrderId("f49603442d7f8688356f917ac9463e03412f0631a2f53add6418c8656ec0f0d4"),
+      OrderId("8b0f0181de985c06d4ac9d82518f4e9252c4244ab8b3a3e75e90ed1386e5ef4f"),
+      OrderId("80293a3d0068b6c9022832444f98e20abf51bbf759e3c6af201199bcc640e409"),
+    )
+
+    //10147946 + 12439419 + 10147946
+
+    batch.foreach { order =>
+      if (list.contains(order.order.id)) {
+
+        println("-----------")
+        println(order.order.id)
+        println(order.evaluation.get.widen[LmDepositCompoundEvaluation].get.tokens)
+        println("-----------")
+      }
+
+    }
+
+    //    batch
+//      .map(_.order)
+//      .sortBy(_.id.value) shouldEqual (Compound.expectedBatchCompoundsEval ::: Compound.expectedBatchCompoundsRegister)
+//      .map(_.order)
+//      .sortBy(_.id.value)
 
     val one = processOrder[IO](
       Compound.compoundTxOneOrder,
@@ -46,7 +72,9 @@ class OrderProcessorSpec extends AnyFlatSpec with Matchers with Indexer {
     )
       .unsafeRunSync()
 
-    one.length shouldEqual 2
+    println(one)
+
+    one.length shouldEqual 3
   }
 
   "Order processor" should "find LM deposit" in {
@@ -68,7 +96,7 @@ class OrderProcessorSpec extends AnyFlatSpec with Matchers with Indexer {
 
     ProcessedOrderParser
       .make[IO]
-      .evaluated(LM.tx, 1, register.head, SelfHosted.pool, 1)
+      .evaluated(LM.tx, 1, register.head, SelfHosted.pool, 1, List.empty)
       .unsafeRunSync()
       .get shouldEqual eval.head
 

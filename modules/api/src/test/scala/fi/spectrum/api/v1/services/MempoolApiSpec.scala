@@ -81,7 +81,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
       None
     ).asInstanceOf[Processed.Any]
     val evalOrder =
-      ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, registerOrder, SelfHosted.pool, 0).unsafeRunSync().get
+      ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, registerOrder, SelfHosted.pool, 0, List.empty).unsafeRunSync().get
 
     val data = MempoolData(
       Address.fromStringUnsafe("9i245HdmSYwYsVR2qudtULu3BRBenPagNbT6uLi2Np9QZzdQWGH"),
@@ -121,7 +121,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
       None
     ).asInstanceOf[Processed.Any]
     val evalOrder =
-      ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, registerOrder, SelfHosted.pool, 0).unsafeRunSync().get
+      ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, registerOrder, SelfHosted.pool, 0, List.empty).unsafeRunSync().get
 
     val data = MempoolData(
       Address.fromStringUnsafe("9i245HdmSYwYsVR2qudtULu3BRBenPagNbT6uLi2Np9QZzdQWGH"),
@@ -206,7 +206,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
     val evalOrder =
       ProcessedOrderParser
         .make[IO]
-        .evaluated(LM.redeemEvaluate, 0, registerOrder, SelfHosted.pool, 0)
+        .evaluated(LM.redeemEvaluate, 0, registerOrder, SelfHosted.pool, 0, List.empty)
         .unsafeRunSync()
         .get
 
@@ -250,7 +250,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
     val evalOrder =
       ProcessedOrderParser
         .make[IO]
-        .evaluated(LM.redeemEvaluate, 0, registerOrder, SelfHosted.pool, 0)
+        .evaluated(LM.redeemEvaluate, 0, registerOrder, SelfHosted.pool, 0, List.empty)
         .unsafeRunSync()
         .get
 

@@ -98,6 +98,19 @@ object Main extends EnvApp[AppContext] {
         mkRedis[String, String, F](config.redisAppCache).mapK(iso.tof)
       implicit0(apiCache: Cache[F]) <- Cache.make[I, F].toResource
       implicit0(appCache: AppCache[F]) = AppCache.make[F]
+      implicit0(sttp: SttpBackend[F, Any])     <- makeBackend
+      implicit0(ammStatsMath: AmmStatsMath[F]) <- AmmStatsMath.make[I, F].toResource
+      implicit0(asset: Asset[xa.DB])           <- Asset.make[I, xa.DB].toResource
+      implicit0(blocks: Blocks[xa.DB])         <- Blocks.make[I, xa.DB].toResource
+      implicit0(pools: Pools[xa.DB])           <- Pools.make[I, xa.DB].toResource
+      implicit0(locks: Locks[xa.DB])           <- Locks.make[I, xa.DB].toResource
+      implicit0(history: History[xa.DB])       <- History.make[I, xa.DB].toResource
+      implicit0(lm: LM[xa.DB])                 <- LM.make[I, xa.DB].toResource
+      implicit0(redis: Plain[F])               <- mkRedis[Array[Byte], Array[Byte], F](config.redisApiCache).mapK(iso.tof)
+      implicit0(redis2: RedisCommands[F, String, String]) <-
+        mkRedis[String, String, F](config.redisAppCache).mapK(iso.tof)
+      implicit0(apiCache: Cache[F]) <- Cache.make[I, F].toResource
+      implicit0(appCache: AppCache[F]) = AppCache.make[F]
       implicit0(httpRespCache: HttpResponseCaching[F])   <- HttpResponseCaching.make[I, F].toResource
       implicit0(network: Network[F])                     <- Network.make[I, F].toResource
       implicit0(assets: Assets[F])                       <- Assets.make[I, F, xa.DB].toResource
