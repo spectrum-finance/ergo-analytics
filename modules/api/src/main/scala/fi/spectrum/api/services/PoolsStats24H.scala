@@ -51,12 +51,12 @@ object PoolsStats24H {
   private val day: Int = 3600000 * 24
 
   def make[I[_]: Sync, F[_]: Sync: Clock: Parallel, D[_]](implicit
-                                                          txr: Txr[F, D],
-                                                          pools: Pools[D],
-                                                          solver: FiatPriceSolver[F],
-                                                          ammMath: AmmStatsMath[F],
-                                                          cache: AppCache[F],
-                                                          logs: Logs[I, F]
+    txr: Txr[F, D],
+    pools: Pools[D],
+    solver: FiatPriceSolver[F],
+    ammMath: AmmStatsMath[F],
+    cache: AppCache[F],
+    logs: Logs[I, F]
   ): I[PoolsStats24H[F]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[PoolsStats24H[F]]

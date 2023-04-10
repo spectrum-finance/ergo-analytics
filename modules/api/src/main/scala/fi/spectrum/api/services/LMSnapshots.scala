@@ -23,10 +23,10 @@ object LMSnapshots {
     tofu.higherKind.derived.genRepresentableK
 
   def make[I[_]: Sync, F[_]: Sync, D[_]](implicit
-                                         txr: Txr[F, D],
-                                         lm: LM[D],
-                                         cache: AppCache[F],
-                                         logs: Logs[I, F]
+    txr: Txr[F, D],
+    lm: LM[D],
+    cache: AppCache[F],
+    logs: Logs[I, F]
   ): I[LMSnapshots[F]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[LMSnapshots[F]]

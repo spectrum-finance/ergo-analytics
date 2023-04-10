@@ -29,10 +29,10 @@ object Fees24H {
   private val day: Int = 3600000 * 24
 
   def make[I[_]: Sync, F[_]: Sync: Clock: Parallel, D[_]: Applicative](implicit
-                                                                       txr: Txr[F, D],
-                                                                       pools: Pools[D],
-                                                                       cache: AppCache[F],
-                                                                       logs: Logs[I, F]
+    txr: Txr[F, D],
+    pools: Pools[D],
+    cache: AppCache[F],
+    logs: Logs[I, F]
   ): I[Fees24H[F]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[Fees24H[F]]

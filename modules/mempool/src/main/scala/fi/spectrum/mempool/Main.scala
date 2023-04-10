@@ -80,7 +80,8 @@ object Main extends IOApp {
       K: RecordDeserializer[F, *],
       V: RecordDeserializer[F, *]
     ](conf: ConsumerConfig)(implicit
-                            context: KafkaConfig.Has[F], F: MonoidK[S]
+      context: KafkaConfig.Has[F],
+      F: MonoidK[S]
     ): Aux[K, V, (TopicPartition, OffsetAndMetadata), S, F] =
       Consumer.empty[S, F, K, V]
 

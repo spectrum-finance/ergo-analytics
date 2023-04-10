@@ -28,10 +28,10 @@ object Volumes24H {
   private val day: Int = 3600000 * 24
 
   def make[I[_]: Sync, F[_]: Sync: Clock, D[_]](implicit
-                                                txr: Txr[F, D],
-                                                pools: Pools[D],
-                                                cache: AppCache[F],
-                                                logs: Logs[I, F]
+    txr: Txr[F, D],
+    pools: Pools[D],
+    cache: AppCache[F],
+    logs: Logs[I, F]
   ): I[Volumes24H[F]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[Volumes24H[F]]
