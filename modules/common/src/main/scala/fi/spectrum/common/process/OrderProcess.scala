@@ -2,6 +2,7 @@ package fi.spectrum.common.process
 
 import cats.Monad
 import cats.syntax.option._
+import cats.syntax.foldable._
 import cats.syntax.traverse._
 import fi.spectrum.core.domain.BoxId
 import fi.spectrum.core.domain.analytics.Processed
@@ -85,8 +86,8 @@ object OrderProcess {
           } yield (x, y)
           result
             .traverse { case (redeem, compound) =>
-              orderParser.evaluated(tx, timestamp, redeem.widenOrder, pool, height).flatMap { r =>
-                orderParser.evaluated(tx, timestamp, compound.widenOrder, pool, height).map { c =>
+              orderParser.evaluated(tx, timestamp, redeem.widenOrder, pool, height, List.empty).flatMap { r =>
+                orderParser.evaluated(tx, timestamp, compound.widenOrder, pool, height, List.empty).map { c =>
                   List(r, c).flatten
                 }
               }
@@ -97,14 +98,18 @@ object OrderProcess {
     def lmCompoundBatch(orders: List[Processed.Any], pool: Pool): F[List[Processed.Any]] =
       orders
         .flatMap(_.wined[Compound])
-        .traverse { order =>
-          orderParser.evaluated(tx, timestamp, order.widenOrder, pool, height)
+        .foldLeftM(List.empty[Processed.Any]) { case (acc, order) =>
+          orderParser
+            .evaluated(tx, timestamp, order.widenOrder, pool, height, acc)
+            .map {
+              case Some(value) => value :: acc
+              case None        => acc
+            }
         }
-        .map(_.flatten)
 
     def evalOrder: F[Option[Processed.Any]] = getState.flatMap {
       case (order :: Nil, Some(pool)) =>
-        orderParser.evaluated(tx, timestamp, order, pool, height)
+        orderParser.evaluated(tx, timestamp, order, pool, height, List.empty)
       case ((lock @ Processed(order: LockV1, _, _, _, _)) :: Nil, _) =>
         orderParser.withdraw(tx, timestamp, lock.widen(order)).someIn
       case (order :: Nil, _) =>
