@@ -1,6 +1,7 @@
 package fi.spectrum.api
 
 import cats.data.ReaderT
+import cats.effect.{IO, IOApp}
 import fs2.Stream
 import tofu.lift.{IsoK, Unlift}
 import tofu.logging.{Loggable, LoggableContext, Logging, Logs}
@@ -8,9 +9,9 @@ import tofu.{Delay, WithRun}
 import zio.Task
 import zio.interop.catz._
 
-abstract class EnvApp[C: Loggable] extends zio.interop.catz.CatsApp {
+abstract class EnvApp[C: Loggable] extends IOApp {
 
-  type I[+A] = Task[A]
+  type I[+A] = IO[A]
   type F[A]  = ReaderT[I, C, A]
   type S[+A] = Stream[F, A]
 

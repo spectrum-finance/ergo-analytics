@@ -33,7 +33,8 @@ sealed trait ProcessedOrderParser[F[_]] {
     timestamp: Long,
     order: Processed.Any,
     pool: Pool,
-    height: Int
+    height: Int,
+    processed: List[Processed[Order]]
   ): F[Option[Processed[Order]]]
 
   def refunded(tx: Transaction, timestamp: Long, order: Processed.Any): F[Processed[Order]]
@@ -87,25 +88,25 @@ object ProcessedOrderParser {
         .widenOrder
         .pure
 
-    def registered(tx: Transaction, timestamp: Long): F[List[Processed[Order]]] = {
+    def registered(tx: Transaction, timestamp: Long): F[List[Processed[Order]]] =
       tx.outputs.toList
         .flatMap(orderParser.parse)
         .map(Processed.make(OrderState(tx.id, timestamp, OrderStatus.Registered), _))
         .pure
-    }
 
     def evaluated(
       tx: Transaction,
       timestamp: Long,
       order: Processed.Any,
       pool: Pool,
-      height: Int
+      height: Int,
+      processed: List[Processed[Order]]
     ): F[Option[Processed[Order]]] =
       tx.outputs.toList
         .map(poolParser.parse(_, timestamp, height))
         .collectFirst { case Some(v) => v }
         .map { next =>
-          val eval = evalParser.parse(order.order, tx.outputs.toList, pool, next)
+          val eval = evalParser.parse(order.order, tx.outputs.toList, pool, next, processed)
           val fee  = feeParser.parse(tx.outputs.toList, order, eval, pool.poolId)
           val swapEvalWithFee = fee
             .flatMap { fee =>
@@ -147,7 +148,8 @@ object ProcessedOrderParser {
       timestamp: Long,
       order: Any,
       pool: Pool,
-      height: Int
+      height: Int,
+      processed: List[Processed[Order]]
     ): Mid[F, Option[Processed[Order]]] =
       for {
         _ <- info"evaluated(${tx.id}, ${order.order.id}, ${pool.box.boxId})"
