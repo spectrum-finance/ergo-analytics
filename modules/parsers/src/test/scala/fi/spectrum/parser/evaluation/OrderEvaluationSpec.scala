@@ -28,7 +28,7 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
       swapRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
     val pool =
       swapEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0, 10)).collectFirst { case Some(v) => v }.get
-    parser.parse(order, swapEvaluateTransaction.outputs.toList, pool, pool).get shouldEqual swapEval.copy(fee = ERG(0))
+    parser.parse(order, swapEvaluateTransaction.outputs.toList, pool, pool, List.empty).get shouldEqual swapEval.copy(fee = ERG(0))
   }
 
   property("Parse redeem evaluation") {
@@ -36,7 +36,7 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
       redeemRegisterTransaction.outputs.toList.map(o => orderParser.parse(o)).collectFirst { case Some(v) => v }.get
     val pool =
       redeemEvaluateTransaction.outputs.toList.map(poolParser.parse(_, 0, 10)).collectFirst { case Some(v) => v }.get
-    parser.parse(order, redeemEvaluateTransaction.outputs.toList, pool, pool).get shouldEqual redeemEval
+    parser.parse(order, redeemEvaluateTransaction.outputs.toList, pool, pool, List.empty).get shouldEqual redeemEval
   }
 
   property("Parse deposit evaluation") {
@@ -55,7 +55,7 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
         order,
         depositEvaluateTransaction.outputs.toList,
         pool,
-        newNext
+        newNext, List.empty
       )
       .get shouldEqual depositEval
   }
@@ -65,7 +65,7 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
     import fi.spectrum.parser.lm.pool.v1.SelfHosted._
     import fi.spectrum.parser.lm.compound.v1.Compound._
     val order = orderParser.parse(depositOrder).get
-    val eval  = parser.parse(order, tx.outputs.toList, pool, pool).get.asInstanceOf[LmDepositCompoundEvaluation]
+    val eval  = parser.parse(order, tx.outputs.toList, pool, pool, List.empty).get.asInstanceOf[LmDepositCompoundEvaluation]
     eval.bundle shouldEqual CompoundParserV1.v1Compound
       .compound(
         LM.compoundCreateForDeposit,

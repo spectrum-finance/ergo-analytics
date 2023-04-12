@@ -3,13 +3,12 @@ package fi.spectrum.indexer.db.persist
 import cats.FlatMap
 import fi.spectrum.core.domain.analytics.OrderEvaluation._
 import fi.spectrum.core.domain.analytics.ProcessedOrderOptics._
-import fi.spectrum.core.domain.analytics.{OffChainFee, OrderEvaluation, Processed}
+import fi.spectrum.core.domain.analytics.{OffChainFee, Processed}
 import fi.spectrum.core.domain.order.Order.Compound
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
 import fi.spectrum.core.domain.order.Order.Redeem.{AmmRedeem, LmRedeem}
 import fi.spectrum.core.domain.order.{Order, OrderId}
 import fi.spectrum.core.domain.pool.Pool
-import fi.spectrum.core.domain.pool.PoolOptics._
 import fi.spectrum.core.domain.pool.Pool.LmPool._
 import fi.spectrum.core.domain.pool.Pool.{AmmPool, LmPool}
 import fi.spectrum.core.domain.pool.PoolOptics._
@@ -19,6 +18,7 @@ import fi.spectrum.indexer.db.models.LmDepositDB._
 import fi.spectrum.indexer.db.models.LmPoolDB._
 import fi.spectrum.indexer.db.models.LmRedeemDB._
 import fi.spectrum.indexer.db.models._
+import fi.spectrum.indexer.db.repositories._
 import fi.spectrum.indexer.models.Block
 import tofu.doobie.LiftConnectionIO
 import tofu.doobie.log.EmbeddableLogHandler

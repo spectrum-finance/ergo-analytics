@@ -1,10 +1,10 @@
 package fi.spectrum.indexer.db.repositories
 
 import fi.spectrum.core.domain.BlockId
-import fi.spectrum.indexer.db.classes.DeleteRepository
+import fi.spectrum.indexer.db.classes.Repository
 import fi.spectrum.indexer.db.models.BlockDB
 
-class BlockRepository extends Repository[BlockDB, BlockId] with DeleteRepository[BlockDB, BlockId] {
+class BlockRepository extends Repository[BlockDB, BlockId] {
 
   val field: String = "id"
 
