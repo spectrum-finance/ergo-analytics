@@ -14,7 +14,6 @@ import tofu.syntax.logging._
 import tofu.syntax.handle._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.evals._
-
 import scala.concurrent.duration.FiniteDuration
 
 trait VerifiedTokensProcess[S[_]] {
@@ -34,8 +33,9 @@ object VerifiedTokensProcess {
       config                         <- NetworkConfig.access.lift[I]
     } yield new Live[S, F](config.verifiedTokenListRequestTime)
 
-  final private class Live[S[_]: Monad: Evals[*[_], F]: Catches, F[_]: Temporal: Logging](requestTime: FiniteDuration)(
-    implicit
+  final private class Live[S[_]: Monad: Evals[*[_], F]: Catches, F[_]: Temporal: Logging](
+    requestTime: FiniteDuration
+  )(implicit
     verifiedTokens: VerifiedTokens[F],
     metrics: Metrics[F]
   ) extends VerifiedTokensProcess[S] {
@@ -49,7 +49,8 @@ object VerifiedTokensProcess {
       } yield ()
     } >> run).handleWith { err: Throwable =>
       eval(
-        warn"The error ${err.getMessage} occurred in VerifiedTokensProcess stream. Going to restore process.."
+        warn"The error ${err.getMessage} occurred in VerifiedTokensProcess stream. Going to restore process.." >>
+        metrics.sendCount("warn.verified.tokens.process", 1.0)
       ) >> run
     }
   }
