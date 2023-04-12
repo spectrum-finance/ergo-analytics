@@ -23,8 +23,8 @@
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>/opt/docker/logs/indexer-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>100MB</maxFileSize>
-            <maxHistory>5</maxHistory>
+            <maxFileSize>500MB</maxFileSize>
+            <maxHistory>7</maxHistory>
             <totalSizeCap>5GB</totalSizeCap>
         </rollingPolicy>
     </appender>
@@ -37,7 +37,6 @@
     <logger name="org.apache.kafka" level="INFO"/>
     <logger name="sttp.client3.asynchttpclient" level="INFO"/>
     <root level="info">
-        <appender-ref ref="ASYNCSTDOUT"/>
         <appender-ref ref="ASYNCFILE"/>
     </root>
 
