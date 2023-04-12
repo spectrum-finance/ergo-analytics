@@ -346,3 +346,10 @@ create table if not exists public.lm_redeems
 
 alter table public.lm_redeems
     owner to ergo_admin;
+
+
+create index lm_redeem__pool_id on public.lm_redeems using btree (pool_id);
+create index lm_redeem__pool_state_id on public.lm_redeems using btree (pool_state_id);
+create index lm_redeem__protocol_version on public.lm_redeems using btree (protocol_version);
+create index lm_redeem__out_id on public.lm_redeems using btree (out_id);
+create index lm_redeem__register_timestamp on public.lm_redeems using btree (registered_transaction_timestamp);

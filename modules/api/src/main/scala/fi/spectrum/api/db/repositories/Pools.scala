@@ -173,7 +173,7 @@ object Pools {
       processMetric(_, s"db.pools.volume.$id")
 
     def fees(id: PoolSnapshot, window: TimeWindow): Mid[F, Option[PoolFeesSnapshot]] =
-      processMetric(_, s"db.pools.fees.$id")
+      processMetric(_, s"db.pools.fees.${id.id}")
 
     def trace(id: PoolId, depth: Int, currHeight: Int): Mid[F, List[PoolTraceDB]] =
       processMetric(_, s"db.pools.trace.$id")
