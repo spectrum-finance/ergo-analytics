@@ -1,8 +1,9 @@
 package fi.spectrum.api
 
-import cats.effect.Resource
+import cats.effect.{ExitCode, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
+import dev.profunktor.redis4cats.RedisCommands
 import fi.spectrum.api.configs.ConfigBundle
 import fi.spectrum.api.db.repositories._
 import fi.spectrum.api.models.TraceId
@@ -10,9 +11,8 @@ import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.{CryptoPriceSolver, FiatPriceSolver}
 import fi.spectrum.api.processes.{BlocksProcess, ErgPriceProcess, VerifiedTokensProcess}
 import fi.spectrum.api.services._
-import fi.spectrum.api.v1.ErrorsMiddleware.ErrorsMiddleware
-import fi.spectrum.api.v1.{ErrorsMiddleware, HttpServer}
-import fi.spectrum.api.v1.services.{AmmStats, HistoryApi, LmStatsApi, LqLocks, MempoolApi}
+import fi.spectrum.api.v1.HttpServer
+import fi.spectrum.api.v1.services._
 import fi.spectrum.cache.Cache
 import fi.spectrum.cache.Cache.Plain
 import fi.spectrum.cache.middleware.CacheMiddleware.CachingMiddleware
@@ -46,24 +46,21 @@ import tofu.fs2Instances._
 import tofu.lift.{IsoK, Unlift}
 import tofu.logging.Logs
 import tofu.{In, WithContext, WithLocal}
-import zio.ExitCode
-import zio.interop.catz._
 
 object Main extends EnvApp[AppContext] {
 
   implicit val serverOptions: Http4sServerOptions[F] = Http4sServerOptions.default[F]
 
-  override def run(args: List[String]): zio.URIO[Any, zio.ExitCode] =
+  def run(args: List[String]): I[ExitCode] =
     Dispatcher
       .parallel[I]
       .use { dispatcher =>
         implicit val cxt: WithContext[I, Dispatcher[I]] = WithContext.const(dispatcher)
         init(args.headOption).use { case (processes, ctx) =>
           val appF = fs2.Stream(processes: _*).parJoinUnbounded.compile.drain
-          appF.run(ctx) as ExitCode.success
+          appF.run(ctx) as ExitCode.Success
         }
       }
-      .orDie
 
   private def init(
     configPathOpt: Option[String]
@@ -84,18 +81,21 @@ object Main extends EnvApp[AppContext] {
       implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
       implicit0(metricsF: Metrics[F])          = Metrics.make[F]
       implicit0(blocksC: BlocksConsumer[S, F]) = makeConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
-      implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
       implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
-      implicit0(sttp: SttpBackend[F, Any])               <- makeBackend
-      implicit0(ammStatsMath: AmmStatsMath[F])           <- AmmStatsMath.make[I, F].toResource
-      implicit0(asset: Asset[xa.DB])                     <- Asset.make[I, xa.DB].toResource
-      implicit0(blocks: Blocks[xa.DB])                   <- Blocks.make[I, xa.DB].toResource
-      implicit0(pools: Pools[xa.DB])                     <- Pools.make[I, xa.DB].toResource
-      implicit0(locks: Locks[xa.DB])                     <- Locks.make[I, xa.DB].toResource
-      implicit0(history: History[xa.DB])                 <- History.make[I, xa.DB].toResource
-      implicit0(lm: LM[xa.DB])                           <- LM.make[I, xa.DB].toResource
-      implicit0(redis: Plain[F])                         <- mkRedis[Array[Byte], Array[Byte], F].mapK(iso.tof)
-      implicit0(cache: Cache[F])                         <- Cache.make[I, F].toResource
+      implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
+      implicit0(sttp: SttpBackend[F, Any])     <- makeBackend
+      implicit0(ammStatsMath: AmmStatsMath[F]) <- AmmStatsMath.make[I, F].toResource
+      implicit0(asset: Asset[xa.DB])           <- Asset.make[I, xa.DB].toResource
+      implicit0(blocks: Blocks[xa.DB])         <- Blocks.make[I, xa.DB].toResource
+      implicit0(pools: Pools[xa.DB])           <- Pools.make[I, xa.DB].toResource
+      implicit0(locks: Locks[xa.DB])           <- Locks.make[I, xa.DB].toResource
+      implicit0(history: History[xa.DB])       <- History.make[I, xa.DB].toResource
+      implicit0(lm: LM[xa.DB])                 <- LM.make[I, xa.DB].toResource
+      implicit0(redis: Plain[F])               <- mkRedis[Array[Byte], Array[Byte], F](config.redisApiCache).mapK(iso.tof)
+      implicit0(redis2: RedisCommands[F, String, String]) <-
+        mkRedis[String, String, F](config.redisAppCache).mapK(iso.tof)
+      implicit0(apiCache: Cache[F]) <- Cache.make[I, F].toResource
+      implicit0(appCache: AppCache[F]) = AppCache.make[F]
       implicit0(httpRespCache: HttpResponseCaching[F])   <- HttpResponseCaching.make[I, F].toResource
       implicit0(network: Network[F])                     <- Network.make[I, F].toResource
       implicit0(assets: Assets[F])                       <- Assets.make[I, F, xa.DB].toResource
@@ -116,11 +116,10 @@ object Main extends EnvApp[AppContext] {
       implicit0(locks: LqLocks[F])                       = LqLocks.make[F, xa.DB]
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
-      implicit0(errorsMiddleware: ErrorsMiddleware[F]) <- ErrorsMiddleware.make[I, F].toResource
-      implicit0(ammStats: AmmStats[F])                 <- AmmStats.make[I, F, xa.DB].toResource
-      implicit0(lmStats: LmStatsApi[F])                <- LmStatsApi.make[I, F, xa.DB].toResource
-      implicit0(mempool: MempoolApi[F])                <- MempoolApi.make[I, F, xa.DB].toResource
-      implicit0(historyApi: HistoryApi[F])             <- HistoryApi.make[I, F, xa.DB].toResource
+      implicit0(ammStats: AmmStats[F])     <- AmmStats.make[I, F, xa.DB].toResource
+      implicit0(lmStats: LmStatsApi[F])    <- LmStatsApi.make[I, F, xa.DB].toResource
+      implicit0(mempool: MempoolApi[F])    <- MempoolApi.make[I, F, xa.DB].toResource
+      implicit0(historyApi: HistoryApi[F]) <- HistoryApi.make[I, F, xa.DB].toResource
       serverProc = HttpServer.make[I, F](config.http)
     } yield List(
       ergProcess.run,
@@ -138,6 +137,14 @@ object Main extends EnvApp[AppContext] {
     implicit val maker: MakeKafkaConsumer[F, K, V] = MakeKafkaConsumer.make[F, K, V]
     Consumer.make[S, F, K, V](conf)
   }
+
+  private def emptyConsumer[
+    K: RecordDeserializer[F, *],
+    V: RecordDeserializer[F, *]
+  ](conf: ConsumerConfig)(implicit
+    context: KafkaConfig.Has[F]
+  ): Aux[K, V, (TopicPartition, OffsetAndMetadata), S, F] =
+    Consumer.empty[S, F, K, V]
 
   private def makeBackend(implicit iso: IsoK[F, I]): Resource[I, SttpBackend[F, Any]] =
     HttpClientFs2Backend

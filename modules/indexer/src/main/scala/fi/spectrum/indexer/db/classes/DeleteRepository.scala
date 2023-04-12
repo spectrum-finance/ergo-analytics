@@ -6,7 +6,8 @@ import doobie.util.log.LogHandler
 
 /** Describes the way to delete T entity using I field
   */
-trait DeleteRepository[T, I] extends InsertRepository[T] {
+trait DeleteRepository[I] {
+  val tableName: String
   val field: String
 
   def delete(implicit lh: LogHandler, w: Write[I]): Update[I] =

@@ -4,13 +4,10 @@ import doobie.util.log.LogHandler
 import doobie.{ConnectionIO, Update}
 import fi.spectrum.core.domain.analytics.OrderEvaluation.LmDepositCompoundEvaluation
 import fi.spectrum.core.domain.order.OrderId
-import fi.spectrum.indexer.db.classes.{DeleteRepository, RefundRepository}
 import fi.spectrum.indexer.db.models.{LmCompoundDB, LmCompoundUpdate, UpdateEvaluatedTx}
 
 class LmCompoundRepository
-  extends OrderRepository[LmCompoundDB, LmDepositCompoundEvaluation, OrderId]
-  with DeleteRepository[LmCompoundDB, OrderId]
-  with RefundRepository[LmCompoundDB] {
+  extends OrderRepository[LmCompoundDB, LmDepositCompoundEvaluation, OrderId] {
   val tableName: String = "lm_compound"
 
   val executed: String   = "executed_transaction_id"

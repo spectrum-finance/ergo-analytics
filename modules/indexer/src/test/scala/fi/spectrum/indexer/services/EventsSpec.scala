@@ -147,7 +147,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
             swap2.timestamp,
             parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().head,
             swapPool.get,
-            10
+            10, List.empty
           )
           .unsafeRunSync()
           .get
@@ -159,7 +159,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
             swap2.timestamp,
             parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().head,
             swapPool.get,
-            10
+            10, List.empty
           )
           .unsafeRunSync()
           .get
@@ -171,7 +171,7 @@ class EventsSpec extends AnyFlatSpec with Matchers with Indexer with BeforeAndAf
             swap2.timestamp,
             parser.registered(swap1.transaction, swap1.timestamp).unsafeRunSync().head,
             swapPool.get,
-            10
+            10, List.empty
           )
           .unsafeRunSync()
           .get

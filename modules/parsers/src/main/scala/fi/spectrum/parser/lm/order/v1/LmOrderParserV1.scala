@@ -24,9 +24,9 @@ final class LmOrderParserV1(parser: CompoundParser[V1]) extends LmOrderParser[V1
         ErgoTreeTemplate.fromBytes(tree.template) == depositV1,
         for {
           poolId            <- tree.constants.parseBytea(1).map(PoolId.fromBytes)
-          redeemer          <- tree.constants.parseBytea(3).map(SErgoTree.fromBytes)
-          maxMinerFee       <- tree.constants.parseLong(21)
-          expectedNumEpochs <- tree.constants.parseInt(14)
+          redeemer          <- tree.constants.parseBytea(2).map(SErgoTree.fromBytes)
+          maxMinerFee       <- tree.constants.parseLong(23)
+          expectedNumEpochs <- tree.constants.parseInt(16)
           tokens            <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
           params = LmDepositParams(expectedNumEpochs, tokens)
         } yield LmDepositV1(
@@ -46,11 +46,11 @@ final class LmOrderParserV1(parser: CompoundParser[V1]) extends LmOrderParser[V1
       .cond(
         ErgoTreeTemplate.fromBytes(tree.template) == redeemV1,
         for {
-          redeemer    <- tree.constants.parseBytea(2).map(SErgoTree.fromBytes)
-          lqT         <- tree.constants.parseBytea(3).map(TokenId.fromBytes)
-          lqA         <- tree.constants.parseLong(4)
+          redeemer    <- tree.constants.parseBytea(9).map(SErgoTree.fromBytes)
+          lqT         <- tree.constants.parseBytea(10).map(TokenId.fromBytes)
+          lqA         <- tree.constants.parseLong(11)
           tokens      <- box.assets.headOption.map(a => AssetAmount(a.tokenId, a.amount))
-          maxMinerFee <- tree.constants.parseLong(9)
+          maxMinerFee <- tree.constants.parseLong(8)
         } yield LmRedeemV1(
           box,
           tokens.tokenId,

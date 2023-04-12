@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
 
   object Version {
-    val ce3          = "3.4.2"
+    val ce3          = "3.4.8"
     val tofu         = "0.11.0"
     val glass        = "0.1.0"
     val derevo       = "0.13.0"

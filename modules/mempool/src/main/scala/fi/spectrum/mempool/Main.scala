@@ -1,15 +1,15 @@
 package fi.spectrum.mempool
 
-import cats.Monad
 import cats.effect.kernel.{Async, Clock, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
 import cats.effect.{ExitCode, IO, IOApp}
+import cats.{Monad, MonoidK}
 import dev.profunktor.redis4cats.RedisCommands
 import fi.spectrum.cache.redis.codecs._
 import fi.spectrum.cache.redis.mkRedis
 import fi.spectrum.core.config.ProtocolConfig
-import fi.spectrum.core.domain.{BoxId, TokenId, TxId}
+import fi.spectrum.core.domain.{TokenId, TxId}
 import fi.spectrum.core.storage.OrdersStorage
 import fi.spectrum.core.syntax.WithContextOps._
 import fi.spectrum.graphite.MetricsMiddleware.MetricsMiddleware
@@ -22,10 +22,11 @@ import fi.spectrum.mempool.services.{Mempool, MempoolTx}
 import fi.spectrum.mempool.v1.HttpServer
 import fi.spectrum.parser.PoolParser
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
+import fi.spectrum.streaming.domain.ChainSyncEvent._
+import fi.spectrum.streaming.domain.MempoolEvent._
 import fi.spectrum.streaming.domain.{ChainSyncEvent, MempoolEvent}
 import fi.spectrum.streaming.kafka.Consumer._
 import fi.spectrum.streaming.kafka.KafkaDecoder._
-import fi.spectrum.streaming.domain.MempoolEvent._
 import fi.spectrum.streaming.kafka._
 import fi.spectrum.streaming.kafka.config.{ConsumerConfig, KafkaConfig}
 import fi.spectrum.streaming.kafka.serde.json._
@@ -33,6 +34,7 @@ import fi.spectrum.streaming.kafka.serde.string._
 import fs2.Chunk
 import fs2.kafka.RecordDeserializer
 import io.github.oskin1.rocksdb.scodec.TxRocksDB
+import mouse.all._
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.ergoplatform.ErgoAddressEncoder
@@ -44,8 +46,6 @@ import tofu.logging.{Logging, Logs}
 import tofu.streams.{Chunks, Evals, Temporal}
 import tofu.syntax.monadic._
 import tofu.{In, WithContext}
-import mouse.all._
-import ChainSyncEvent._
 
 object Main extends IOApp {
 
@@ -65,7 +65,7 @@ object Main extends IOApp {
   def init[
     S[_]: Evals[*[_], F]: Chunks[*[_], Chunk]: Monad: LiftStream[*[_], F]: Temporal[*[_], Chunk],
     F[_]: Async: In[Dispatcher[F], *[_]]: Clock
-  ](configPathOpt: Option[String]): Resource[F, List[S[Unit]]] = {
+  ](configPathOpt: Option[String])(implicit F: MonoidK[S]): Resource[F, List[S[Unit]]] = {
     def makeConsumer[
       K: RecordDeserializer[F, *],
       V: RecordDeserializer[F, *]
@@ -75,6 +75,15 @@ object Main extends IOApp {
       implicit val maker: MakeKafkaConsumer[F, K, V] = MakeKafkaConsumer.make[F, K, V]
       Consumer.make[S, F, K, V](conf)
     }
+
+    def emptyConsumer[
+      K: RecordDeserializer[F, *],
+      V: RecordDeserializer[F, *]
+    ](conf: ConsumerConfig)(implicit
+      context: KafkaConfig.Has[F],
+      F: MonoidK[S]
+    ): Aux[K, V, (TopicPartition, OffsetAndMetadata), S, F] =
+      Consumer.empty[S, F, K, V]
 
     implicit val serverOptions: Http4sServerOptions[F] = Http4sServerOptions.default[F]
 

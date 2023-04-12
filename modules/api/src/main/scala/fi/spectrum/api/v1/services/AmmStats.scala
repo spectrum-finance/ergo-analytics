@@ -339,7 +339,7 @@ object AmmStats {
       for {
         _ <- info"getPoolsStats24h()"
         r <- _
-        _ <- info"getPoolsStats24h()"
+        _ <- info"getPoolsStats24h() - finished"
         _ <- trace"getPoolsStats24h() - ${r.mkString(",")}"
       } yield r
 
@@ -368,7 +368,7 @@ object AmmStats {
       for {
         _ <- info"getPoolPriceChart($poolId, $window, $resolution)"
         r <- _
-        _ <- info"getPoolPriceChart($poolId, $window, $resolution)"
+        _ <- info"getPoolPriceChart($poolId, $window, $resolution) - finished"
         _ <- trace"getPoolPriceChart($poolId, $window, $resolution) - $r"
       } yield r
 
