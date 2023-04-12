@@ -14,8 +14,8 @@ import tofu.syntax.lift._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.handle._
+import tofu.syntax.streams.all.eval
 import tofu.syntax.streams.evals._
-
 import scala.concurrent.duration.FiniteDuration
 
 trait ErgPriceProcess[S[_]] {
@@ -36,8 +36,9 @@ object ErgPriceProcess {
       _                              <- ergRate.update.lift[I]
     } yield new Live[S, F](config.cmcRequestTime)
 
-  final private class Live[S[_]: Monad: Evals[*[_], F]: Catches, F[_]: Temporal: Logging](requestTime: FiniteDuration)(
-    implicit
+  final private class Live[S[_]: Monad: Evals[*[_], F]: Catches, F[_]: Temporal: Logging](
+    requestTime: FiniteDuration
+  )(implicit
     ergRate: ErgRate[F],
     metrics: Metrics[F]
   ) extends ErgPriceProcess[S] {
@@ -51,7 +52,10 @@ object ErgPriceProcess {
         _    <- Temporal[F].sleep(requestTime)
       } yield ()
     } >> run).handleWith { err: Throwable =>
-      eval(warn"The error ${err.getMessage} occurred in ErgPriceProcess stream. Going to restore process..") >> run
+      eval(
+        warn"The error ${err.getMessage} occurred in ErgPriceProcess stream. Going to restore process.." >>
+        metrics.sendCount("warn.erg.price.process", 1.0)
+      ) >> run
     }
   }
 }
