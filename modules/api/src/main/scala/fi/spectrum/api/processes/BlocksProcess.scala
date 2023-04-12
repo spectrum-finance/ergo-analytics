@@ -6,6 +6,7 @@ import cats.{Foldable, Functor, Monad, Parallel}
 import fi.spectrum.api.configs.BlocksProcessConfig
 import fi.spectrum.api.services._
 import fi.spectrum.cache.middleware.HttpResponseCaching
+import fi.spectrum.graphite.Metrics
 import fi.spectrum.streaming.kafka.BlocksConsumer
 import tofu.Catches
 import tofu.lift.Lift
@@ -16,6 +17,7 @@ import tofu.syntax.lift._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.all._
+import tofu.syntax.streams.evals.eval
 
 trait BlocksProcess[S[_]] {
   def run: S[Unit]
@@ -41,6 +43,7 @@ object BlocksProcess {
     lMSnapshots: LMSnapshots[F],
     lmStats: LmStats[F],
     lift: Lift[F, I],
+    metrics: Metrics[F],
     logs: Logs[I, F]
   ): I[BlocksProcess[S]] = logs.forService[BlocksProcess[S]].flatMap { implicit __ =>
     for {
@@ -70,7 +73,8 @@ object BlocksProcess {
     caching: HttpResponseCaching[F],
     heightService: Height[F],
     lMSnapshots: LMSnapshots[F],
-    lmStats: LmStats[F]
+    lmStats: LmStats[F],
+    metrics: Metrics[F]
   ) extends BlocksProcess[S] {
 
     def run: S[Unit] =
@@ -104,7 +108,10 @@ object BlocksProcess {
             }
         }
         .handleWith { err: Throwable =>
-          eval(warn"The error ${err.getMessage} occurred in BlocksProcess stream. Going to restore process...") >> run
+          eval(
+            warn"The error ${err.getMessage} occurred in BlocksProcess stream. Going to restore process..." >>
+            metrics.sendCount("warn.blocks.process", 1.0)
+          ) >> run
         }
 
   }
