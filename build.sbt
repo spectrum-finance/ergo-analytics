@@ -23,7 +23,7 @@ def compilerDependencies = List(CompilerPlugins.betterMonadicFor, CompilerPlugin
 
 lazy val commonSettings = Seq(
   assembly / test := {},
-  assembly / assemblyMergeStrategy  := {
+  assembly / assemblyMergeStrategy := {
     case "logback.xml"                                             => MergeStrategy.first
     case "module-info.class"                                       => MergeStrategy.discard
     case other if other.contains("scala/annotation/nowarn.class")  => MergeStrategy.first
@@ -40,9 +40,21 @@ lazy val root = (project in file("."))
 lazy val core = mkModule("core", "core")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(commonSettings)
+  .settings(dependencyOverrides += "org.typelevel" %% "cats-effect-kernel" % Version.ce3)
   .settings(
     libraryDependencies ++= compilerDependencies ++ List(
-      ce3, sigma, newtype, refined, refinedCats, mouse, kafka, pureConfigCE, redis, rocksDB, retry, redis
+      ce3,
+      sigma,
+      newtype,
+      refined,
+      refinedCats,
+      mouse,
+      kafka,
+      pureConfigCE,
+      redis,
+      rocksDB,
+      retry,
+      redis
     ) ++ tofu ++ derevo ++ enums ++ circe ++ tests ++ enums ++ doobie ++ sttp ++ scodec ++ tapir
   )
 
@@ -62,6 +74,8 @@ lazy val parsers = mkModule("parsers", "parsers")
 lazy val api = mkModule("api", "api")
   .settings(scalacOptions ++= commonScalacOption)
   .settings(dockerBaseImage := "openjdk:11-jre-slim")
+  .settings(bashScriptExtraDefines += """addJava "-Xms2G"""")
+  .settings(bashScriptExtraDefines += """addJava "-Xmx4G"""")
   .settings(commonSettings)
   .settings(libraryDependencies ++= compilerDependencies ++ scodec ++ http4s ++ tapir ++ tests ++ List(zioInterop))
   .dependsOn(common, graphite, cache)

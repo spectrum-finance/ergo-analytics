@@ -2,12 +2,13 @@ package fi.spectrum.api.services
 
 import cats.Monad
 import cats.data.OptionT
-import cats.effect.{Ref, Sync}
-import cats.syntax.traverse._
+import cats.effect.Sync
 import cats.syntax.either._
+import cats.syntax.traverse._
 import fi.spectrum.api.currencies.UsdUnits
 import fi.spectrum.api.db.models.amm.PoolSnapshot
 import fi.spectrum.api.db.models.lm.LmPoolSnapshot
+import fi.spectrum.api.db.repositories.AppCache
 import fi.spectrum.api.models.FullAsset
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.v1.models.lm.LMPoolStat
@@ -34,18 +35,19 @@ object LmStats {
 
   def make[I[_]: Sync, F[_]: Sync: Clock](implicit
     solver: FiatPriceSolver[F],
-    logs: Logs[I, F]
+    logs: Logs[I, F],
+    cache: AppCache[F]
   ): I[LmStats[F]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[Fees24H[F]]
-      cache                          <- Ref.in[I, F, List[LMPoolStat]](List.empty)
-    } yield new Tracing[F] attach new Live[F](cache)
+    } yield new Tracing[F] attach new Live[F]
 
-  final private class Live[F[_]: Monad](cache: Ref[F, List[LMPoolStat]])(implicit
-    solver: FiatPriceSolver[F]
+  final private class Live[F[_]: Monad](implicit
+    solver: FiatPriceSolver[F],
+    cache: AppCache[F]
   ) extends LmStats[F] {
 
-    def get: F[List[LMPoolStat]] = cache.get
+    def get: F[List[LMPoolStat]] = cache.getLmPoolsStats
 
     def update(ammPools: List[PoolSnapshot], currentHeight: Int, lmPools: List[LmPoolSnapshot]): F[Unit] =
       lmPools
@@ -77,7 +79,7 @@ object LmStats {
             LMPoolStat(pool.poolId, compoundedReward, profit)
           }
         }
-        .flatMap(cache.set)
+        .flatMap(cache.setLmPoolsStats)
   }
 
   final private class Tracing[F[_]: Monad: Logging: Clock] extends LmStats[Mid[F, *]] {

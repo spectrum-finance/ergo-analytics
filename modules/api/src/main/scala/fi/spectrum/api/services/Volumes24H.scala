@@ -1,12 +1,10 @@
 package fi.spectrum.api.services
 
 import cats.Monad
-import cats.effect.Ref
 import cats.effect.kernel.Sync
 import derevo.derive
-import fi.spectrum.api.db.models.PoolVolumeSnapshotDB
-import fi.spectrum.api.db.models.amm.{AssetInfo, PoolSnapshot, PoolVolumeSnapshot}
-import fi.spectrum.api.db.repositories.Pools
+import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
+import fi.spectrum.api.db.repositories.{AppCache, Pools}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
@@ -32,26 +30,27 @@ object Volumes24H {
   def make[I[_]: Sync, F[_]: Sync: Clock, D[_]](implicit
     txr: Txr[F, D],
     pools: Pools[D],
+    cache: AppCache[F],
     logs: Logs[I, F]
   ): I[Volumes24H[F]] =
     for {
       implicit0(logging: Logging[F]) <- logs.forService[Volumes24H[F]]
-      cache                          <- Ref.in[I, F, List[PoolVolumeSnapshot]](List.empty)
-    } yield new Tracing[F] attach new Live[F, D](cache)
+    } yield new Tracing[F] attach new Live[F, D]
 
-  final private class Live[F[_]: Monad: Clock, D[_]](cache: Ref[F, List[PoolVolumeSnapshot]])(implicit
+  final private class Live[F[_]: Monad: Clock, D[_]](implicit
     txr: Txr[F, D],
-    pools: Pools[D]
+    pools: Pools[D],
+    cache: AppCache[F]
   ) extends Volumes24H[F] {
 
     def update(snapshots: List[PoolSnapshot]): F[List[PoolVolumeSnapshot]] = for {
       timestamp <- millis
       volumes   <- pools.volumes(TimeWindow(Some(timestamp - day), Some(timestamp))).trans
       res = volumes.flatMap(_.toPoolVolumeSnapshot(snapshots))
-      _ <- cache.set(res)
+      _ <- cache.setVolume24(res)
     } yield res
 
-    def get: F[List[PoolVolumeSnapshot]] = cache.get
+    def get: F[List[PoolVolumeSnapshot]] = cache.getVolume24
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Volumes24H[Mid[F, *]] {
