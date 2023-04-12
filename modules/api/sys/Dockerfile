@@ -26,4 +26,5 @@ ENV ENV_CONFIG "conf/api.conf"
 
 COPY --from=builder /api.jar /api.jar
 COPY --from=builder /usr/local/YourKit-JavaProfiler-2022.3 /usr/local/YourKit-JavaProfiler-2022.3
-ENTRYPOINT java-agentpath:/usr/local/YourKit-JavaProfiler-2022.3/bin/linux-x86-64/libyjpagent.so=port=10001,listen=all  -Xms2G -Xmx4G -Dlogback.configurationFile=${LOG_CONFIG} -jar /api.jar ${ENV_CONFIG}
+# java-agentpath:/usr/local/YourKit-JavaProfiler-2022.3/bin/linux-x86-64/libyjpagent.so=port=10001,listen=all
+ENTRYPOINT  -Xms2G -Xmx4G -Dlogback.configurationFile=${LOG_CONFIG} -jar /api.jar ${ENV_CONFIG}
