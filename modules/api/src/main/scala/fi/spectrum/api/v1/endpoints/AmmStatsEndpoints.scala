@@ -45,10 +45,10 @@ final class AmmStatsEndpoints {
       .name("Base statistics about selected pool")
       .description("Provides pool's statistic e.g. TVL, volume, fees, x, y, etc. in requested time window")
 
-  def getPoolsStats24hE: Endpoint[Unit, Unit, HttpError, List[PoolStats], Any] =
+  def getPoolsStats24hE: Endpoint[Unit, Unit, HttpError, List[PoolStatsDifferentAPR], Any] =
     baseEndpoint.get
       .in(PathPrefix / "pools" / "stats")
-      .out(jsonBody[List[PoolStats]])
+      .out(jsonBody[List[PoolStatsDifferentAPR]])
       .tag(Group)
       .name("Pools statistics")
       .description("Provides pool's statistic of every known pool for last 24h")

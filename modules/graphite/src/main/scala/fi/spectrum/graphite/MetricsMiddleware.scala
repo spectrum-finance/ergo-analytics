@@ -24,7 +24,7 @@ object MetricsMiddleware {
         finish <- OptionT.liftF(Clock[F].realTime)
         _      <- OptionT.liftF(metrics.sendTs(key, (finish.toMillis - start.toMillis).toDouble))
         _      <- OptionT.liftF(metrics.sendCount(key, 1.toDouble))
-        _      <- OptionT.liftF(metrics.sendCount(key + s"status.code.${resp.status.code}", 1.toDouble))
+        _      <- OptionT.liftF(metrics.sendCount(key + s".status.code.${resp.status.code}", 1.toDouble))
       } yield resp
     }
   }

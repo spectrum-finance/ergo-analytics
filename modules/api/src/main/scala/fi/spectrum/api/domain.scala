@@ -54,6 +54,7 @@ object domain {
 
   object FeePercentProjection {
     implicit val schema: Schema[FeePercentProjection] = deriving
-    def empty: FeePercentProjection                   = FeePercentProjection(0.0)
+
+    def empty: FeePercentProjection = FeePercentProjection(0.0123)
   }
 }

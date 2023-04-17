@@ -107,7 +107,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(tokensProcess: VerifiedTokensProcess[S]) <- VerifiedTokensProcess.make[I, F, S].toResource
       implicit0(cryptoSolver: CryptoPriceSolver[F])      <- CryptoPriceSolver.make[I, F].toResource
       implicit0(fiatSolver: FiatPriceSolver[F])          <- FiatPriceSolver.make[I, F].toResource
-      implicit0(fees24H: Fees24H[F])                     <- Fees24H.make[I, F, xa.DB].toResource
+      implicit0(fees24H: FeesSnapshots[F])                     <- FeesSnapshots.make[I, F, xa.DB].toResource
       implicit0(lmSnapshots: LMSnapshots[F])             <- LMSnapshots.make[I, F, xa.DB].toResource
       implicit0(height: Height[F])                       <- Height.make[I, F].toResource
       implicit0(lmStats: LmStats[F])                     <- LmStats.make[I, F].toResource

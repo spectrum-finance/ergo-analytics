@@ -4,7 +4,7 @@ import cats.Monad
 import dev.profunktor.redis4cats.RedisCommands
 import fi.spectrum.api.db.models.amm.{PoolFeesSnapshot, PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.models.lm.LmPoolSnapshot
-import fi.spectrum.api.v1.models.amm.PoolStats
+import fi.spectrum.api.v1.models.amm.{PoolStats, PoolStatsDifferentAPR}
 import fi.spectrum.api.v1.models.lm.LMPoolStat
 import io.circe.parser.decode
 import io.circe.syntax._
@@ -24,8 +24,8 @@ trait AppCache[F[_]] {
   def getVolume24: F[List[PoolVolumeSnapshot]]
   def setVolume24(snapshots: List[PoolVolumeSnapshot]): F[Unit]
 
-  def getPoolsStat24H: F[List[PoolStats]]
-  def setPoolsStat24H(in: List[PoolStats]): F[Unit]
+  def getPoolsStat24H: F[List[PoolStatsDifferentAPR]]
+  def setPoolsStat24H(in: List[PoolStatsDifferentAPR]): F[Unit]
 
   def getLmPoolsStats: F[List[LMPoolStat]]
   def setLmPoolsStats(in: List[LMPoolStat]): F[Unit]
@@ -74,13 +74,13 @@ object AppCache {
     def setVolume24(snapshots: List[PoolVolumeSnapshot]): F[Unit] =
       cmd.set(keyVolume24, snapshots.asJson.noSpaces)
 
-    def getPoolsStat24H: F[List[PoolStats]] =
+    def getPoolsStat24H: F[List[PoolStatsDifferentAPR]] =
       cmd
         .get(keyPoolStats24)
-        .flatMapIn(r => decode[List[PoolStats]](r).toOption)
+        .flatMapIn(r => decode[List[PoolStatsDifferentAPR]](r).toOption)
         .map(_.getOrElse(List.empty))
 
-    def setPoolsStat24H(in: List[PoolStats]): F[Unit] =
+    def setPoolsStat24H(in: List[PoolStatsDifferentAPR]): F[Unit] =
       cmd.set(keyPoolStats24, in.asJson.noSpaces)
 
     def getLmPoolsStats: F[List[LMPoolStat]] =

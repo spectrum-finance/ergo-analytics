@@ -15,49 +15,54 @@ import tofu.syntax.monadic._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
 
-trait Fees24H[F[_]] {
-  def update(assets: List[PoolSnapshot]): F[List[PoolFeesSnapshot]]
+trait FeesSnapshots[F[_]] {
+  def update(assets: List[PoolSnapshot]): F[(List[PoolFeesSnapshot], List[PoolFeesSnapshot])]
 
   def get: F[List[PoolFeesSnapshot]]
 }
 
-object Fees24H {
+object FeesSnapshots {
 
-  implicit def representableK: RepresentableK[Fees24H] =
+  implicit def representableK: RepresentableK[FeesSnapshots] =
     tofu.higherKind.derived.genRepresentableK
 
-  private val day: Int = 3600000 * 24
+  private val day: Long = 3600000 * 24
 
   def make[I[_]: Sync, F[_]: Sync: Clock: Parallel, D[_]: Applicative](implicit
     txr: Txr[F, D],
     pools: Pools[D],
     cache: AppCache[F],
     logs: Logs[I, F]
-  ): I[Fees24H[F]] =
+  ): I[FeesSnapshots[F]] =
     for {
-      implicit0(logging: Logging[F]) <- logs.forService[Fees24H[F]]
+      implicit0(logging: Logging[F]) <- logs.forService[FeesSnapshots[F]]
     } yield new Tracing[F] attach new Live[F, D]
 
   final private class Live[F[_]: Monad: Clock: Parallel, D[_]: Applicative](implicit
     txr: Txr[F, D],
     pools: Pools[D],
     cache: AppCache[F]
-  ) extends Fees24H[F] {
+  ) extends FeesSnapshots[F] {
 
-    def update(poolsList: List[PoolSnapshot]): F[List[PoolFeesSnapshot]] =
-      millis.flatMap { now =>
+    def update(poolsList: List[PoolSnapshot]): F[(List[PoolFeesSnapshot], List[PoolFeesSnapshot])] = {
+      def query(gap: Long): F[List[PoolFeesSnapshot]] = millis.flatMap { now =>
         poolsList
-          .parTraverse(pools.fees(_, TimeWindow(Some(now - day), Some(now))).trans)
+          .parTraverse(pools.fees(_, TimeWindow(Some(now - gap), Some(now))).trans)
           .map(_.flatten)
-          .flatTap(cache.setPoolFeeSnapshots)
       }
+
+      for {
+        fee1d  <- query(day).flatTap(cache.setPoolFeeSnapshots)
+        fee30d <- query(day * 30)
+      } yield (fee1d, fee30d)
+    }
 
     def get: F[List[PoolFeesSnapshot]] = cache.getPoolFeeSnapshots
   }
 
-  final private class Tracing[F[_]: Monad: Logging: Clock] extends Fees24H[Mid[F, *]] {
+  final private class Tracing[F[_]: Monad: Logging: Clock] extends FeesSnapshots[Mid[F, *]] {
 
-    def update(assets: List[PoolSnapshot]): Mid[F, List[PoolFeesSnapshot]] =
+    def update(assets: List[PoolSnapshot]): Mid[F, (List[PoolFeesSnapshot], List[PoolFeesSnapshot])] =
       for {
         _      <- info"It's time to update fees!"
         start  <- millis
