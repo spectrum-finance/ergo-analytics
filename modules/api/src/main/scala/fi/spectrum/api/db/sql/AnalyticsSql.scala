@@ -20,12 +20,9 @@ final class AnalyticsSql(implicit lg: LogHandler) {
   def getPoolSnapshots: Query0[PoolSnapshotDB] =
     sql"""
          |SELECT p1.pool_id, p1.x_id, p1.x_amount, p1.y_id, p1.y_amount, p1.lp_id, p1.lp_amount, p1.fee_num
-         |FROM
-         |	pools p1
-         |	LEFT JOIN (
-         |		SELECT max(height) AS height, pool_id FROM pools GROUP BY pool_id
-		 |  ) AS p2 ON p2.height = p1.height AND p2.pool_id = p1.pool_id
-         |WHERE p2.height = p1.height AND p2.pool_id = p1.pool_id;
+         |FROM pools p1
+         |LEFT JOIN ( SELECT max(id) AS id, pool_id FROM pools GROUP BY pool_id ) AS p2 ON p2.pool_id = p1.pool_id and p2.id = p1.id
+         |WHERE p2.id = p1.id;
          """.stripMargin.query[PoolSnapshotDB]
 
   def mkTimestamp(window: TimeWindow, key: String): Fragment =
