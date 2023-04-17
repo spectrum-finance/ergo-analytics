@@ -39,7 +39,7 @@ object LmStats {
     cache: AppCache[F]
   ): I[LmStats[F]] =
     for {
-      implicit0(logging: Logging[F]) <- logs.forService[Fees24H[F]]
+      implicit0(logging: Logging[F]) <- logs.forService[FeesSnapshots[F]]
     } yield new Tracing[F] attach new Live[F]
 
   final private class Live[F[_]: Monad](implicit

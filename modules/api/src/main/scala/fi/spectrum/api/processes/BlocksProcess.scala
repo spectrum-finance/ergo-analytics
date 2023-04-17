@@ -34,7 +34,7 @@ object BlocksProcess {
     events: BlocksConsumer[S, F],
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
-    fees24H: Fees24H[F],
+    fees24H: FeesSnapshots[F],
     poolsStats: PoolsStats24H[F],
     assets: Assets[F],
     network: Network[F],
@@ -47,15 +47,15 @@ object BlocksProcess {
     logs: Logs[I, F]
   ): I[BlocksProcess[S]] = logs.forService[BlocksProcess[S]].flatMap { implicit __ =>
     for {
-      assetsL      <- assets.update.lift[I]
-      poolsL       <- snapshots.update(assetsL).lift[I]
-      volumesL     <- volumes24H.update(poolsL).lift[I]
-      feesL        <- fees24H.update(poolsL).lift[I]
-      _            <- poolsStats.update(poolsL, volumesL, feesL).lift[I]
-      height       <- network.getCurrentNetworkHeight.lift[I]
-      newHeight    <- heightService.update(height).lift[I]
-      lmSnapshotsL <- lMSnapshots.update.lift[I]
-      _            <- lmStats.update(poolsL, newHeight, lmSnapshotsL).lift[I]
+      assetsL            <- assets.update.lift[I]
+      poolsL             <- snapshots.update(assetsL).lift[I]
+      volumesL           <- volumes24H.update(poolsL).lift[I]
+      (fees1dL, fee30dL) <- fees24H.update(poolsL).lift[I]
+      _                  <- poolsStats.update(poolsL, volumesL, fees1dL, fee30dL).lift[I]
+      height             <- network.getCurrentNetworkHeight.lift[I]
+      newHeight          <- heightService.update(height).lift[I]
+      lmSnapshotsL       <- lMSnapshots.update.lift[I]
+      _                  <- lmStats.update(poolsL, newHeight, lmSnapshotsL).lift[I]
     } yield new Live[F, S, C](height)
   }
 
@@ -64,17 +64,17 @@ object BlocksProcess {
     S[_]: Evals[*[_], F]: Temporal[*[_], C]: Monad: Catches,
     C[_]: Functor: Foldable
   ](height: Int)(implicit
-    events: BlocksConsumer[S, F],
-    snapshots: Snapshots[F],
-    volumes24H: Volumes24H[F],
-    assets: Assets[F],
-    fees24H: Fees24H[F],
-    poolsStats: PoolsStats24H[F],
-    caching: HttpResponseCaching[F],
-    heightService: Height[F],
-    lMSnapshots: LMSnapshots[F],
-    lmStats: LmStats[F],
-    metrics: Metrics[F]
+                 events: BlocksConsumer[S, F],
+                 snapshots: Snapshots[F],
+                 volumes24H: Volumes24H[F],
+                 assets: Assets[F],
+                 fees24H: FeesSnapshots[F],
+                 poolsStats: PoolsStats24H[F],
+                 caching: HttpResponseCaching[F],
+                 heightService: Height[F],
+                 lMSnapshots: LMSnapshots[F],
+                 lmStats: LmStats[F],
+                 metrics: Metrics[F]
   ) extends BlocksProcess[S] {
 
     def run: S[Unit] =
@@ -88,15 +88,15 @@ object BlocksProcess {
                 _ <- Monad[F].whenA(batch.toList.lastOption.flatMap(_.message).exists(_.height > height)) {
                        val lastHeight = batch.toList.lastOption.flatMap(_.message).map(_.height).getOrElse(0)
                        for {
-                         assetsL      <- assets.update
-                         snapshotsL   <- snapshots.update(assetsL)
-                         volumesL     <- volumes24H.update(snapshotsL)
-                         feesL        <- fees24H.update(snapshotsL)
-                         _            <- poolsStats.update(snapshotsL, volumesL, feesL)
-                         newHeight    <- heightService.update(lastHeight)
-                         lmSnapshotsL <- lMSnapshots.update
-                         _            <- lmStats.update(snapshotsL, newHeight, lmSnapshotsL)
-                         _            <- caching.invalidateAll
+                         assetsL           <- assets.update
+                         snapshotsL        <- snapshots.update(assetsL)
+                         volumesL          <- volumes24H.update(snapshotsL)
+                         (fees1d, fees30d) <- fees24H.update(snapshotsL)
+                         _                 <- poolsStats.update(snapshotsL, volumesL, fees1d, fees30d)
+                         newHeight         <- heightService.update(lastHeight)
+                         lmSnapshotsL      <- lMSnapshots.update
+                         _                 <- lmStats.update(snapshotsL, newHeight, lmSnapshotsL)
+                         _                 <- caching.invalidateAll
                        } yield ()
                      }
                 _ <- batch.toList.lastOption.traverse(_.commit)

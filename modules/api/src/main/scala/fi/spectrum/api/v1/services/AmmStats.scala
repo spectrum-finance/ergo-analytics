@@ -38,7 +38,7 @@ trait AmmStats[F[_]] {
 
   def getPoolStats(poolId: PoolId, window: TimeWindow): F[Option[PoolStats]]
 
-  def getPoolsStats24h: F[List[PoolStats]]
+  def getPoolsStats24h: F[List[PoolStatsDifferentAPR]]
 
   def getPoolsSummaryVerified: F[List[PoolSummary]]
 
@@ -159,7 +159,7 @@ object AmmStats {
         tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
       } yield tvl).value
 
-    def getPoolsStats24h: F[List[PoolStats]] =
+    def getPoolsStats24h: F[List[PoolStatsDifferentAPR]] =
       poolsStats.get
 
     def getPoolStats(poolId: PoolId, window: TimeWindow): F[Option[PoolStats]] =
@@ -335,7 +335,7 @@ object AmmStats {
         _ <- info"getPoolStats($poolId, $window) - ${r.map(_.toString)}"
       } yield r
 
-    def getPoolsStats24h: Mid[F, List[PoolStats]] =
+    def getPoolsStats24h: Mid[F, List[PoolStatsDifferentAPR]] =
       for {
         _ <- info"getPoolsStats24h()"
         r <- _
@@ -395,7 +395,7 @@ object AmmStats {
     def getPoolStats(poolId: PoolId, window: TimeWindow): Mid[F, Option[PoolStats]] =
       sendMetrics(window, "window.getPoolStats", _)
 
-    def getPoolsStats24h: Mid[F, List[PoolStats]] =
+    def getPoolsStats24h: Mid[F, List[PoolStatsDifferentAPR]] =
       _ <* unit
 
     def getPoolsSummary: Mid[F, List[PoolSummary]] =

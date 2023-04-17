@@ -12,7 +12,7 @@ import fi.spectrum.api.domain.{Fees, TotalValueLocked, Volume}
 import fi.spectrum.api.modules.AmmStatsMath
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
-import fi.spectrum.api.v1.models.amm.PoolStats
+import fi.spectrum.api.v1.models.amm.PoolStatsDifferentAPR
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
@@ -27,9 +27,15 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 @derive(representableK)
 trait PoolsStats24H[F[_]] {
-  def update(poolsList: List[PoolSnapshot], volumes: List[PoolVolumeSnapshot], fees: List[PoolFeesSnapshot]): F[Unit]
 
-  def get: F[List[PoolStats]]
+  def update(
+    poolsList: List[PoolSnapshot],
+    volumes: List[PoolVolumeSnapshot],
+    fees1d: List[PoolFeesSnapshot],
+    fees30d: List[PoolFeesSnapshot]
+  ): F[Unit]
+
+  def get: F[List[PoolStatsDifferentAPR]]
 
   def processPoolFee(
     feesSnap: Option[PoolFeesSnapshot],
@@ -48,7 +54,7 @@ object PoolsStats24H {
 
   private val MillisInYear: FiniteDuration = 365.days
 
-  private val day: Int = 3600000 * 24
+  private val day: Long = 1.day.toMillis
 
   def make[I[_]: Sync, F[_]: Sync: Clock: Parallel, D[_]](implicit
     txr: Txr[F, D],
@@ -73,23 +79,39 @@ object PoolsStats24H {
     def update(
       poolsList: List[PoolSnapshot],
       volumes: List[PoolVolumeSnapshot],
-      fees: List[PoolFeesSnapshot]
+      fees1d: List[PoolFeesSnapshot],
+      fees30d: List[PoolFeesSnapshot]
     ): F[Unit] =
       millis
         .flatMap { now =>
           val window = TimeWindow(Some(now - day), Some(now))
+          val tw30d  = TimeWindow(Some(now - 30.days.toMillis), Some(now))
           poolsList.map { pool =>
-            def run: OptionT[F, PoolStats] = for {
+            def run: OptionT[F, PoolStatsDifferentAPR] = for {
               info <- OptionT(pools.getFirstPoolSwapTime(pool.id).trans)
-              fee = fees.find(_.poolId == pool.id)
-              vol = volumes.find(_.poolId == pool.id)
+              fee1d  = fees1d.find(_.poolId == pool.id)
+              fee30d = fees30d.find(_.poolId == pool.id)
+              vol    = volumes.find(_.poolId == pool.id)
               lockedX <- OptionT(solver.convert(pool.lockedX, UsdUnits, poolsList))
               lockedY <- OptionT(solver.convert(pool.lockedY, UsdUnits, poolsList))
               tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
-              volume            <- OptionT(processPoolVolume(vol, window, poolsList))
-              fees              <- OptionT(processPoolFee(fee, window, poolsList))
-              yearlyFeesPercent <- OptionT.liftF(ammMath.feePercentProjection(pool.id, tvl, fees, info, MillisInYear))
-            } yield PoolStats(pool.id, pool.lockedX, pool.lockedY, tvl, volume, fees, yearlyFeesPercent)
+              volume  <- OptionT(processPoolVolume(vol, window, poolsList))
+              fees24h <- OptionT(processPoolFee(fee1d, window, poolsList))
+              fees30d <- OptionT(processPoolFee(fee30d, tw30d, poolsList))
+              yearlyFeesPercent24h <-
+                OptionT.liftF(ammMath.feePercentProjection(pool.id, tvl, fees24h, info, MillisInYear))
+              yearlyFeesPercent30d <-
+                OptionT.liftF(ammMath.feePercentProjection(pool.id, tvl, fees30d, info, MillisInYear))
+            } yield PoolStatsDifferentAPR(
+              pool.id,
+              pool.lockedX,
+              pool.lockedY,
+              tvl,
+              volume,
+              fees24h,
+              yearlyFeesPercent24h,
+              yearlyFeesPercent30d
+            )
 
             run.value
           }.parSequence
@@ -124,17 +146,18 @@ object PoolsStats24H {
       case None => OptionT.pure[F](Fees.empty(UsdUnits, window))
     }).value
 
-    def get: F[List[PoolStats]] = cache.getPoolsStat24H
+    def get: F[List[PoolStatsDifferentAPR]] = cache.getPoolsStat24H
 
   }
 
   final private class Tracing[F[_]: Monad: Logging: Clock] extends PoolsStats24H[Mid[F, *]] {
-    def get: Mid[F, List[PoolStats]] = trace"Get current pools stats" >> _
+    def get: Mid[F, List[PoolStatsDifferentAPR]] = trace"Get current pools stats" >> _
 
     def update(
       poolsList: List[PoolSnapshot],
       volumes: List[PoolVolumeSnapshot],
-      fees: List[PoolFeesSnapshot]
+      fees1d: List[PoolFeesSnapshot],
+      fees30d: List[PoolFeesSnapshot]
     ): Mid[F, Unit] =
       for {
         _      <- info"It's time to update pools stats!"
