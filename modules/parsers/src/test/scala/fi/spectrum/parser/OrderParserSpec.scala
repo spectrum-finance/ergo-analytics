@@ -9,6 +9,11 @@ import fi.spectrum.parser.lock.v1.Lock
 import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
+import fi.spectrum.parser.amm.order.legacy.v1.{N2T => LV1N2T, T2T => LV1T2T}
+import fi.spectrum.parser.amm.order.legacy.v2.{N2T => LV2N2T, T2T => LV2T2T}
+import fi.spectrum.parser.amm.order.v1.{N2T => V1N2T, T2T => V1T2T}
+import fi.spectrum.parser.amm.order.v2.{N2T => V2N2T, T2T => V2T2T}
+import fi.spectrum.parser.amm.order.v3.{N2T => V3N2T, T2T => V3T2T}
 
 class OrderParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
@@ -47,10 +52,12 @@ class OrderParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   property("Parse any order via OrderParser") {
     val a = parser.parse(io.circe.parser.decode[Output](out).toOption.get)
+    println((parser.parse(V3T2T.swap.outputSpf)))
     println(a)
     println(a.get.redeemer)
     val anyOrder: List[(Output, Order)] = List(Lock.output -> Lock.lock) ::: anyAmmOrder
     anyOrder.foreach { case (output, expectedOrder) =>
+      println("n")
       (parser.parse(output).get shouldEqual expectedOrder)
     }
   }

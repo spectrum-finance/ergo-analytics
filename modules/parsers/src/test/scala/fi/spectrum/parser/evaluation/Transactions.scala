@@ -683,7 +683,7 @@ object Transactions {
     OrderId("8f61ff76f14838990acf9bc54c75a8bee7f3951a11defef28305f342b9f81a32"),
     BoxId("8ec534a350787f31c8ad869ce3f30ec451cd00afe634747dbaa65e8ba979dd25"),
     mkPubKey(Address.fromStringUnsafe("9fQ4NAwq8KyCHuVpwTDxK5yWqLgfv36Q83DAfsmvgSn8S4JtnPg")).get,
-    ERG(4000000)
+    ERG(6180108)
   )
 
   def swapEval = SwapEvaluation(
@@ -691,7 +691,7 @@ object Transactions {
       TokenId.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000"),
       33946866016L
     ),
-    Fee.ERG(4000000)
+    Fee.ERG(6180108)
   )
 
   def redeemRegisterTransaction = decode[TransactionTest](
