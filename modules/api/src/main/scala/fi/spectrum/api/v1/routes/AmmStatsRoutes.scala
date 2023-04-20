@@ -2,10 +2,9 @@ package fi.spectrum.api.v1.routes
 
 import cats.effect.kernel.Async
 import cats.syntax.semigroupk._
-import fi.spectrum.api.configs.RequestConfig
 import fi.spectrum.api.v1.endpoints.AmmStatsEndpoints
 import fi.spectrum.common.http.syntax.{toAdaptThrowableOps, toRoutesOps}
-import fi.spectrum.api.v1.services.{AmmStats, LqLocks, MempoolApi}
+import fi.spectrum.api.v1.services.{AmmStats, LqLocks}
 import fi.spectrum.common.http.AdaptThrowable.AdaptThrowableEitherT
 import fi.spectrum.common.http.HttpError
 import org.http4s.HttpRoutes

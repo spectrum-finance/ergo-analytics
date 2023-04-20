@@ -279,27 +279,12 @@ object AmmStats {
                 .find(_.poolId == snapshot.id)
 
               currentOpt.toList.map { vol =>
-                val tx = snapshot.lockedX
-                val ty = snapshot.lockedY
-                val vx = vol.volumeByX
-                val vy = vol.volumeByY
                 AmmMarketSummary(
-                  MarketId(tx.id, ty.id),
-                  tx.id,
-                  tx.ticker,
-                  ty.id,
-                  ty.ticker,
-                  RealPrice.calculate(tx.amount, tx.decimals, ty.amount, ty.decimals).setScale(6),
-                  CryptoVolume(
-                    BigDecimal(vx.amount),
-                    CryptoUnits(AssetClass(vx.id, vx.ticker, vx.decimals)),
-                    tw
-                  ),
-                  CryptoVolume(
-                    BigDecimal(vy.amount),
-                    CryptoUnits(AssetClass(vy.id, vy.ticker, vy.decimals)),
-                    tw
-                  )
+                  snapshot.lockedX,
+                  snapshot.lockedY,
+                  vol.volumeByX,
+                  vol.volumeByY,
+                  tw
                 )
               }
             }
