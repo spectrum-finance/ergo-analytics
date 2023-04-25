@@ -29,8 +29,7 @@ final class AmmStatsRoutes[
     getPoolsSummaryR <+>
     getAvgPoolSlippageR <+>
     getPoolPriceChartR <+>
-    getPoolLocksR <+>
-    getAmmMarketsR
+    getPoolLocksR
 
   def platformStatsR: HttpRoutes[F] =
     interpreter
@@ -66,10 +65,6 @@ final class AmmStatsRoutes[
 
   def getPoolLocksR: HttpRoutes[F] = interpreter.toRoutes(getPoolLocksE.serverLogic { case (poolId, leastDeadline) =>
     locks.byPool(poolId, leastDeadline).adaptThrowable.value
-  })
-
-  def getAmmMarketsR: HttpRoutes[F] = interpreter.toRoutes(getAmmMarketsE.serverLogic { tw =>
-    stats.getMarkets(tw).adaptThrowable.value
   })
 }
 

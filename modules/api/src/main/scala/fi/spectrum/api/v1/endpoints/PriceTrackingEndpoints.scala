@@ -12,15 +12,25 @@ final class PriceTrackingEndpoints {
   val Group      = "cmcStats"
 
   def endpoints: List[Endpoint[_, _, _, _, _]] = List(
-    getCmcMarketsE
+    getVerifiedMarketsE,
+    getMarketsE
   )
 
-  def getCmcMarketsE: Endpoint[Unit, TimeWindow, HttpError, List[AmmMarketSummary], Any] =
+  def getVerifiedMarketsE: Endpoint[Unit, TimeWindow, HttpError, List[AmmMarketSummary], Any] =
+    baseEndpoint.get
+      .in(PathPrefix / "markets" / "verified")
+      .in(timeWindow)
+      .out(jsonBody[List[AmmMarketSummary]])
+      .tag(Group)
+      .name("Get verified pools stats")
+      .description("Provides statistic of every verified market in requested time window")
+
+  def getMarketsE: Endpoint[Unit, TimeWindow, HttpError, List[AmmMarketSummary], Any] =
     baseEndpoint.get
       .in(PathPrefix / "markets")
       .in(timeWindow)
       .out(jsonBody[List[AmmMarketSummary]])
       .tag(Group)
-      .name("Verified pools stats")
-      .description("Provides statistic of every verified market in requested time window")
+      .name("Get pools stats")
+      .description("Provides statistic of every market in requested time window")
 }

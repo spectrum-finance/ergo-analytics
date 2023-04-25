@@ -9,7 +9,6 @@ import fi.spectrum.api.db.repositories.Pools
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.services._
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
-import fi.spectrum.api.v1.endpoints.monthMillis
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.graphite.Metrics
 import tofu.doobie.transactor.Txr
@@ -25,7 +24,10 @@ import tofu.time.Clock
 @derive(representableK)
 trait PriceTracking[F[_]] {
 
-  def getMarkets(window: TimeWindow): F[List[AmmMarketSummary]]
+  def getVerifiedMarkets(tw: TimeWindow): F[List[AmmMarketSummary]]
+
+  def getMarkets(tw: TimeWindow): F[List[AmmMarketSummary]]
+
 }
 
 object PriceTracking {
@@ -51,9 +53,31 @@ object PriceTracking {
     snapshots: Snapshots[F]
   ) extends PriceTracking[F] {
 
-    def getMarkets(window: TimeWindow): F[List[AmmMarketSummary]] =
+    def getMarkets(tw: TimeWindow): F[List[AmmMarketSummary]] =
+      pools
+        .volumes(tw)
+        .trans
+        .flatMap(volumes => snapshots.get.map(volumes -> _))
+        .map { case (volumesDB, snapshots) =>
+          val volumes = volumesDB.flatMap(_.toPoolVolumeSnapshot(snapshots))
+          snapshots.flatMap { snapshot =>
+            val currentOpt = volumes
+              .find(_.poolId == snapshot.id)
+
+            currentOpt.toList.map { vol =>
+              AmmMarketSummary(
+                snapshot.lockedX,
+                snapshot.lockedY,
+                vol.volumeByX,
+                vol.volumeByY,
+                tw
+              )
+            }
+          }
+        }
+
+    def getVerifiedMarkets(tw: TimeWindow): F[List[AmmMarketSummary]] =
       for {
-        tw                     <- resolveTimeWindow(window)
         validTokens            <- tokens.get
         (volumesDB, snapshots) <- pools.volumes(tw).trans.flatMap(volumes => snapshots.get.map(volumes -> _))
         validSnaps = snapshots.filter(ps => validTokens.contains(ps.lockedX.id) && validTokens.contains(ps.lockedY.id))
@@ -96,21 +120,17 @@ object PriceTracking {
         .map { case (_, markets) => markets.maxBy(_._2) }
         .toList
         .map(_._1)
-
-    private def resolveTimeWindow(tw: TimeWindow): F[TimeWindow] = millis.map { now =>
-      (tw.from, tw.to) match {
-        case (Some(from), None) =>
-          val maybeTo = from + monthMillis * 3
-          val to      = if (maybeTo > now) now else maybeTo
-          TimeWindow(Some(from), Some(to))
-        case (None, Some(to)) => TimeWindow(Some(to - monthMillis * 3), Some(to))
-        case (None, None)     => TimeWindow(Some(now - monthMillis * 3), Some(now))
-        case _                => tw
-      }
-    }
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends PriceTracking[Mid[F, *]] {
+
+    def getVerifiedMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
+      for {
+        _ <- info"getVerifiedMarkets($window)"
+        r <- _
+        _ <- info"getVerifiedMarkets($window)"
+        _ <- trace"getVerifiedMarkets($window) - $r"
+      } yield r
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
       for {
@@ -132,6 +152,9 @@ object PriceTracking {
         finis <- millis
         _     <- metrics.sendTs(name, Math.abs(window.to.getOrElse(finis) - window.from.getOrElse(firstTxTs)).toDouble)
       } yield r
+
+    def getVerifiedMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
+      sendMetrics(window, "window.getVerifiedMarkets", _)
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
       sendMetrics(window, "window.getMarkets", _)
