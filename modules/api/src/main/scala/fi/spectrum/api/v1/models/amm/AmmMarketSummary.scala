@@ -4,7 +4,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import fi.spectrum.api.domain.CryptoVolume
 import fi.spectrum.core.domain.{HexString, TokenId}
-import fi.spectrum.api.models.{AssetClass, CryptoUnits, Ticker}
+import fi.spectrum.api.models.{AssetClass, CryptoUnits, FullAsset, Ticker}
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.models.amm.types.{MarketId, RealPrice}
 import sttp.tapir.Schema
@@ -24,6 +24,26 @@ case class AmmMarketSummary(
 )
 
 object AmmMarketSummary {
+
+  def apply(x: FullAsset, y: FullAsset, volByX: FullAsset, volByY: FullAsset, tw: TimeWindow): AmmMarketSummary =
+    AmmMarketSummary(
+      MarketId(x.id, y.id),
+      x.id,
+      x.ticker,
+      y.id,
+      y.ticker,
+      RealPrice.calculate(x.amount, x.decimals, y.amount, y.decimals).setScale(6),
+      CryptoVolume(
+        BigDecimal(volByX.amount),
+        CryptoUnits(AssetClass(volByX.id, volByX.ticker, volByX.decimals)),
+        tw
+      ),
+      CryptoVolume(
+        BigDecimal(volByY.amount),
+        CryptoUnits(AssetClass(volByY.id, volByY.ticker, volByY.decimals)),
+        tw
+      )
+    )
 
   implicit def poolStatsSchema: Schema[AmmMarketSummary] = Schema
     .derived[AmmMarketSummary]

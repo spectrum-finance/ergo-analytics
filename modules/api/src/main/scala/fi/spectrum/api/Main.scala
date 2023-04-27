@@ -116,10 +116,11 @@ object Main extends EnvApp[AppContext] {
       implicit0(locks: LqLocks[F])                       = LqLocks.make[F, xa.DB]
       implicit0(httpCache: CachingMiddleware[F])         = CacheMiddleware.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
-      implicit0(ammStats: AmmStats[F])     <- AmmStats.make[I, F, xa.DB].toResource
-      implicit0(lmStats: LmStatsApi[F])    <- LmStatsApi.make[I, F, xa.DB].toResource
-      implicit0(mempool: MempoolApi[F])    <- MempoolApi.make[I, F, xa.DB].toResource
-      implicit0(historyApi: HistoryApi[F]) <- HistoryApi.make[I, F, xa.DB].toResource
+      implicit0(ammStats: AmmStats[F])           <- AmmStats.make[I, F, xa.DB].toResource
+      implicit0(priceTracking: PriceTracking[F]) <- PriceTracking.make[I, F, xa.DB].toResource
+      implicit0(lmStats: LmStatsApi[F])          <- LmStatsApi.make[I, F, xa.DB].toResource
+      implicit0(mempool: MempoolApi[F])          <- MempoolApi.make[I, F, xa.DB].toResource
+      implicit0(historyApi: HistoryApi[F])       <- HistoryApi.make[I, F, xa.DB].toResource
       serverProc = HttpServer.make[I, F](config.http)
     } yield List(
       ergProcess.run,
