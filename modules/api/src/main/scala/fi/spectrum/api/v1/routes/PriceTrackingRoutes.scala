@@ -8,6 +8,7 @@ import fi.spectrum.common.http.HttpError
 import fi.spectrum.common.http.syntax.toAdaptThrowableOps
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
+import cats.syntax.semigroupk._
 
 final class PriceTrackingRoutes[
   F[_]: Async: AdaptThrowableEitherT[*[_], HttpError]
@@ -20,11 +21,20 @@ final class PriceTrackingRoutes[
 
   private val interpreter = Http4sServerInterpreter(opts)
 
-  def routes: HttpRoutes[F] = getCmcMarketsR
+  def routes: HttpRoutes[F] = getCmcMarketsR <+> getPairsCoinGeckoR <+> getTickersCoinGeckoR
 
   def getCmcMarketsR: HttpRoutes[F] = interpreter.toRoutes(getCmcMarketsE.serverLogic { tw =>
     pt.getMarkets(tw).adaptThrowable.value
   })
+
+  def getPairsCoinGeckoR: HttpRoutes[F] = interpreter.toRoutes(
+    getPairsCoinGeckoE.serverLogic(_ => pt.getPairsCoinGecko.adaptThrowable.value)
+  )
+
+  def getTickersCoinGeckoR: HttpRoutes[F] = interpreter.toRoutes(
+    getTickersCoinGeckoE.serverLogic(_ => pt.getTickersCoinGecko.adaptThrowable.value)
+  )
+
 }
 
 object PriceTrackingRoutes {

@@ -8,19 +8,34 @@ import sttp.tapir.json.circe.jsonBody
 
 final class PriceTrackingEndpoints {
 
-  val PathPrefix = "cmc"
-  val Group      = "cmcStats"
+  val PathPrefixPriceTracking = "price-tracking"
+  val Group                   = "price-tracking"
 
   def endpoints: List[Endpoint[_, _, _, _, _]] = List(
-    getCmcMarketsE
+    getCmcMarketsE,
+    getPairsCoinGeckoE,
+    getTickersCoinGeckoE
   )
 
   def getCmcMarketsE: Endpoint[Unit, TimeWindow, HttpError, List[AmmMarketSummary], Any] =
     baseEndpoint.get
-      .in(PathPrefix / "markets")
+      .in(PathPrefixPriceTracking / "cmc" / "markets")
       .in(timeWindow)
       .out(jsonBody[List[AmmMarketSummary]])
       .tag(Group)
-      .name("Verified pools stats")
-      .description("Provides statistic of every verified market in requested time window")
+      .name("Coin market cap markets API")
+
+  def getPairsCoinGeckoE: Endpoint[Unit, Unit, HttpError, List[CoinGeckoPairs], Any] =
+    baseEndpoint.get
+      .in(PathPrefixPriceTracking / "coin" / "gecko" / "pairs")
+      .out(jsonBody[List[CoinGeckoPairs]])
+      .tag(Group)
+      .name("Coin Gecko pairs API")
+
+  def getTickersCoinGeckoE: Endpoint[Unit, Unit, HttpError, List[CoinGeckoTicker], Any] =
+    baseEndpoint.get
+      .in(PathPrefixPriceTracking / "coin" / "gecko" / "tickers")
+      .out(jsonBody[List[CoinGeckoTicker]])
+      .tag(Group)
+      .name("Coin Gecko tickers API")
 }

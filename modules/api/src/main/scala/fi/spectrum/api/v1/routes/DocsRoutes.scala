@@ -38,11 +38,12 @@ final class DocsRoutes[F[_]: Concurrent: Async](implicit
   val historyEndpoints       = new HistoryEndpoints
 
   private def allEndpoints =
-    ammStatsEndpoints.endpoints ++ priceTrackingEndpoints.endpoints ++ lmStatsEndpoints.endpoints ++ historyEndpoints.endpoints
+    ammStatsEndpoints.endpoints ++ priceTrackingEndpoints.endpoints ++
+      lmStatsEndpoints.endpoints ++ historyEndpoints.endpoints
 
   private def tags =
     Tag(ammStatsEndpoints.PathPrefix, "AMM Api".some) ::
-    Tag(priceTrackingEndpoints.PathPrefix, "CMC Api".some) ::
+    Tag(priceTrackingEndpoints.PathPrefixPriceTracking, "Price tracking Api".some) ::
     Tag(lmStatsEndpoints.PathPrefix, "LM Api".some) ::
     Tag(historyEndpoints.PathPrefix, "History Api".some) :: Nil
 
