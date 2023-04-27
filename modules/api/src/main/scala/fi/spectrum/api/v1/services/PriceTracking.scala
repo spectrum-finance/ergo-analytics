@@ -1,11 +1,13 @@
 package fi.spectrum.api.v1.services
 
+import cats.data.OptionT
 import cats.syntax.traverse._
 import cats.{Functor, Monad, Parallel}
 import derevo.derive
 import fi.spectrum.api.currencies.UsdUnits
 import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.repositories.Pools
+import fi.spectrum.api.domain.TotalValueLocked
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.services._
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
@@ -34,6 +36,8 @@ trait PriceTracking[F[_]] {
   def getTickersCoinGecko: F[List[CoinGeckoTicker]]
 
   def getMarkets(window: TimeWindow): F[List[AmmMarketSummary]]
+
+  def getCmcYFInfo: F[CMCYFInfo]
 }
 
 object PriceTracking {
@@ -45,6 +49,10 @@ object PriceTracking {
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
+    lmStats: LmStatsApi[F],
+    lmStatss: LmStats[F],
+    lmSnapshots: LMSnapshots[F],
+    assets: Assets[F],
     metrics: Metrics[F],
     logs: Logs[I, F]
   ): I[PriceTracking[F]] =
@@ -58,8 +66,110 @@ object PriceTracking {
     tokens: VerifiedTokens[F],
     solver: FiatPriceSolver[F],
     snapshots: Snapshots[F],
-    volumes24H: Volumes24H[F]
+    volumes24H: Volumes24H[F],
+    lmStats: LmStatsApi[F],
+    lmStatss: LmStats[F],
+    lmSnapshots: LMSnapshots[F],
+    assets: Assets[F]
   ) extends PriceTracking[F] {
+
+    def getCmcYFInfo: F[CMCYFInfo] =
+      evalPoolsCMCInfo
+        .map { pools =>
+          CMCYFInfo(
+            "",
+            "",
+            "",
+            List.empty,
+            pools
+          )
+        }
+
+    private def evalPoolsCMCInfo: F[List[PoolCMCInfo]] =
+      for {
+        poolSnapshots <- snapshots.get
+        lmSnaps <- lmSnapshots.get
+        apr <- lmStats.lmStatsApi
+        assets <- assets.get
+        poolsTvl <- poolSnapshots.flatTraverse(p => processPoolTvl(p).map(_.map(tvl => (tvl, p))).map(_.toList))
+        poolsWithApr =
+          apr.flatMap { lmPool =>
+            lmSnaps.find(_.poolId == lmPool.poolId).flatMap { lm =>
+              poolsTvl.find(_._2.id == lmPool.poolId).flatMap { case (tvl, snap) =>
+                assets
+                  .find(_.id == lm.reward.tokenId)
+                  .flatMap(_.ticker)
+                  .flatMap(rewardTicker =>
+                    evalPairTicker(snap).flatMap { ticker =>
+                      lmPool.yearProfit.map(apr => (rewardTicker.value, ticker, tvl, apr))
+                    }
+                  )
+              }
+            }
+          }
+      } yield poolsWithApr.map { case (reward, pair, tvl, apy) =>
+        PoolCMCInfo("", pair, "", "", List(reward), apy.setScale(1), tvl.value.toLong)
+      }
+
+    private def evalPoolsCMCInfoTest: F[List[PoolCMCInfo]] =
+      for {
+        _ <- lmSnapshots.update
+        ass           <- assets.update
+        _             <- snapshots.update(ass)
+        poolSnapshots <- snapshots.get
+        _ = println(poolSnapshots)
+        lmSnaps <- lmSnapshots.get
+        _ <- lmStatss.update(poolSnapshots, 1000, lmSnaps)
+        apr <- lmStats.lmStatsApi
+        _ = println(apr)
+        _ = println(lmSnaps)
+        assets <- assets.get
+        _ = println(assets)
+        poolsTvl <- poolSnapshots.flatTraverse(p => processPoolTvl(p).map(_.map(tvl => (tvl, p))).map(_.toList))
+        _ = println(poolsTvl)
+
+
+        jj =  apr.flatMap { lmPool =>
+          lmSnaps.find(_.poolId == lmPool.poolId).flatMap { lm =>
+            poolsTvl.find(_._2.id == lmPool.poolId).map { case (tvl, snap) => (lmPool.yearProfit, lm, tvl, snap)}}}
+
+        yy =  apr.flatMap { lmPool =>
+            poolsTvl.find(_._2.id == lmPool.poolId).map { case (tvl, snap) => (lmPool.yearProfit, tvl, snap)}}
+
+        _ = println(yy)
+
+        poolsWithApr =
+          apr.flatMap { lmPool =>
+            lmSnaps.find(_.poolId == lmPool.poolId).flatMap { lm =>
+              poolsTvl.find(_._2.id == lmPool.poolId).flatMap { case (tvl, snap) =>
+                assets
+                  .find(_.id == lm.reward.tokenId)
+                  .flatMap(_.ticker)
+                  .flatMap(rewardTicker =>
+                    evalPairTicker(snap).flatMap { ticker =>
+                      lmPool.yearProfit.map(apr => (rewardTicker.value, ticker, tvl, apr))
+                    }
+                  )
+              }
+            }
+          }
+      } yield poolsWithApr.map { case (reward, pair, tvl, apy) =>
+        PoolCMCInfo("", pair, "", "", List(reward), apy.setScale(1), tvl.value.toLong)
+      }
+
+    private def processPoolTvl(pool: PoolSnapshot): F[Option[TotalValueLocked]] =
+      (for {
+        poolSnapshots <- OptionT.liftF(snapshots.get)
+        lockedX       <- OptionT(solver.convert(pool.lockedX, UsdUnits, poolSnapshots))
+        lockedY       <- OptionT(solver.convert(pool.lockedY, UsdUnits, poolSnapshots))
+        tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
+      } yield tvl).value
+
+    private def evalPairTicker(pool: PoolSnapshot) =
+      for {
+        xTicker <- pool.lockedX.ticker
+        yTicker <- pool.lockedY.ticker
+      } yield s"${xTicker.value}-${yTicker.value}"
 
     def getPairsCoinGecko: F[List[CoinGeckoPairs]] =
       for {
@@ -199,6 +309,14 @@ object PriceTracking {
         _ <- trace"getMarkets($window) - $r"
       } yield r
 
+    def getCmcYFInfo: Mid[F, CMCYFInfo] =
+      for {
+        _ <- info"getCmcYFInfo()"
+        r <- _
+        _ <- info"getCmcYFInfo() finished"
+        _ <- trace"getCmcYFInfo() - $r"
+      } yield r
+
     def getTickersCoinGecko: Mid[F, List[CoinGeckoTicker]] =
       for {
         _ <- info"getTickersCoinGecko()"
@@ -222,6 +340,8 @@ object PriceTracking {
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
       sendMetrics(window, "window.getMarkets", _)
+
+    def getCmcYFInfo: Mid[F, CMCYFInfo] = unit >> _
 
     def getPairsCoinGecko: Mid[F, List[CoinGeckoPairs]] = unit >> _
 
