@@ -135,14 +135,14 @@ object Network {
       retryingOnAllErrors(
         cmcPolicy,
         (err: Throwable, _: RetryDetails) =>
-          info"Failed to get erg price. ${err.getMessage}. Retrying..." >> metrics.sendCount("cmc.request.failed", 1.0)
+          warn"Failed to get erg price. ${err.getMessage}. Retrying..." >> metrics.sendCount("cmc.request.failed", 1.0)
       )(_)
 
     def getVerifiedTokenList: Mid[F, List[TokenId]] =
       retryingOnAllErrors(
         verifiedTokensPolicy,
         (err: Throwable, _: RetryDetails) =>
-          info"Failed to get verified tokens. ${err.getMessage}. Retrying..." >>
+          warn"Failed to get verified tokens. ${err.getMessage}. Retrying..." >>
           metrics.sendCount("verified.tokens.request.failed", 1.0)
       )(_)
 
@@ -150,7 +150,7 @@ object Network {
       retryingOnAllErrors(
         explorerPolicy,
         (err: Throwable, _: RetryDetails) =>
-          info"Failed to get best height. ${err.getMessage}. Retrying..." >>
+          warn"Failed to get best height. ${err.getMessage}. Retrying..." >>
           metrics.sendCount("explorer.best.height.request.failed", 1.0)
       )(_)
 
@@ -158,7 +158,7 @@ object Network {
       retryingOnAllErrors(
         mempoolPolicy,
         (err: Throwable, _: RetryDetails) =>
-          info"Failed to get mempool data. ${err.getMessage}. Retrying..." >>
+          warn"Failed to get mempool data. ${err.getMessage}. Retrying..." >>
           metrics.sendCount("mempool.data.request.failed", 1.0)
       )(_)
   }

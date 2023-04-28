@@ -58,7 +58,7 @@ object Explorer {
     def getTokenInfo(tokenId: TokenId): Mid[F, Option[TokenInfo]] =
       retryingOnAllErrors(
         policy,
-        (err: Throwable, _: RetryDetails) => info"Failed to find token $tokenId. ${err.getMessage}. Retrying..."
+        (err: Throwable, _: RetryDetails) => warn"Failed to find token $tokenId. ${err.getMessage}. Retrying..."
       )(_)
   }
 

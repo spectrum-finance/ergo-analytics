@@ -35,9 +35,9 @@ object Metrics {
   final private class Errors[F[_]: Catches: Logging] extends Metrics[Mid[F, *]] {
 
     def sendTs(key: String, value: Double): Mid[F, Unit] =
-      _.handleWith[Throwable](err => error"While sending ts metrics error ${err.getMessage} has occurred.")
+      _.handleWith[Throwable](err => warn"While sending ts metrics error ${err.getMessage} has occurred.")
 
     def sendCount(key: String, value: Double): Mid[F, Unit] =
-      _.handleWith[Throwable](err => error"While sending count metrics error ${err.getMessage} has occurred.")
+      _.handleWith[Throwable](err => warn"While sending count metrics error ${err.getMessage} has occurred.")
   }
 }
