@@ -19,11 +19,13 @@ import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
 import fi.spectrum.core.domain.order.Order.Redeem.{AmmRedeem, LmRedeem}
 import fi.spectrum.core.domain.order.OrderStatus.{Registered, WaitingRegistration}
 import org.ergoplatform.ErgoAddressEncoder
+import tofu.Catches
 import tofu.doobie.transactor.Txr
 import tofu.logging.Logs
 import tofu.syntax.doobie.txr._
 import tofu.syntax.foption._
 import tofu.syntax.monadic._
+import tofu.syntax.handle._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
 
@@ -33,7 +35,7 @@ trait MempoolApi[F[_]] {
 
 object MempoolApi {
 
-  def make[I[_]: Functor, F[_]: Monad, D[_]: Monad: Clock](implicit
+  def make[I[_]: Functor, F[_]: Monad: Catches, D[_]: Monad: Clock](implicit
     history: History[D],
     network: Network[F],
     txr: Txr[F, D],
@@ -42,7 +44,7 @@ object MempoolApi {
   ): I[MempoolApi[F]] =
     logs.forService[MempoolApi[F]].map(implicit __ => new Live[F, D])
 
-  final private class Live[F[_]: Monad, D[_]: Monad: Clock](implicit
+  final private class Live[F[_]: Monad: Catches, D[_]: Monad: Clock](implicit
     h: History[D],
     network: Network[F],
     txr: Txr[F, D],
@@ -88,5 +90,6 @@ object MempoolApi {
           }
           .map(_.flatten)
       }
+        .handle((_: Throwable) => List.empty)
   }
 }
