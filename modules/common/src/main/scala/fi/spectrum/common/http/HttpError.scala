@@ -32,6 +32,6 @@ object HttpError {
     new AdaptThrowableEitherT[F, HttpError] {
 
       final def adapter: Throwable => F[HttpError] = e =>
-        info"API error is: ${e.getMessage}".as(Unknown(500, "Something went wrong"))
+        warn"API error is: ${e.getMessage}".as(Unknown(500, "Something went wrong"))
     }
 }

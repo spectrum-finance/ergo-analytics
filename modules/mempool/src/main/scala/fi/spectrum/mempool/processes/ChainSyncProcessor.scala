@@ -1,12 +1,12 @@
 package fi.spectrum.mempool.processes
 
+import cats.syntax.either._
 import cats.syntax.foldable._
 import cats.syntax.traverse._
-import cats.syntax.either._
 import cats.{Foldable, Functor, Monad}
 import fi.spectrum.mempool.config.ApplicationConfig
 import fi.spectrum.mempool.services.MempoolTx
-import fi.spectrum.streaming.kafka.{CSConsumer, MempoolConsumer}
+import fi.spectrum.streaming.kafka.CSConsumer
 import tofu.logging.Logging
 import tofu.streams.{Chunks, Evals, Temporal}
 import tofu.syntax.logging._
@@ -40,9 +40,12 @@ object ChainSyncProcessor {
       events.stream
         .groupWithin(config.csBatchSize, config.csGroupTime)
         .evalTap(batch => info"Got next chai sync batch of size: ${batch.size}.")
-        .evalTap(batch =>
-          info"Got errors: ${batch.toList.filter(_.message.isLeft).map(_.message.leftMap(_.getMessage)).mkString(",")}"
-        )
+        .evalTap { batch =>
+          val count = batch.toList.filter(_.message.isLeft).map(_.message.leftMap(_.getMessage))
+          Monad[F].whenA(count.nonEmpty)(
+            warn"Got errors: ${count.mkString(",")}"
+          )
+        }
         .evalMap { committableBatch =>
           committableBatch.toList
             .flatMap(_.message.toOption)

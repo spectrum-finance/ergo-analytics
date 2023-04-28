@@ -14,17 +14,17 @@ import fi.spectrum.api.v1.models.history.ApiOrder._
 import fi.spectrum.api.v1.models.history.ApiOrder
 import fi.spectrum.core.domain.Address
 import fi.spectrum.core.domain.order.Order
-import fi.spectrum.core.domain.order.Order.Compound
 import fi.spectrum.core.domain.order.Order.Deposit.{AmmDeposit, LmDeposit}
 import fi.spectrum.core.domain.order.Order.Redeem.{AmmRedeem, LmRedeem}
 import fi.spectrum.core.domain.order.OrderStatus.{Registered, WaitingRegistration}
 import org.ergoplatform.ErgoAddressEncoder
 import tofu.Catches
 import tofu.doobie.transactor.Txr
-import tofu.logging.Logs
+import tofu.logging.{Logging, Logs}
 import tofu.syntax.doobie.txr._
 import tofu.syntax.foption._
 import tofu.syntax.monadic._
+import tofu.syntax.logging._
 import tofu.syntax.handle._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
@@ -44,7 +44,7 @@ object MempoolApi {
   ): I[MempoolApi[F]] =
     logs.forService[MempoolApi[F]].map(implicit __ => new Live[F, D])
 
-  final private class Live[F[_]: Monad: Catches, D[_]: Monad: Clock](implicit
+  final private class Live[F[_]: Monad: Catches: Logging, D[_]: Monad: Clock](implicit
     h: History[D],
     network: Network[F],
     txr: Txr[F, D],
@@ -53,43 +53,49 @@ object MempoolApi {
 
     //todo NEL
     def ordersByAddress(addresses: List[Address]): F[List[ApiOrder]] =
-      network.getMempoolData(addresses).flatMap { orders =>
-        orders
-          .traverse { data =>
-            val grouped = data.orders.groupBy(_.order.id)
-            grouped
-              .map(_._2.toList)
-              .toList
-              .map {
-                case x :: Nil if x.state.status.in(WaitingRegistration, Registered) => // process register
-                  millis.map(now => x.toApi(now))
-                case x :: Nil => // query db for register order
-                  millis.flatMap { now =>
-                    x.wined[AmmDeposit]
-                      .traverse(d => h.depositRegister(d.order.id).flatMapIn(d.toApi(_, now)))
-                      .orElseF(
-                        x.wined[AmmRedeem].traverse(r => h.redeemRegister(r.order.id).flatMapIn(r.toApi(_, now)))
-                      )
-                      .orElseF(x.wined[Order.Swap].traverse(s => h.swapRegister(s.order.id).flatMapIn(s.toApi(_, now))))
-                      .orElseF(
-                        x.wined[LmDeposit].traverse(s => h.lmDepositRegister(s.order.id).flatMapIn(s.toApi(_, now)))
-                      )
-                      .orElseF(
-                        x.wined[LmRedeem].traverse(s => h.lmRedeemRegister(s.order.id).flatMapIn(s.toApi(_, now)))
-                      )
-                      .map(_.flatten)
-                  }
-                case x :: y :: Nil => // process as completed order
-                  millis.map(x.toApi(y, _))
-                case _ => // nothing to process
-                  noneF[D, ApiOrder]
-              }
-              .sequence
-              .map(_.flatten.sortBy(_.registerTx.ts)(Ordering[Long].reverse))
-              .trans
-          }
-          .map(_.flatten)
-      }
-        .handle((_: Throwable) => List.empty)
+      network
+        .getMempoolData(addresses)
+        .flatMap { orders =>
+          orders
+            .traverse { data =>
+              val grouped = data.orders.groupBy(_.order.id)
+              grouped
+                .map(_._2.toList)
+                .toList
+                .map {
+                  case x :: Nil if x.state.status.in(WaitingRegistration, Registered) => // process register
+                    millis.map(now => x.toApi(now))
+                  case x :: Nil => // query db for register order
+                    millis.flatMap { now =>
+                      x.wined[AmmDeposit]
+                        .traverse(d => h.depositRegister(d.order.id).flatMapIn(d.toApi(_, now)))
+                        .orElseF(
+                          x.wined[AmmRedeem].traverse(r => h.redeemRegister(r.order.id).flatMapIn(r.toApi(_, now)))
+                        )
+                        .orElseF(
+                          x.wined[Order.Swap].traverse(s => h.swapRegister(s.order.id).flatMapIn(s.toApi(_, now)))
+                        )
+                        .orElseF(
+                          x.wined[LmDeposit].traverse(s => h.lmDepositRegister(s.order.id).flatMapIn(s.toApi(_, now)))
+                        )
+                        .orElseF(
+                          x.wined[LmRedeem].traverse(s => h.lmRedeemRegister(s.order.id).flatMapIn(s.toApi(_, now)))
+                        )
+                        .map(_.flatten)
+                    }
+                  case x :: y :: Nil => // process as completed order
+                    millis.map(x.toApi(y, _))
+                  case _ => // nothing to process
+                    noneF[D, ApiOrder]
+                }
+                .sequence
+                .map(_.flatten.sortBy(_.registerTx.ts)(Ordering[Long].reverse))
+                .trans
+            }
+            .map(_.flatten)
+        }
+        .handleWith { err: Throwable =>
+          warn"THe error ${err.getMessage} occurred in mempool service." as List.empty[ApiOrder]
+        }
   }
 }
