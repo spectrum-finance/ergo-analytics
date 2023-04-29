@@ -72,7 +72,8 @@ object LmStatsApi {
               .flatMap { compound =>
                 lmPools.find(_.poolId == compound.poolId).flatMap {
                   case pool if pool.lastBlockHeight > height =>
-                    val epochsToCompound = pool.epochNum - (pool.epochIndex.getOrElse(pool.epochNum) + 1)
+                    val isProgramStart = if (pool.programStart < height) pool.epochIndex.getOrElse(0) + 1 else 1
+                    val epochsToCompound = pool.epochNum - isProgramStart
                     val releasedTMP      = compound.tmp.amount - epochsToCompound * compound.vLq.amount
                     val actualTMP        = 0x7fffffffffffffffL - pool.tmp.amount - (pool.lq.amount - 1L) * epochsToCompound
                     val allocRem =
