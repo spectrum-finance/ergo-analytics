@@ -8,7 +8,8 @@ import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.repositories.Pools
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.services._
-import fi.spectrum.api.v1.endpoints.models.TimeWindow
+import fi.spectrum.api.v1.endpoints.models.{CoinGeckoPairs, CoinGeckoTicker, TimeWindow}
+import fi.spectrum.api.v1.endpoints.monthMillis
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.graphite.Metrics
 import tofu.doobie.transactor.Txr
@@ -20,6 +21,10 @@ import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
+import fi.spectrum.api.v1.models.amm.types.MarketId
+import tofu.syntax.foption._
+
+import scala.math.BigDecimal.RoundingMode
 
 @derive(representableK)
 trait PriceTracking[F[_]] {
@@ -27,6 +32,10 @@ trait PriceTracking[F[_]] {
   def getVerifiedMarkets(tw: TimeWindow): F[List[AmmMarketSummary]]
 
   def getMarkets(tw: TimeWindow): F[List[AmmMarketSummary]]
+
+  def getPairsCoinGecko: F[List[CoinGeckoPairs]]
+
+  def getTickersCoinGecko: F[List[CoinGeckoTicker]]
 
 }
 
@@ -37,6 +46,7 @@ object PriceTracking {
     pools: Pools[D],
     tokens: VerifiedTokens[F],
     snapshots: Snapshots[F],
+    volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
     metrics: Metrics[F],
     logs: Logs[I, F]
@@ -50,8 +60,70 @@ object PriceTracking {
     pools: Pools[D],
     tokens: VerifiedTokens[F],
     solver: FiatPriceSolver[F],
-    snapshots: Snapshots[F]
+    snapshots: Snapshots[F],
+    volumes24H: Volumes24H[F]
   ) extends PriceTracking[F] {
+
+    def getPairsCoinGecko: F[List[CoinGeckoPairs]] =
+      for {
+        tw                     <- resolveTimeWindow(TimeWindow.empty)
+        validTokens            <- tokens.get
+        (volumesDB, snapshots) <- pools.volumes(tw).trans.flatMap(v => snapshots.get.map(v -> _))
+        validated = snapshots.filter { ps =>
+                      validTokens.contains(ps.lockedX.id) && validTokens.contains(ps.lockedY.id)
+                    }
+        poolVolumes    = volumesDB.flatMap(_.toPoolVolumeSnapshot(validated))
+        volumesWithIds = poolVolumes.map(v => MarketId(v) -> v)
+      } yield volumesWithIds
+        .groupBy(_._1)
+        .map { case (_, value) =>
+          value.maxBy(s => s._2.volumeByX.amount + s._2.volumeByY.amount)
+        }
+        .toList
+        .map { case (id, snapshot) =>
+          CoinGeckoPairs(id, snapshot.volumeByX.id, snapshot.volumeByY.id, snapshot.poolId)
+        }
+
+    def getTickersCoinGecko: F[List[CoinGeckoTicker]] =
+      volumes24H.get.flatMap { volumes =>
+        snapshots.get.flatMap { snapshots =>
+          volumes
+            .map(v => MarketId(v) -> v)
+            .groupBy(_._1)
+            .map { case (_, value) =>
+              value.maxBy(s => s._2.volumeByX.amount + s._2.volumeByY.amount)
+            }
+            .toList
+            .traverse { case (id, snapshot) =>
+              snapshots.find(_.id == snapshot.poolId).traverse { ammPool =>
+                for {
+                  xTvl <- solver
+                            .convert(ammPool.lockedX, UsdUnits, snapshots)
+                            .mapIn(_.value)
+                            .map(_.getOrElse(BigDecimal(0)))
+                  xVolume <- solver
+                               .convert(snapshot.volumeByX, UsdUnits, snapshots)
+                               .mapIn(_.value)
+                               .map(_.getOrElse(BigDecimal(0)))
+                  yVolume <- solver
+                               .convert(snapshot.volumeByY, UsdUnits, snapshots)
+                               .mapIn(_.value)
+                               .map(_.getOrElse(BigDecimal(0)))
+                } yield CoinGeckoTicker(
+                  id,
+                  snapshot.volumeByX.id,
+                  snapshot.volumeByY.id,
+                  (ammPool.lockedX.withDecimals / ammPool.lockedY.withDecimals).setScale(6, RoundingMode.HALF_UP),
+                  xTvl * 2,
+                  xVolume,
+                  yVolume,
+                  snapshot.poolId
+                )
+              }
+            }
+            .map(_.flatten)
+        }
+      }
 
     def getMarkets(tw: TimeWindow): F[List[AmmMarketSummary]] =
       pools
@@ -120,6 +192,18 @@ object PriceTracking {
         .map { case (_, markets) => markets.maxBy(_._2) }
         .toList
         .map(_._1)
+
+    private def resolveTimeWindow(tw: TimeWindow): F[TimeWindow] = millis.map { now =>
+      (tw.from, tw.to) match {
+        case (Some(from), None) =>
+          val maybeTo = from + monthMillis * 3
+          val to      = if (maybeTo > now) now else maybeTo
+          TimeWindow(Some(from), Some(to))
+        case (None, Some(to)) => TimeWindow(Some(to - monthMillis * 3), Some(to))
+        case (None, None)     => TimeWindow(Some(now - monthMillis * 3), Some(now))
+        case _                => tw
+      }
+    }
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends PriceTracking[Mid[F, *]] {
@@ -138,6 +222,22 @@ object PriceTracking {
         r <- _
         _ <- info"getMarkets($window)"
         _ <- trace"getMarkets($window) - $r"
+      } yield r
+
+    def getTickersCoinGecko: Mid[F, List[CoinGeckoTicker]] =
+      for {
+        _ <- info"getTickersCoinGecko()"
+        r <- _
+        _ <- info"getTickersCoinGecko() finished"
+        _ <- trace"getTickersCoinGecko() - $r"
+      } yield r
+
+    def getPairsCoinGecko: Mid[F, List[CoinGeckoPairs]] =
+      for {
+        _ <- info"getPairsCoinGecko()"
+        r <- _
+        _ <- info"getPairsCoinGecko() finished"
+        _ <- trace"getPairsCoinGecko() - $r"
       } yield r
   }
 
@@ -158,5 +258,9 @@ object PriceTracking {
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
       sendMetrics(window, "window.getMarkets", _)
+
+    def getPairsCoinGecko: Mid[F, List[CoinGeckoPairs]] = unit >> _
+
+    def getTickersCoinGecko: Mid[F, List[CoinGeckoTicker]] = unit >> _
   }
 }

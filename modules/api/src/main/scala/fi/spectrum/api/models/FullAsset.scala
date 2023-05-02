@@ -15,7 +15,7 @@ final case class FullAsset(
   ticker: Option[Ticker],
   decimals: Option[Int]
 ) {
-  def evalDecimals: Int      = decimals getOrElse 0
+  def withDecimals: BigDecimal = BigDecimal(amount) / BigDecimal(10).pow(decimals.getOrElse(0))
   def assetClass: AssetClass = AssetClass(id, ticker, decimals)
 
   def withAmount(newAmount: Long): FullAsset = this.copy(amount = newAmount)

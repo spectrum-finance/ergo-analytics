@@ -21,7 +21,7 @@ final class PriceTrackingRoutes[
 
   private val interpreter = Http4sServerInterpreter(opts)
 
-  def routes: HttpRoutes[F] = getVerifiedMarketsR <+> getMarketsR
+  def routes: HttpRoutes[F] = getVerifiedMarketsR <+> getMarketsR <+> getPairsCoinGeckoR <+> getTickersCoinGeckoR
 
   def getVerifiedMarketsR: HttpRoutes[F] = interpreter.toRoutes(getVerifiedMarketsE.serverLogic { tw =>
     pt.getVerifiedMarkets(tw).adaptThrowable.value
@@ -30,6 +30,14 @@ final class PriceTrackingRoutes[
   def getMarketsR: HttpRoutes[F] = interpreter.toRoutes(getMarketsE.serverLogic { tw =>
     pt.getMarkets(tw).adaptThrowable.value
   })
+
+  def getPairsCoinGeckoR: HttpRoutes[F] = interpreter.toRoutes(
+    getPairsCoinGeckoE.serverLogic(_ => pt.getPairsCoinGecko.adaptThrowable.value)
+  )
+
+  def getTickersCoinGeckoR: HttpRoutes[F] = interpreter.toRoutes(
+    getTickersCoinGeckoE.serverLogic(_ => pt.getTickersCoinGecko.adaptThrowable.value)
+  )
 }
 
 object PriceTrackingRoutes {
