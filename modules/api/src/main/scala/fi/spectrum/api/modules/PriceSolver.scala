@@ -6,7 +6,6 @@ import fi.spectrum.api.db.models.amm.PoolSnapshot
 import fi.spectrum.api.models._
 import fi.spectrum.api.models.constants.ErgoUnits
 import fi.spectrum.api.services.ErgRate
-import fi.spectrum.core.domain.constants.ErgoAssetDecimals
 import tofu.higherKind.{Mid, RepresentableK}
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.foption._
@@ -86,7 +85,7 @@ object PriceSolver {
           (for {
             ergEquiv <- OptionT(cryptoSolver.convert(asset, ErgoUnits, knownPools))
             ergRate  <- OptionT(rates.rateOf(fiat))
-            fiatEquiv    = ergEquiv.value / math.pow(10, ErgoAssetDecimals - fiat.currency.decimals) * ergRate
+            fiatEquiv = ergEquiv.value * ergRate
             fiatEquivFmt = fiatEquiv.setScale(2, RoundingMode.FLOOR)
           } yield AssetEquiv(asset, fiat, fiatEquivFmt)).value
       }
@@ -108,10 +107,10 @@ object PriceSolver {
             parsePools(knownPools.filter(p => p.lockedX.id == asset.id || p.lockedY.id == asset.id)).pure
               .flatTap(_ => trace"Convert $asset using known pools.")
               .map(_.find(_.contains(units.tokenId)).map { market =>
-                val amountEquiv = BigDecimal(asset.amount) * market.priceBy(asset.id)
+                val amountEquiv = asset.withDecimals * market.priceBy(asset.id)
                 AssetEquiv(asset, target, amountEquiv)
               })
-          } else AssetEquiv(asset, target, BigDecimal(asset.amount)).someF
+          } else AssetEquiv(asset, target, asset.withDecimals).someF
       }
   }
 
