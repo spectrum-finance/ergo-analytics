@@ -8,7 +8,7 @@ import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.repositories.Pools
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.services._
-import fi.spectrum.api.v1.endpoints.models.{CoinGeckoPairs, CoinGeckoTicker, TimeWindow}
+import fi.spectrum.api.v1.endpoints.models.{CMCMarket, CoinGeckoPairs, CoinGeckoTicker, TimeWindow}
 import fi.spectrum.api.v1.endpoints.monthMillis
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.graphite.Metrics
@@ -29,7 +29,7 @@ import scala.math.BigDecimal.RoundingMode
 @derive(representableK)
 trait PriceTracking[F[_]] {
 
-  def getVerifiedMarkets(tw: TimeWindow): F[List[AmmMarketSummary]]
+  def getVerifiedMarkets: F[List[CMCMarket]]
 
   def getMarkets(tw: TimeWindow): F[List[AmmMarketSummary]]
 
@@ -148,45 +148,52 @@ object PriceTracking {
           }
         }
 
-    def getVerifiedMarkets(tw: TimeWindow): F[List[AmmMarketSummary]] =
+    def getVerifiedMarkets: F[List[CMCMarket]] =
       for {
-        validTokens            <- tokens.get
-        (volumesDB, snapshots) <- pools.volumes(tw).trans.flatMap(volumes => snapshots.get.map(volumes -> _))
+        validTokens <- tokens.get
+        volumes     <- volumes24H.get
+        snapshots   <- snapshots.get
         validSnaps = snapshots.filter(ps => validTokens.contains(ps.lockedX.id) && validTokens.contains(ps.lockedY.id))
-        volumes    = volumesDB.flatMap(_.toPoolVolumeSnapshot(validSnaps))
-        markets <- evalMarketsWithLiquidity(validSnaps, volumes, tw)
+        markets <- evalMarketsWithLiquidity(validSnaps, volumes)
       } yield distinctMarkets(markets)
 
     private def evalMarketsWithLiquidity(
       pools: List[PoolSnapshot],
-      volumes: List[PoolVolumeSnapshot],
-      tw: TimeWindow
-    ): F[List[(AmmMarketSummary, BigDecimal)]] =
+      volumes: List[PoolVolumeSnapshot]
+    ): F[List[(CMCMarket, BigDecimal)]] =
       pools.flatTraverse { snapshot =>
         val currentOpt = volumes.find(_.poolId == snapshot.id)
         currentOpt
-          .flatTraverse { vol =>
+          .traverse { vol =>
             val tx = snapshot.lockedX
             val ty = snapshot.lockedY
             val vx = vol.volumeByX
             val vy = vol.volumeByY
-            solver.convert(tx, UsdUnits, pools).flatMap { xOpt =>
-              xOpt.flatTraverse { xEq =>
-                solver.convert(ty, UsdUnits, pools).map { yOpt =>
-                  yOpt.map { yEq =>
-                    (
-                      AmmMarketSummary(tx, ty, vx, vy, tw),
-                      xEq.value + yEq.value
-                    )
-                  }
-                }
-              }
-            }
+            for {
+              tvlX <- solver.convert(tx, UsdUnits, pools)
+              tvlY <- solver.convert(ty, UsdUnits, pools)
+              volX <- solver.convert(vx, UsdUnits, pools)
+              volY <- solver.convert(vy, UsdUnits, pools)
+            } yield (
+              CMCMarket(
+                MarketId(tx.id, ty.id),
+                tx.id,
+                tx.ticker,
+                tx.ticker,
+                ty.id,
+                ty.ticker,
+                ty.ticker,
+                tx.withDecimals / ty.withDecimals,
+                volX.map(_.value).getOrElse(BigDecimal(0)),
+                volY.map(_.value).getOrElse(BigDecimal(0))
+              ),
+              tvlX.map(_.value).getOrElse(BigDecimal(0)) + tvlY.map(_.value).getOrElse(BigDecimal(0))
+            )
           }
           .map(_.toList)
       }
 
-    private def distinctMarkets(markets: List[(AmmMarketSummary, BigDecimal)]): List[AmmMarketSummary] =
+    private def distinctMarkets(markets: List[(CMCMarket, BigDecimal)]): List[CMCMarket] =
       markets
         .groupBy { case (market, _) => market.id }
         .map { case (_, markets) => markets.maxBy(_._2) }
@@ -208,12 +215,12 @@ object PriceTracking {
 
   final private class Tracing[F[_]: Monad: Logging] extends PriceTracking[Mid[F, *]] {
 
-    def getVerifiedMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
+    def getVerifiedMarkets: Mid[F, List[CMCMarket]] =
       for {
-        _ <- info"getVerifiedMarkets($window)"
+        _ <- info"getVerifiedMarkets()"
         r <- _
-        _ <- info"getVerifiedMarkets($window)"
-        _ <- trace"getVerifiedMarkets($window) - $r"
+        _ <- info"getVerifiedMarkets()"
+        _ <- trace"getVerifiedMarkets() - $r"
       } yield r
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
@@ -253,8 +260,7 @@ object PriceTracking {
         _     <- metrics.sendTs(name, Math.abs(window.to.getOrElse(finis) - window.from.getOrElse(firstTxTs)).toDouble)
       } yield r
 
-    def getVerifiedMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
-      sendMetrics(window, "window.getVerifiedMarkets", _)
+    def getVerifiedMarkets: Mid[F, List[CMCMarket]] = unit >> _
 
     def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
       sendMetrics(window, "window.getMarkets", _)

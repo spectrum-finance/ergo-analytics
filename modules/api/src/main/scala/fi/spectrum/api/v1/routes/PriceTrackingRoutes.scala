@@ -23,8 +23,8 @@ final class PriceTrackingRoutes[
 
   def routes: HttpRoutes[F] = getVerifiedMarketsR <+> getMarketsR <+> getPairsCoinGeckoR <+> getTickersCoinGeckoR
 
-  def getVerifiedMarketsR: HttpRoutes[F] = interpreter.toRoutes(getVerifiedMarketsE.serverLogic { tw =>
-    pt.getVerifiedMarkets(tw).adaptThrowable.value
+  def getVerifiedMarketsR: HttpRoutes[F] = interpreter.toRoutes(getVerifiedMarketsE.serverLogic { _ =>
+    pt.getVerifiedMarkets.adaptThrowable.value
   })
 
   def getMarketsR: HttpRoutes[F] = interpreter.toRoutes(getMarketsE.serverLogic { tw =>

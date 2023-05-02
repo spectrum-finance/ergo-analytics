@@ -1,8 +1,8 @@
 package fi.spectrum.api.v1.endpoints
 
-import fi.spectrum.api.v1.endpoints.models.{CoinGeckoPairs, CoinGeckoTicker, TimeWindow}
+import fi.spectrum.api.v1.endpoints.models.{CMCMarket, CoinGeckoPairs, CoinGeckoTicker, TimeWindow}
 import fi.spectrum.api.v1.models.amm._
-import fi.spectrum.common.http.{baseEndpoint, HttpError}
+import fi.spectrum.common.http.{HttpError, baseEndpoint}
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
@@ -20,11 +20,10 @@ final class PriceTrackingEndpoints {
     getTickersCoinGeckoE
   )
 
-  def getVerifiedMarketsE: Endpoint[Unit, TimeWindow, HttpError, List[AmmMarketSummary], Any] =
+  def getVerifiedMarketsE: Endpoint[Unit, Unit, HttpError, List[CMCMarket], Any] =
     baseEndpoint.get
       .in(PathPrefixPriceTracking / PathPrefixCMC / "markets")
-      .in(timeWindow)
-      .out(jsonBody[List[AmmMarketSummary]])
+      .out(jsonBody[List[CMCMarket]])
       .tag(Group)
       .name("CMC pools stats API")
       .description("CMC pools stats API")
