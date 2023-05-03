@@ -6,7 +6,13 @@ import cats.syntax.applicative._
 import cats.syntax.either._
 import cats.syntax.option._
 import cats.syntax.semigroupk._
-import fi.spectrum.api.v1.endpoints.{AmmStatsEndpoints, DocsEndpoints, HistoryEndpoints, LmStatsEndpoints}
+import fi.spectrum.api.v1.endpoints.{
+  AmmStatsEndpoints,
+  DocsEndpoints,
+  HistoryEndpoints,
+  LmStatsEndpoints,
+  PriceTrackingEndpoints
+}
 import fi.spectrum.common.http.{HttpError, VersionPrefix}
 import org.http4s.HttpRoutes
 import sttp.apispec.Tag
@@ -26,15 +32,18 @@ final class DocsRoutes[F[_]: Concurrent: Async](implicit
 
   val routes: HttpRoutes[F] = openApiSpecR <+> redocApiSpecR
 
-  val ammStatsEndpoints = new AmmStatsEndpoints
-  val lmStatsEndpoints  = new LmStatsEndpoints
-  val historyEndpoints  = new HistoryEndpoints
+  val ammStatsEndpoints      = new AmmStatsEndpoints
+  val priceTrackingEndpoints = new PriceTrackingEndpoints
+  val lmStatsEndpoints       = new LmStatsEndpoints
+  val historyEndpoints       = new HistoryEndpoints
 
   private def allEndpoints =
-    ammStatsEndpoints.endpoints ++ lmStatsEndpoints.endpoints ++ historyEndpoints.endpoints
+    ammStatsEndpoints.endpoints ++ priceTrackingEndpoints.endpoints ++ lmStatsEndpoints.endpoints ++
+      historyEndpoints.endpoints
 
   private def tags =
     Tag(ammStatsEndpoints.PathPrefix, "AMM Api".some) ::
+    Tag(priceTrackingEndpoints.PathPrefixPriceTracking, "Price tracking API".some) ::
     Tag(lmStatsEndpoints.PathPrefix, "LM Api".some) ::
     Tag(historyEndpoints.PathPrefix, "History Api".some) :: Nil
 

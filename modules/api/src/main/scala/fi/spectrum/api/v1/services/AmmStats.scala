@@ -47,8 +47,6 @@ trait AmmStats[F[_]] {
   def getAvgPoolSlippage(poolId: PoolId, depth: Int): F[Option[PoolSlippage]]
 
   def getPoolPriceChart(poolId: PoolId, window: TimeWindow, resolution: Int): F[List[PricePoint]]
-
-  def getMarkets(window: TimeWindow): F[List[AmmMarketSummary]]
 }
 
 object AmmStats {
@@ -266,46 +264,6 @@ object AmmStats {
           }
       }
 
-    def getMarkets(window: TimeWindow): F[List[AmmMarketSummary]] =
-      resolveTimeWindow(window).flatMap { tw =>
-        pools
-          .volumes(tw)
-          .trans
-          .flatMap(volumes => snapshots.get.map(volumes -> _))
-          .map { case (volumesDB, snapshots) =>
-            val volumes = volumesDB.flatMap(_.toPoolVolumeSnapshot(snapshots))
-            snapshots.flatMap { snapshot =>
-              val currentOpt = volumes
-                .find(_.poolId == snapshot.id)
-
-              currentOpt.toList.map { vol =>
-                val tx = snapshot.lockedX
-                val ty = snapshot.lockedY
-                val vx = vol.volumeByX
-                val vy = vol.volumeByY
-                AmmMarketSummary(
-                  MarketId(tx.id, ty.id),
-                  tx.id,
-                  tx.ticker,
-                  ty.id,
-                  ty.ticker,
-                  RealPrice.calculate(tx.amount, tx.decimals, ty.amount, ty.decimals).setScale(6),
-                  CryptoVolume(
-                    BigDecimal(vx.amount),
-                    CryptoUnits(AssetClass(vx.id, vx.ticker, vx.decimals)),
-                    tw
-                  ),
-                  CryptoVolume(
-                    BigDecimal(vy.amount),
-                    CryptoUnits(AssetClass(vy.id, vy.ticker, vy.decimals)),
-                    tw
-                  )
-                )
-              }
-            }
-          }
-      }
-
     private def resolveTimeWindow(tw: TimeWindow): F[TimeWindow] = millis.map { now =>
       (tw.from, tw.to) match {
         case (Some(from), None) =>
@@ -371,14 +329,6 @@ object AmmStats {
         _ <- info"getPoolPriceChart($poolId, $window, $resolution) - finished"
         _ <- trace"getPoolPriceChart($poolId, $window, $resolution) - $r"
       } yield r
-
-    def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
-      for {
-        _ <- info"getMarkets($window)"
-        r <- _
-        _ <- info"getMarkets($window)"
-        _ <- trace"getMarkets($window) - $r"
-      } yield r
   }
 
   final private class AmmMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F]) extends AmmStats[Mid[F, *]] {
@@ -412,8 +362,5 @@ object AmmStats {
 
     def getPoolsSummaryVerified: Mid[F, List[PoolSummary]] =
       _ <* unit
-
-    def getMarkets(window: TimeWindow): Mid[F, List[AmmMarketSummary]] =
-      sendMetrics(window, "window.getMarkets", _)
   }
 }

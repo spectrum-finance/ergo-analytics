@@ -5,7 +5,7 @@ import cats.effect.kernel.Async
 import cats.syntax.semigroupk._
 import fi.spectrum.api.configs.HttpConfig
 import fi.spectrum.api.models.TraceId
-import fi.spectrum.api.v1.routes.{AmmStatsRoutes, DocsRoutes, HistoryRoutes, LmStatsRoutes}
+import fi.spectrum.api.v1.routes.{AmmStatsRoutes, DocsRoutes, HistoryRoutes, LmStatsRoutes, PriceTrackingRoutes}
 import fi.spectrum.api.v1.services._
 import fi.spectrum.cache.middleware.CacheMiddleware.CachingMiddleware
 import fi.spectrum.common.http.syntax.routes.unliftRoutes
@@ -28,18 +28,20 @@ object HttpServer {
     mempool: MempoolApi[F],
     statsLM: LmStatsApi[F],
     history: HistoryApi[F],
+    priceTracking: PriceTracking[F],
     opts: Http4sServerOptions[F],
     cache: CachingMiddleware[F],
     metrics: MetricsMiddleware[F],
     logs: Logs[I, F]
   ): fs2.Stream[I, ExitCode] =
     fs2.Stream.eval(logs.forService[HttpServer.type]).flatMap { implicit __ =>
-      val ammStatsR = AmmStatsRoutes.make[F]
-      val lmStatsR  = LmStatsRoutes.make[F]
-      val historyR  = HistoryRoutes.make[F]
-      val docsR     = DocsRoutes.make[F]
+      val ammStatsR      = AmmStatsRoutes.make[F]
+      val priceTrackingR = PriceTrackingRoutes.make[F]
+      val lmStatsR       = LmStatsRoutes.make[F]
+      val historyR       = HistoryRoutes.make[F]
+      val docsR          = DocsRoutes.make[F]
       val routes = unliftRoutes[F, I](
-        metrics.middleware(historyR <+> cache.middleware(ammStatsR <+> lmStatsR <+> docsR))
+        metrics.middleware(historyR <+> cache.middleware(ammStatsR <+> priceTrackingR <+> lmStatsR <+> docsR))
       )
       val corsRoutes = CORS.policy.withAllowOriginAll(routes)
       val api        = Router("/" -> corsRoutes).orNotFound

@@ -1,14 +1,11 @@
 package fi.spectrum.api.v1.endpoints
 
-import fi.spectrum.api.configs.RequestConfig
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.locks.LiquidityLockInfo
 import fi.spectrum.common.http.{baseEndpoint, HttpError}
-import fi.spectrum.common.http.{HttpError, baseEndpoint}
 import fi.spectrum.core.domain.order.PoolId
 import sttp.tapir._
-import fi.spectrum.common.http.{HttpError, baseEndpoint}
 import sttp.tapir.json.circe.jsonBody
 
 final class AmmStatsEndpoints {
@@ -24,7 +21,6 @@ final class AmmStatsEndpoints {
     getPoolsSummaryE,
     getAvgPoolSlippageE,
     getPoolPriceChartE,
-    getAmmMarketsE,
     getPoolLocksE
   )
 
@@ -100,15 +96,6 @@ final class AmmStatsEndpoints {
       .tag(Group)
       .name("Pool chart")
       .description("Provides price chart by pool in requested time window and resolution")
-
-  def getAmmMarketsE: Endpoint[Unit, TimeWindow, HttpError, List[AmmMarketSummary], Any] =
-    baseEndpoint.get
-      .in(PathPrefix / "markets")
-      .in(timeWindow)
-      .out(jsonBody[List[AmmMarketSummary]])
-      .tag(Group)
-      .name("All pools stats")
-      .description("Provides statistic of every market in requested time window")
 
   def getPoolLocksE: Endpoint[Unit, (PoolId, Int), HttpError, List[LiquidityLockInfo], Any] =
     baseEndpoint.get

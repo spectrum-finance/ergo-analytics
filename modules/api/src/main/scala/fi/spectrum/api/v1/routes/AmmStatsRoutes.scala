@@ -2,10 +2,9 @@ package fi.spectrum.api.v1.routes
 
 import cats.effect.kernel.Async
 import cats.syntax.semigroupk._
-import fi.spectrum.api.configs.RequestConfig
 import fi.spectrum.api.v1.endpoints.AmmStatsEndpoints
 import fi.spectrum.common.http.syntax.{toAdaptThrowableOps, toRoutesOps}
-import fi.spectrum.api.v1.services.{AmmStats, LqLocks, MempoolApi}
+import fi.spectrum.api.v1.services.{AmmStats, LqLocks}
 import fi.spectrum.common.http.AdaptThrowable.AdaptThrowableEitherT
 import fi.spectrum.common.http.HttpError
 import org.http4s.HttpRoutes
@@ -30,8 +29,7 @@ final class AmmStatsRoutes[
     getPoolsSummaryR <+>
     getAvgPoolSlippageR <+>
     getPoolPriceChartR <+>
-    getPoolLocksR <+>
-    getAmmMarketsR
+    getPoolLocksR
 
   def platformStatsR: HttpRoutes[F] =
     interpreter
@@ -67,10 +65,6 @@ final class AmmStatsRoutes[
 
   def getPoolLocksR: HttpRoutes[F] = interpreter.toRoutes(getPoolLocksE.serverLogic { case (poolId, leastDeadline) =>
     locks.byPool(poolId, leastDeadline).adaptThrowable.value
-  })
-
-  def getAmmMarketsR: HttpRoutes[F] = interpreter.toRoutes(getAmmMarketsE.serverLogic { tw =>
-    stats.getMarkets(tw).adaptThrowable.value
   })
 }
 

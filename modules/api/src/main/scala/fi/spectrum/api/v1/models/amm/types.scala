@@ -3,6 +3,7 @@ package fi.spectrum.api.v1.models.amm
 import cats.Show
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import fi.spectrum.api.db.models.amm.PoolVolumeSnapshot
 import fi.spectrum.core.domain.TokenId
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
@@ -21,6 +22,9 @@ object types {
 
     def apply(baseId: TokenId, quoteId: TokenId): MarketId =
       MarketId(s"${baseId}_$quoteId")
+
+    def apply(volume: PoolVolumeSnapshot): MarketId =
+      MarketId(volume.volumeByX.id, volume.volumeByY.id)
 
     implicit val encoder: Encoder[MarketId] = deriving
     implicit val decoder: Decoder[MarketId] = deriving

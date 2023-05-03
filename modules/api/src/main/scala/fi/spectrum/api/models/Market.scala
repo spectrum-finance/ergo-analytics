@@ -1,7 +1,7 @@
 package fi.spectrum.api.models
 
 import derevo.derive
-import fi.spectrum.core.domain.{TokenId}
+import fi.spectrum.core.domain.TokenId
 import tofu.logging.derivation.loggable
 
 @derive(loggable)
@@ -19,9 +19,6 @@ object Market {
     Market(
       rx.assetClass,
       ry.assetClass,
-      Price(
-        BigDecimal(ry.amount) / rx.amount,
-        BigDecimal(rx.amount) / ry.amount
-      )
+      Price(ry.withDecimals / rx.withDecimals, rx.withDecimals / ry.withDecimals)
     )
 }
