@@ -66,9 +66,10 @@ object PriceTracking {
 
     def getPairsCoinGecko: F[List[CoinGeckoPairs]] =
       for {
-        tw                     <- resolveTimeWindow(TimeWindow.empty)
-        validTokens            <- tokens.get
-        (volumesDB, snapshots) <- pools.volumes(tw).trans.flatMap(v => snapshots.get.map(v -> _))
+        tw          <- resolveTimeWindow(TimeWindow.empty)
+        validTokens <- tokens.get
+        volumesDB   <- pools.volumes(tw).trans
+        snapshots   <- snapshots.get
         validated = snapshots.filter { ps =>
                       validTokens.contains(ps.lockedX.id) && validTokens.contains(ps.lockedY.id)
                     }
