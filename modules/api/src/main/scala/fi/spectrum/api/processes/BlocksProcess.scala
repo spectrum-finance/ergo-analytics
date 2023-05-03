@@ -55,7 +55,7 @@ object BlocksProcess {
       height       <- network.getCurrentNetworkHeight.lift[I]
       newHeight    <- heightService.update(height).lift[I]
       lmSnapshotsL <- lMSnapshots.update.lift[I]
-      _            <- lmStats.update(poolsL, newHeight, lmSnapshotsL).lift[I]
+      _            <- lmStats.update(poolsL, newHeight, lmSnapshotsL, assetsL).lift[I]
     } yield new Live[F, S, C](height)
   }
 
@@ -95,7 +95,7 @@ object BlocksProcess {
                          _            <- poolsStats.update(snapshotsL, volumesL, feesL)
                          newHeight    <- heightService.update(lastHeight)
                          lmSnapshotsL <- lMSnapshots.update
-                         _            <- lmStats.update(snapshotsL, newHeight, lmSnapshotsL)
+                         _            <- lmStats.update(snapshotsL, newHeight, lmSnapshotsL, assetsL)
                          _            <- caching.invalidateAll
                        } yield ()
                      }
