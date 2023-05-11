@@ -632,8 +632,8 @@ object Compound {
 
   val compoundBatchTxTest = decode[TransactionTest] {
     val file = new File(
-      "/Users/oskin/Desktop/Dev/scala_dev/ergo-analytics/modules/parsers/src/test/scala/fi/spectrum/parser/evaluation/EvalTxCompound.json"
-    )
+      "modules/parsers/src/test/scala/fi/spectrum/parser/evaluation/EvalTxCompound.json"
+    ).getAbsoluteFile
     val source = Source.fromFile(file)
     val res    = source.getLines().mkString("")
     source.close()
