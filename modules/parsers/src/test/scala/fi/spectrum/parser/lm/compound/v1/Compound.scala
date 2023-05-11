@@ -197,24 +197,6 @@ object Compound {
     V1
   )
 
-//  val compoundLastEpoch = CompoundV1(
-//    compoundLastEpochOutput,
-//    LmCompoundParams(
-//      AssetAmount(
-//        TokenId.unsafeFromString("a875b8dd63b401d988ab8af0f46b89afe5c6c264edde02f6b8819f094e24cf5e"),
-//        21309708902L
-//      ),
-//      none,
-//      AssetAmount(
-//        TokenId.unsafeFromString("00738c0e3c4d89a1a2d5e71a20e4a00262340f289e58d9d866719564a933bad5"),
-//        1
-//      ).tokenId
-//    ),
-//    PoolId.unsafeFromString("0f30b560b6c396cc3fc2bdbcf41dd036070ed8b1df2df31ca292cfc5bbb38c0f"),
-//    PublicKeyRedeemer(PubKey.unsafeFromString("03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec")),
-//    V1
-//  )
-
   val compoundTx = decode[TransactionTest](
     """{
       |    "id": "b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e",

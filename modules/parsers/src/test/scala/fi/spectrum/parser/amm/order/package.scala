@@ -31,9 +31,7 @@ package object order {
     V3T2T.redeem.output       -> V3T2T.redeem.order,
     LV2N2T.deposit.output     -> LV2N2T.deposit.deposit,
     LV2T2T.deposit.output     -> LV2T2T.deposit.deposit,
-
     V1N2T.deposit.depositN2T  -> V1N2T.deposit.expectedN2TDepositV1,
-
     V1T2T.deposit.depositT2T  -> V1T2T.deposit.expectedT2TDepositV1,
     V3T2T.deposit.outputSpf   -> V3T2T.deposit.depositSpf
   )
