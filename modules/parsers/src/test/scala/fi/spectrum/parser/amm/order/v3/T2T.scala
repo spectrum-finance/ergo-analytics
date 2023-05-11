@@ -147,36 +147,44 @@ object T2T {
     val outputSpf = decode[Output](
       s"""
          |{
-         |    "boxId": "374f037640bf0dbf6e34244871937e75aaf110de9254ffcf09aa06291c11d375",
-         |    "transactionId": "3da3aae612feee5ecf8d0af01e1205bdf25c01b09e5774517c8abd9387f81c03",
-         |    "blockId": "258667b9c516bc0610017e92b3690c137d7aec673f6b6ad98d2c90fd2c31d780",
-         |    "value": 12323164,
+         |    "boxId": "e48c5e856ee274a6175800e471e3a135e9af0027de04ea44b77fd07fc7b9908c",
+         |    "transactionId": "5c8355957ce18e492cd36406ee442b82022bfe879933f83a4bc4f27a940dc9be",
+         |    "blockId": "f031cc3cfb4bf6fd7bb21024ebf176ebdf6d096c22fa7829a4cf440553ae81be",
+         |    "value": 400000,
          |    "index": 0,
-         |    "globalIndex": 26670124,
-         |    "creationHeight": 942994,
-         |    "settlementHeight": 942996,
-         |    "ergoTree": "19c30417040005f8fbd80b08cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec040404060402040205feffffffffffffffff0104040504040004000e209916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec0e240008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec0404040205c0b80201000e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d802d601b2a4730000d6027301eb027302d195ed92b1a4730393b1db630872017304d80bd603db63087201d604b2a5730500d605b27203730600d6067e9973078c72050206d6077ec1720106d6089d9c7e72020672067207d609b27203730800d60a7e8c72090206d60b9d9c7e7309067206720ad60cdb63087204d60db2720c730a00ededededed938cb27203730b0001730c93c27204730d95ed8f7208720b93b1720c730ed801d60eb2720c730f00eded92c1720499c1a77310938c720e018c720901927e8c720e02069d9c99720b7208720a720695927208720b927ec1720406997ec1a706997e7202069d9c997208720b720772067311938c720d018c720501927e8c720d0206a17208720b90b0ada5d9010e639593c2720e7312c1720e73137314d9010e599a8c720e018c720e0273157316",
-         |    "address": "AVwRjyvectUWbmNGFBDonnfZue2PmZwhZtn3jBssdMdzBvnRw6moHaPGRAkesgkmfgs4cWU11Jxg1NQzNYzFE2VNwf4kVfxZfo7d2xD4YKEfP2oMMNnPyWVhTRt5vbCE4gEpbbcCDhY68dmx4Bx9bTd8eQQxJG2NzmSpuzU4qzVhrrqwg3Mq1sbc6zdADqzs2k8GQQt38GxG5QQLhJSnZEAB8TvEiMZGEKqPMATqY9HETxr13959bHLTyn2SvDdqDVKF7ZgpjEWmiqoikTaSLTGwfMopBXrE3bWTY26tFaL698zuPZ9zK6Ruz6kK3B2MCbFxemzxoiaoYnLfAjyjzczajp2ZP5eTasE76Ly2GtnAYnpfFa4VUAaSnCY2CQ2doSGwNCGd3DZE6e1btpewLUV33ZWAYj5NhxnrnXGPg1V9gz31HfbPiDMGdQcip41R99GmJLXfY3CoxLkJLPVYBXTvaRyNZHziE6JFHeMn41yTgKDBy9zoQLXsEn9v8vRJX9N44Ftc3wMR7hcfxgE2AdaH591ZFjEyV6FzKD6g53mGxfDNBaiqcLmvoE1Q26XyYzoac5weU9T39BbJaeETbZiJ81WH5CrcQmfZyYkRzypRKCD7cHnJ4MXQojo7Ff5gF5EP3Ta15eoFgcUDLKWCQTxirz5nBA3tqsZQuSD2A4FkQG1UZ3d27JJM7vjy5k1NJ6w3Ty4YaTUX2e2zm16sDN6L58oTSp21aeFcc952vX6FtbdYWUr68ifBux9ZCoS2sb7ZpacNz3NQvr8YnWY51QGPATZG4qagz",
+         |    "globalIndex": 26967066,
+         |    "creationHeight": 949420,
+         |    "settlementHeight": 949422,
+         |    "ergoTree": "19e3041a040008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec040404080402040205feffffffffffffffff0104040590a2c60504060504040004000e20bfb483069f2809349a9378e8a746cbdcb44c66f94d0e839fd14158e8829eea680e240008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec0404040204040402010101000e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d801d601b2a4730000eb027301d195ed92b1a4730293b1db630872017303d80cd602db63087201d603b2a5730400d604b27202730500d6057e9973068c72040206d606b27202730700d6077e8c72060206d6089d9c7e73080672057207d609b27202730900d60a7e8c72090206d60b9d9c7e730a067205720ad60cdb63087203d60db2720c730b00edededededed938cb27202730c0001730d93c27203730e92c17203c1a795ed8f7208720b93b1720c730fd801d60eb2720c731000ed938c720e018c720901927e8c720e02069d9c99720b7208720a720595ed917208720b93b1720c7311d801d60eb2720c731200ed938c720e018c720601927e8c720e02069d9c997208720b7207720595937208720b73137314938c720d018c720401927e8c720d0206a17208720b90b0ada5d9010e639593c2720e7315c1720e73167317d9010e599a8c720e018c720e0273187319",
+         |    "address": "3pgwev33aP9MzhGLC5gwnKTL5e8gQNon3iFvVWTe5tkHX6C3j9rfGQ5qJYaoSUVoh14FGUkaZce6HrByVr82EABLkByViVSc6zwyJWdyeRcCw4AjFoZGHxjmNbJFdoMpw5dPBwEe3J4QD92ZGZMeX3sVDpyH19mg3rQFEbc49LpZVw3RMzmYngWYSt3BteihHkw1XuEfbeT9UmT8h1XjAbNP9GXce3MsiZTN7SGyB5s4BsoFTqoShLjmW7gKhsxPBH2pmnCHNoBWRoLTdAnTsU7xVmdmVsB3xn5DJsuLBif14eZhvc8uPWX58cLg8b9fa61L7jhKubT7TGvU3xAhu2NUxhSh2oVDi6LFX8D7Lqpr68jzLMQyvaLsWj8JkUUDBNmy9zHxoV3YQY4zVLyPQmWiyYBew39Qkix1BzMjCgBqyxyxLuGTPd1LmXkqKHAuqrsLGkZdvdWi1vFpHwccfys8WArzy7LLati1F3TekRr52ifYovgzABqhm7W4VDNBYjLkuJxu1myYSJW6ZVhwmCADMW6QuAeeKk6Qvtzs3CLUjxWY8kU5BfW2iUBfzX3vuZ6iDdkgaXY4ESdvrXtCSUV3urTN2BP7rqnukEzfjyyJ2YMuscGUrnk5gbF1uCFDomryYEXnaZ83TWQTRNdY7VmKxSRk6dD71bA475aSSsyVoJP3anneXBbCJ5g7M59f2f9g4WuAQhSBTvPpdm36GTZrG3ku9fSfQvCb81mVu4uTM54sfoMAET3UzP7nCzcN6AUFaBzmQ7oe7b2uq6eqvbp425s5ozohHh6M8rie3RpbsYR3eFgcSaD4FwLSP9BfrtVcMZ2wTt3VF",
          |    "assets": [
          |        {
-         |            "tokenId": "03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04",
+         |            "tokenId": "472c3d4ecaa08fb7392ff041ee2e6af75f4a558810a74b28600549d5392810e8",
          |            "index": 0,
+         |            "amount": 5818504,
+         |            "name": "NETA",
+         |            "decimals": 6,
+         |            "type": "EIP-004"
+         |        },
+         |        {
+         |            "tokenId": "03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04",
+         |            "index": 1,
          |            "amount": 2,
          |            "name": "SigUSD",
          |            "decimals": 2,
          |            "type": "EIP-004"
          |        },
          |        {
-         |            "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
-         |            "index": 1,
-         |            "amount": 15,
-         |            "name": "SigRSV",
-         |            "decimals": 0,
+         |            "tokenId": "9a06d9e545a41fd51eeffc5e20d818073bf820c635e2a9d922269913e0de369d",
+         |            "index": 2,
+         |            "amount": 135031,
+         |            "name": "SPF",
+         |            "decimals": 6,
          |            "type": "EIP-004"
          |        }
          |    ],
          |    "additionalRegisters": {},
-         |    "spentTransactionId": "e3023afd988ec2e10a4355edf346f7a6cfbd8d7ed9bd99c51702190b58163caa",
+         |    "spentTransactionId": "d7d423d6848da0df7018ff34bc4000e3dedfa4434204f9c963451e5f17b005e4",
          |    "mainChain": true
          |}
          |""".stripMargin
@@ -184,66 +192,66 @@ object T2T {
 
     val depositSpf: AmmDepositV3 = AmmDepositV3(
       outputSpf,
-      SPF(123),
-      PoolId.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000"),
-      ErgoTreeRedeemer(
-        SErgoTree.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000")
+      SPF(135031),
+      PoolId.unsafeFromString("bfb483069f2809349a9378e8a746cbdcb44c66f94d0e839fd14158e8829eea68"),
+      PublicKeyRedeemer(
+        PubKey.unsafeFromString("03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec")
       ),
       AmmDepositParams(
         AssetAmount(
-          TokenId.unsafeFromString("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04"),
-          877
+          TokenId.unsafeFromString("472c3d4ecaa08fb7392ff041ee2e6af75f4a558810a74b28600549d5392810e8"),
+          5818504
         ),
         AssetAmount(
-          TokenId.unsafeFromString("01faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04"),
-          1001
+          TokenId.unsafeFromString("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04"),
+          2
         )
       ),
-      777777,
+      2000000,
       Version.V3
     )
 
     val outputSpfIsX = decode[Output](
       s"""
          |{
-         |    "boxId": "6d2158c595abda513c2f8cf9fe92ea0542d3b936bbf372f03dcda568f6296c60",
-         |    "transactionId": "d098f935fe6c686cffe3c58895e768f31ae35bf439b13d48b457874c8c0e00c4",
-         |    "blockId": "f687cea76d2bfac06027c153db294bd2a368594b8180c95c8f008943e5e232c6",
+         |    "boxId": "4774de4f9dab4d60fcf654c09faa0decfd08dd94ac4c58b1a04ac1e7de3abdaa",
+         |    "transactionId": "e3d6c3d3775776b4660d29343db62fea55faafec32f53122dbfd08137071f9be",
+         |    "blockId": "b7f55bee53d2930ed703a6805069a123fb9dc391cf61e27443c3970ce2419d2d",
          |    "value": 400000,
          |    "index": 0,
-         |    "globalIndex": 28289311,
-         |    "creationHeight": 982507,
-         |    "settlementHeight": 982509,
-         |    "ergoTree": "19e8041a040008cd03b221b94e0cbfacb79502a646c8a7ba08717e913db1583e12ecd12d2cb18b2156040404080402040205feffffffffffffffff0104040580a4a7da06040605c8b79cbc01040004000e2091578c60081a4f6c7d5cb3e5e587b2dc7b51712c0d4f66561eb134934964fa980e240008cd03b221b94e0cbfacb79502a646c8a7ba08717e913db1583e12ecd12d2cb18b21560404040204040402010101000e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d801d601b2a4730000eb027301d195ed92b1a4730293b1db630872017303d80cd602db63087201d603b2a5730400d604b27202730500d6057e9973068c72040206d606b27202730700d6077e8c72060206d6089d9c7e73080672057207d609b27202730900d60a7e8c72090206d60b9d9c7e730a067205720ad60cdb63087203d60db2720c730b00edededededed938cb27202730c0001730d93c27203730e92c17203c1a795ed8f7208720b93b1720c730fd801d60eb2720c731000ed938c720e018c720901927e8c720e02069d9c99720b7208720a720595ed917208720b93b1720c7311d801d60eb2720c731200ed938c720e018c720601927e8c720e02069d9c997208720b7207720595937208720b73137314938c720d018c720401927e8c720d0206a17208720b90b0ada5d9010e639593c2720e7315c1720e73167317d9010e599a8c720e018c720e0273187319",
-         |    "address": "2QWphCN3bp6iGUoLqHPk4tqSVCyj772KgY9hMpJ4GeSj1mJEoAU8hnr6kgUGkp6d6KsqHLKoFnij5JNLzphD7mH9J6YswAnLGSosuMtZFAszrnn3zhhEyHDerW7YC9yPHg2YUWuzMrP7jeESohq36bQ8zUiiXRVirF4rZsS9hTrVmukSkKK6iXKPJdPt7MKBuoxXVrFBmtMG4AsQT8ihBcsoFQH355R3wKvKvn2UVkrXvzUjbFjVquacKja52oZbeGYUr4jS5V2YerzWhrWVn5CJrzHzgP7kxgxSKfbdiDm5CV61dmiUJgyoncjfbUBKsYZbzKd844NdCYGnZ7tSnouWD2YZosPe8nQx9MDqruh7nWS7srNbRfnZ29T4x2AK5R7ZGMYjP26RjaBSuNqD8zyNLBbLWaz9scWXJtiVzebexSdKF1TtjKeUDoA76id6oQ9eoWq9QeXXYawMz5Z9ggm6jbt4bFjoNMGm9A9StsEeDzfQJqjG9Tc4dX8PV7LSnT1j87oua8e1q6vRKUgTPCvSj4MaLoYnPEvCcJtuJQVWjTmeMJJKVxFf6wjZ4ptLSBV8389f8NTFo5pXaxgzbyP7xuFdzeVVEZe8LC94KK8yvMDu4129jtxhWDro1nsmY24gQr71wy7M5RXphWcW7K63hXX9YvUfhegpbCxLK7PndAt9xA4A28MFWSuRwb2h4d8vXLX8EL1gQMdU5BXyANbxhfXUdHP32KgJv1CrjApGpfD1HfGV3toMuytbG8L6q8uNXnnx4KFFGSRXWkXbTjoJrtyFuULhS47fvxbLnVdcSe4Vuu2z76CYGbBLPHhz9qRghuk5oD22ZHXeUyHQ",
+         |    "globalIndex": 26939118,
+         |    "creationHeight": 948753,
+         |    "settlementHeight": 948755,
+         |    "ergoTree": "19e0041a040008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec040404080402040205feffffffffffffffff010404050204060536040004000e20080e453271ff4d2f85f97569b09755e67537bf2a1bc1cd09411b459cf901b9020e240008cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec0404040204040402010101000e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d801d601b2a4730000eb027301d195ed92b1a4730293b1db630872017303d80cd602db63087201d603b2a5730400d604b27202730500d6057e9973068c72040206d606b27202730700d6077e8c72060206d6089d9c7e73080672057207d609b27202730900d60a7e8c72090206d60b9d9c7e730a067205720ad60cdb63087203d60db2720c730b00edededededed938cb27202730c0001730d93c27203730e92c17203c1a795ed8f7208720b93b1720c730fd801d60eb2720c731000ed938c720e018c720901927e8c720e02069d9c99720b7208720a720595ed917208720b93b1720c7311d801d60eb2720c731200ed938c720e018c720601927e8c720e02069d9c997208720b7207720595937208720b73137314938c720d018c720401927e8c720d0206a17208720b90b0ada5d9010e639593c2720e7315c1720e73167317d9010e599a8c720e018c720e0273187319",
+         |    "address": "2uQihBXBJDVbjpuuS1HEue3WtBhs9VepJMcevcLgHVxyprbLjnudeeQEKCQkAgX22t9sNJuH4UTvdDJe9jbbxR9sWoYPSEsJbMVXzo5RJFFxWRQePbiutcNHE1PZtGQ87NWhKKSA4TevwjeL8neoQDzaHL4tS8GdrVo5pdJsDfm5a4faip5x8HpNAjYFCgE3aRVjRbZA7giPKquZANr9CUqsXcZuHqw4EAjjs8Ht9DDWt3ovHTLzRFYAuRZhfepUNW5roxTrHBwWAFSAt8w5Mhs2cxue3jma9pc7t3964y4UiTPsPNAdq2nuwhDyqiCB1c5UWUJ1BW7qdnsmJCTNC5vvptLjzKQLHWSLwEP69GYpFv2mzon2M4iBSWLqH4ndX6wA4gBdbrqy9dB2bKgBG68whkw94QGVBgT7uQCukh6jSZ6CKNzbPVi7oHDvbKf4GreMQNKgGCkjb33qiQJSfKnCCeMSwonx5THBLFGBp3xHwq6mHgDnV4pZJxJndCQUzY25gHvq5AfJSxGKHWjrZzUSMVr1LP8sqQEdDs8osGbHxVLYhrXbY633CKXQM4PGvttk7e675koyznpQoZ51ffDPWUQv6yesyffZ9U3sffr2C9JJWi761vkeksutGSJX7fE8DoZq3H2mNam7m2xHfrNv318kZGGwGMSxbwFHzf9QCgs83KhmGst1fvhzF7kLiP9MveKSnyhakf3kvZun4a4Fd1uxU3djyiDWartapzzNPeZgVf4R5jyF6WbtywZ1uykaXbpTVYmuFsBYew2rpekGYkNknfKHBuQPDfJ541v2EoNe3sw6cteDzVyasy1v21Mf4BTgq",
          |    "assets": [
          |        {
-         |            "tokenId": "706fb118782c421b0b00e01e5403efb64b68e31e01048dc398f3a143eaa05b26",
+         |            "tokenId": "03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04",
          |            "index": 0,
-         |            "amount": 900000000,
-         |            "name": "tERG",
-         |            "decimals": 8,
+         |            "amount": 1,
+         |            "name": "SigUSD",
+         |            "decimals": 2,
          |            "type": "EIP-004"
          |        },
          |        {
-         |            "tokenId": "50eab1afc495420c17c0df5154584cf09d9167263fffc99c25e3e0ae4b26fe00",
+         |            "tokenId": "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
          |            "index": 1,
-         |            "amount": 197365220,
-         |            "name": "tSPF",
-         |            "decimals": 6,
+         |            "amount": 27,
+         |            "name": "SigRSV",
+         |            "decimals": 0,
          |            "type": "EIP-004"
          |        },
          |        {
          |            "tokenId": "9a06d9e545a41fd51eeffc5e20d818073bf820c635e2a9d922269913e0de369d",
          |            "index": 2,
-         |            "amount": 148613,
+         |            "amount": 134568,
          |            "name": "SPF",
          |            "decimals": 6,
          |            "type": "EIP-004"
          |        }
          |    ],
          |    "additionalRegisters": {},
-         |    "spentTransactionId": "2f93ffc2c893c24e0d0804f81d6624f08cc678a3cf2708a38a8a16430dd631d3",
+         |    "spentTransactionId": "394e6eca34ba5427e4f70cdf9432ef3b557c91c1eca386059511cb9289d90b3e",
          |    "mainChain": true
          |}
          |""".stripMargin
@@ -251,22 +259,22 @@ object T2T {
 
     val depositSpfIsX: AmmDepositV3 = AmmDepositV3(
       outputSpfIsX,
-      SPF(123),
-      PoolId.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000"),
-      ErgoTreeRedeemer(
-        SErgoTree.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000")
+      SPF(134568),
+      PoolId.unsafeFromString("080e453271ff4d2f85f97569b09755e67537bf2a1bc1cd09411b459cf901b902"),
+      PublicKeyRedeemer(
+        PubKey.unsafeFromString("03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec")
       ),
       AmmDepositParams(
         AssetAmount(
           TokenId.unsafeFromString("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04"),
-          1000
+          1
         ),
         AssetAmount(
-          TokenId.unsafeFromString("01faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04"),
-          878
+          TokenId.unsafeFromString("003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0"),
+          27
         )
       ),
-      777777,
+      2000000,
       Version.V3
     )
   }

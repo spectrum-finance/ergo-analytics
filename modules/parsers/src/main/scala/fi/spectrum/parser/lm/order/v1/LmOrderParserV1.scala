@@ -63,8 +63,10 @@ final class LmOrderParserV1(parser: CompoundParser[V1]) extends LmOrderParser[V1
       )
       .merge
 
-  def compound(box: Output, tree: Values.ErgoTree): Option[Order.Compound] =
+  def compound(box: Output, tree: Values.ErgoTree): Option[Order.Compound] = {
+    println("DDDDD")
     parser.compound(box, tree)
+  }
 }
 
 object LmOrderParserV1 {

@@ -1,24 +1,19 @@
 package fi.spectrum.parser
 
-import cats.implicits.catsSyntaxEq
 import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.order.Order
 import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.parser.amm.order.anyAmmOrder
+import fi.spectrum.parser.amm.order.v3.{T2T => V3T2T}
 import fi.spectrum.parser.lock.v1.Lock
 import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
-import fi.spectrum.parser.amm.order.legacy.v1.{N2T => LV1N2T, T2T => LV1T2T}
-import fi.spectrum.parser.amm.order.legacy.v2.{N2T => LV2N2T, T2T => LV2T2T}
-import fi.spectrum.parser.amm.order.v1.{N2T => V1N2T, T2T => V1T2T}
-import fi.spectrum.parser.amm.order.v2.{N2T => V2N2T, T2T => V2T2T}
-import fi.spectrum.parser.amm.order.v3.{N2T => V3N2T, T2T => V3T2T}
 
 class OrderParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   implicit val e: ErgoAddressEncoder = new ErgoAddressEncoder(ErgoAddressEncoder.MainnetNetworkPrefix)
-  implicit val spf: TokenId          = TokenId.unsafeFromString("")
+  implicit val spf: TokenId          = TokenId.unsafeFromString("9a06d9e545a41fd51eeffc5e20d818073bf820c635e2a9d922269913e0de369d")
   val parser: OrderParser            = OrderParser.make
 
   val out =

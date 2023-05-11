@@ -6,7 +6,7 @@ import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.CatsPlatform
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
-import fi.spectrum.parser.lm.compound.v1.Compound.expectedCompound
+import fi.spectrum.parser.lm.compound.v1.Compound.{compoundBatchTx, expectedCompound}
 import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
@@ -33,7 +33,7 @@ class CompoundSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
     ProcessedOrderParser
       .make[IO]
-      .registered(Compound.compoundTx, 0)
+      .registered(compoundBatchTx, 0)
       .unsafeRunSync()
       .head
       .order shouldEqual expectedCompound

@@ -19,28 +19,28 @@ object T2T {
     val output: Output = decode[Output](
       """
         |{
-        |    "boxId": "a20edaf87f627de0220b2446a02d96bc0771e1255dea895e717e3ac455b26ce5",
-        |    "transactionId": "a6f75551aaf0ef0b8b09f67e90fb62de67fa23dce85d09e1dcb304219ce40b65",
-        |    "blockId": "9a1fd2557576394940f0480e254aa0a662bd3bbcd32c639b136597c5aae7a2fc",
+        |    "boxId": "4dd85a4d3461ac2a66bc9f6d9edbe45a2bafba3337925683abc0ec2775ade7e7",
+        |    "transactionId": "b5acea53c9f9e505831cc24bd62a8925e07bf7c1e96ef09acb5e3d07f01fe3c7",
+        |    "blockId": "5c6d249f16a528db514da331eabb3151240a24fd103dc69e4948594503c19283",
         |    "value": 7260000,
         |    "index": 0,
-        |    "globalIndex": 28280656,
-        |    "creationHeight": 982356,
-        |    "settlementHeight": 982359,
-        |    "ergoTree": "19b5031508cd03e605bd2d03dc22205f706a24abc0cec5a1c5b43019bcc90758a846f2dfb30f160400040404060402058080d0d88bdea2e30205cefbc0eab3f18ae302040004000e209916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec05faf4ce9e5504c60f060101040404d00f04c60f0e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d802d6017300d602b2a4730100eb027201d195ed92b1a4730293b1db630872027303d804d603db63087202d604b2a5730400d6059d9c7e99c17204c1a7067e7305067e730606d6068cb2db6308a773070002edededed938cb2720373080001730993c27204d072019272057e730a06909c9c7ec17202067e7206067e730b069c9a7205730c9a9c7e8cb27203730d0002067e730e067e9c72067e730f050690b0ada5d90107639593c272077310c1720773117312d90107599a8c7207018c72070273137314",
-        |    "address": "Dxg1z3EWagGuWKTyZjZ3bZJmcFTndPCq5dNr3QGdgKFL9kUs5wuSoZZUXimzKkjqhgZrEYrScVPsGxa1zsp2c6DgQqWSuzP4CBrK3ALs9kL9ANYVE34PLREmk6LEHBq45g9mnwV9rv7poBv83disdv5aApBfkC1pZFE9d8uE6mngfK7nHqYtukHDpefFEiNUQzyfUp6AEaoH4MMbzFo136K6R7uSmcfMe7i6RrFStxDbHHdLowmCSCUBn2THV7PLzT2dZXpCZf2uUQdqLrabZeYW8ZSP6EaxEWFbeoiBJ3QooEfB2QUTWVrfnumoVPkaMzJsYPe7n6vg3b4FjSVAorCPEha6UyBLFv1zruRvRGmHTe9ski1ZtwduLwaz76bEVqhdoq8U6RGEZMfTSETFTvLaPmRPcvWzQZMvYtMhBDRycQpC6yKLCgMaAz2NWSpX3Jpbcx2dMNwFwBLsuHBRGtG2qS7ZwG4jLej5LYQ4wpAjf5qDRgukdK1suQcwVhR9iNvzd1u5dGcNtNGX9pc64HXJB7PmgjV8LSwdfsRKuwsKAnZ6hciLEfiyqCvjv5Su5J2VNVSSkmDAWTsMYJ7FARoyFjTvsFw",
+        |    "globalIndex": 28618891,
+        |    "creationHeight": 991447,
+        |    "settlementHeight": 991449,
+        |    "ergoTree": "19b6041708cd038facdb201507dd1ae78b7979dcf822deed0e3e2e0bd1e3dd4e0f7d9ed165cd5904000e200cd8c9f416e5b1ca9f986a7f10a84191dfb85941619e49e53c0dc30ebf83324b04c60f04d00f040404080402040004040400040606010104000e200e7ae6bcddac78ec42e218775e3dc2e87226cb09692d23242b4e13e435a4b58805e40705e2c0f2a48ff1e62a0580c0a8ca9a3a0e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d805d6017300d602b2a4730100d6037302d6047303d6057304eb027201d195ed92b1a4730593b1db630872027306d80ad606db63087202d607b2a5730700d608b2db63087207730800d6098c720802d60a7e720906d60bb27206730900d60c7e8c720b0206d60d7e8cb2db6308a7730a000206d60e7e8cb27206730b000206d60f9a720a730cedededededed938cb27206730d0001730e93c27207d07201938c7208017203927209730f927ec1720706997ec1a7069d9c720a7e7310067e73110695938c720b017203909c9c720c720d7e7204069c720f9a9c720e7e7205069c720d7e720406909c9c720e720d7e7204069c720f9a9c720c7e7205069c720d7e72040690b0ada5d90110639593c272107312c1721073137314d90110599a8c7210018c72100273157316",
+        |    "address": "SqWZwLTsYLTTkP5GcZZhPSadEGudcXMrU7idDmbzSo9c8jrtjEfXBEbs3FQHRFKnUzZopxrUbmGpib9CSLKr6fxzrB686x1Tpt5wQNoJxCB1whdS6tFed1Frb8A61kVx7wVDctYN3cgnFRGB6hdwtQuGHTyt2V2CCyjxXW7XR77VHSSAyeWn43wefDAc3TooEwjE97UyMEqygkR396VYAKmgRQtkfetMDBc8wZUr2sTiKQx5qLDvUjodZaYkKLY3JQs3xjak1rLpSinYLqtprwnyMHZgZtNejgSV3tyD9D21ixing63WN6QQC7FTwK8ivnuJHu1mafzVLtPtkhJwgA93TFNqYLwwtwNzUh6H22NhTYdQ7x35nqFi2fKgzvMbpCWMDMksszWRsUr2nM1HLmj1gi4rym4gYaqeHUhDmdyLgGzniS4i9TRrG8qYp1be6h8m5ZepFfVQkdJBHFTdNDCkgKUNpuEaKqDjv6J8TfH88KfhPsqUsoof1HwWx9qzSWcFomRRdoNbdFZSwDA4Q8iu7bwX4cPidYwHGd2iBaHMmxdk7YabEjtatp4GhmTQyc2qkYd68Kwhis7cVGxVVMemseP75Uwfh5KkKwGU5dRGTRV3uSSZTp5F2syiV8EfqDHtASZJC2FC8h8t7FWrZ3j6FULVZtHTC22S2h7tiEyymM3pin8Ah8kzjhRRJjeNG6GLZQuvpqjqjzLLBT5PCbNEyAF4phnZNo9LAtxd8McuHD7PKUzbCn88F6Ezc7DmejEDfzemx4uJSf4",
         |    "assets": [
         |        {
-        |            "tokenId": "03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04",
+        |            "tokenId": "0779ec04f2fae64e87418a1ad917639d4668f78484f45df962b0dec14a2591d2",
         |            "index": 0,
-        |            "amount": 2092,
-        |            "name": "SigUSD",
-        |            "decimals": 2,
+        |            "amount": 1000,
+        |            "name": "Mi Goreng ",
+        |            "decimals": 0,
         |            "type": "EIP-004"
         |        }
         |    ],
         |    "additionalRegisters": {},
-        |    "spentTransactionId": "4bf84ec3431c760bc4a455fbf2e9d4d109182eea52db343c562ae55f2868e844",
+        |    "spentTransactionId": "d1dfe839c7fbd7b0368ee8b1559063c8b762018923b5ad86596aa665a670cdd7",
         |    "mainChain": true
         |}
         |""".stripMargin
@@ -48,19 +48,19 @@ object T2T {
 
     val order = SwapV1(
       output,
-      PoolId.unsafeFromString("9916d75132593c8b07fe18bd8d583bda1652eed7565cf41a4738ddd90fc992ec"),
-      PublicKeyRedeemer(PubKey.unsafeFromString("03e605bd2d03dc22205f706a24abc0cec5a1c5b43019bcc90758a846f2dfb30f16")),
+      PoolId.unsafeFromString("0e7ae6bcddac78ec42e218775e3dc2e87226cb09692d23242b4e13e435a4b588"),
+      PublicKeyRedeemer(PubKey.unsafeFromString("038facdb201507dd1ae78b7979dcf822deed0e3e2e0bd1e3dd4e0f7d9ed165cd59")),
       SwapParams(
         AssetAmount(
-          TokenId.unsafeFromString("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04"),
-          2092
+          TokenId.unsafeFromString("0779ec04f2fae64e87418a1ad917639d4668f78484f45df962b0dec14a2591d2"),
+          1000
         ),
         AssetAmount(
-          TokenId.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000"),
-          11440610621L
+          TokenId.unsafeFromString("0cd8c9f416e5b1ca9f986a7f10a84191dfb85941619e49e53c0dc30ebf83324b"),
+          498
         ),
-        52444753158425L,
-        100000000000000000L
+        12048192771084337L,
+        1000000000000L
       ),
       2000000,
       Version.V1
@@ -72,36 +72,36 @@ object T2T {
     val depositT2T: Output = decode[Output](
       """
         |{
-        |    "boxId": "3b8f662b0286d7e5442585c9fd0f2fba35f7cccf2ed02b0c6a95fbc327318b6c",
-        |    "transactionId": "46bf4f19d7a537274b1124ff242cea0351f30a38f2ba87b9454c5a9c49d3ed8b",
-        |    "blockId": "186076620f5f7c69be24adc4a82671b71513d4ae550b62ca6de64628dc9d3ada",
-        |    "value": 7060000,
+        |    "boxId": "2a0a6d752699c41288ec695c7580a61159c9a014def9ff9850e5b4a4ff5deefe",
+        |    "transactionId": "c5675624f3d4c69ef0281a7e3d172a32d31e12587304ffc36742212737abecce",
+        |    "blockId": "90aacbc5820c0d044ffe9f34a412b6f00cd1d68cb1d7fa3b03499b965bafe86c",
+        |    "value": 6060000,
         |    "index": 0,
-        |    "globalIndex": 10156876,
-        |    "creationHeight": 508928,
-        |    "settlementHeight": 629205,
-        |    "ergoTree": "19dd041b08cd03c900eda9e1c2a199ec844c0515279fae0c764ba9dd174b4d9e43ec74c6bfff2e0400040404080402040205feffffffffffffffff010404040004060402040004000e20f1fb942ebd039dc782fd9109acdb60aabea4dc7e75e9c813b6528c62692fc78105020580bfd6060404040204040402010101000e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d803d6017300d602b2a4730100d603db6308a7eb027201d195ed93b1a4730293b1db630872027303d80cd604db63087202d605b2a5730400d606b27204730500d6077e9973068c72060206d608b27204730700d6097e8c72080206d60a9d9c7e8cb27203730800020672077209d60bb27204730900d60c7e8c720b0206d60d9d9c7e8cb27203730a0002067207720cd60edb63087205d60fb2720e730b00edededededed93b27204730c008602730d730e93c27205d0720192c1720599c1a7730f95ed8f720a720d93b1720e7310d801d610b2720e731100ed938c7210018c720b01927e8c721002069d9c99720d720a720c720795ed91720a720d93b1720e7312d801d610b2720e731300ed938c7210018c720801927e8c721002069d9c99720a720d720972079593720a720d73147315938c720f018c720601927e8c720f0206a1720a720d90b0ada5d90110639593c272107316c1721073177318d90110599a8c7210018c7210027319731a",
-        |    "address": "2HUM2ZSbd7qnLqgcaNjh6de8XjR78GXzDS5m53Dx6QuUc5ksvR4DTZt1bzecZnN6yzkMHw4vuF8fGYjQrgZr3qTQ6tJyVByqxVo1m42bDW4UV9gc96AjWKhnnuLQe62Y7SGgK3jRRVaRdoLTSv4gkjYTG4zHBfRUmcxj31nj55t5pf4ZCQ2GztUvnKjkc1Dg1Lf6v4bYnXvuBRx39eTfK1CvgZQWYSqGYDGGWjxUYc9DF9Bj64881cwBgQT52QfgggSBJ2xAwVfvopAQ5DHRh2dVU9BnUEH9xH7TfM1VkVLor4ksdhJ5BrHwwedPtJv5yyo2KuyNJejWi59JY3AQn79u5GpLw6M9r8Ffney2rusB9ER4H8VtnUU1JGxEktQeSUYtz2oxnMjK5xGenrBSC9ze7Z8k8uMqRgXGDABcHPQepwLRhrbLLsyhSbzF4RfFgVAPM5xgKwDMPNhj8rkPcbqgz7zmzG2E2v6EfJ5PQ88FST5jyKzjyygHA6cXhx7CquyVMQf6jNfVAcedtSco1cHPvhe16V9PPtvq729tCKNeMnxPPhKT97PeVLpe2T9eYcrqFFCySRXX5RKimp7wwNyVavvU2tRxLjDbYZiPFZHyv7mcRzXQij1JFKLWxCY4fbzfojNxn8wTL5WKAQNvyTfGHzdSUmxo4GFBctbjWEsbouvBeDUJf49HQFT1Crap5CrAoC1Akdvrjw1LjPR5KVfMjQjUF15g2QNr88NBwRo8uP6CU6LwnfSzKhapKcPcwkbwffU763L35g7Ud4EzVYUWcKUS6E6JPRcvWQrSFfT8u9SACBoca2cSfy2J65JADZXrM",
+        |    "globalIndex": 28614154,
+        |    "creationHeight": 991312,
+        |    "settlementHeight": 991315,
+        |    "ergoTree": "19dd041b08cd03abaf717045fcf5ad0a4058b9895e6d5343bf61a12884618a278b0b81ea6309710400040404080402040205feffffffffffffffff010404040004060402040004000e20facd58505693bccbf7281492fba58f38594d9b4924f253789bf99c49e5d34bd305020580b6dc050404040204040402010101000e691005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a5730405000500058092f4010100d803d6017300d602b2a4730100d603db6308a7eb027201d195ed92b1a4730293b1db630872027303d80cd604db63087202d605b2a5730400d606b27204730500d6077e9973068c72060206d608b27204730700d6097e8c72080206d60a9d9c7e8cb27203730800020672077209d60bb27204730900d60c7e8c720b0206d60d9d9c7e8cb27203730a0002067207720cd60edb63087205d60fb2720e730b00edededededed93b27204730c008602730d730e93c27205d0720192c1720599c1a7730f95ed8f720a720d93b1720e7310d801d610b2720e731100ed938c7210018c720b01927e8c721002069d9c99720d720a720c720795ed91720a720d93b1720e7312d801d610b2720e731300ed938c7210018c720801927e8c721002069d9c99720a720d720972079593720a720d73147315938c720f018c720601927e8c720f0206a1720a720d90b0ada5d90110639593c272107316c1721073177318d90110599a8c7210018c7210027319731a",
+        |    "address": "2HUM2ZSbd7qVu9APa19mNfdoddaushbEMcUqdASCkN52MpHaeagGVJVWYUBtsSSgSStnTscKwUaKKcD6FEEbJSkVcCrZ5NJ6mXJeEtyNjuJd8ZpvMhyqtgeuwGnCEMPGvmdKs4wbQ9gDXjRGNkdDSDxv8Nw6UEvnZNxEzF5xri1BAaVvaxEeyy23xwAb3Ua9tNRbXQ64zAJ6dhp2up3Y8z3gX5vx7etRY1L3ymVPaaPahzry9LzPmhybK5MQMNJy9KAUWTHL4VNNvRyLkVhke5hVPKsTqH1JumFnB8bz6wEQdBxCsyjvEkk2dC1ReGHLYqjbGSqTuaFEVSD2Fjuz2bXBERupCtnqxQ5kqNbam9deChWZWoQSRnrog9E2L5VfX9XhdKEPqjFs8uz8mg9cpgehEWVvdWmVzmyqLLJ16MmbymZ9aasna9k7HVY5whU8nwAHZX94gkgJuXTfpghpw3veGoGyFZnbCBHStq6NPmoC19cprD6W7pZg4mix1QcAdYXvofG8Zkuj7VgUo17b9CyhvHC1f25HVsF6gzUHmJ6L2BcEjEdm8WEkAdnjgGXRgb2XpJGZ7wKAUvF99PQwGf3CBLpv91sUDSdTh64MtGwvUUpw7NBLPzmoQ863YmUkVgqZP8CNsY4FeCUWNDkidjdHefK6T3cLBvczX4SrWkQ1xSio8NDL4cnoMakZQZhfFGXq9hSDuFPDPe7QEJGpTyBm1QmyvEkwqEe1go6xWjZygi4TGJz5zhbbJoFeVuGJGTvjxnefweBem2BwuZHh3QkjU91FGE8vPDnLpsfpsrJyfcbLbkNEfNyLUyroDYQhLJ6UC",
         |    "assets": [
         |        {
-        |            "tokenId": "ef802b475c06189fdbf844153cdc1d449a5ba87cce13d11bb47b5a539f27f12b",
+        |            "tokenId": "706fb118782c421b0b00e01e5403efb64b68e31e01048dc398f3a143eaa05b26",
         |            "index": 0,
-        |            "amount": 200000000000,
-        |            "name": "WT_ERG",
-        |            "decimals": 9,
+        |            "amount": 1394638966,
+        |            "name": "tERG",
+        |            "decimals": 8,
         |            "type": "EIP-004"
         |        },
         |        {
-        |            "tokenId": "30974274078845f263b4f21787e33cc99e9ec19a17ad85a5bc6da2cca91c5a2e",
+        |            "tokenId": "c07bde48465708577d0e0b401300245987d297de2a6004116c825ba09dd26b7d",
         |            "index": 1,
-        |            "amount": 96138352753,
-        |            "name": "WT_ADA",
-        |            "decimals": 8,
+        |            "amount": 8500,
+        |            "name": "tSigRSV",
+        |            "decimals": 0,
         |            "type": "EIP-004"
         |        }
         |    ],
         |    "additionalRegisters": {},
-        |    "spentTransactionId": "106426da7ad745ae5c25322f79794cb480e15f76e8e4abc423d443bb997b9740",
+        |    "spentTransactionId": "ebf52980545672a961286b115c1767b49b52b4cff0ed32db6e5cd8e57041a355",
         |    "mainChain": true
         |}
         |""".stripMargin
@@ -109,17 +109,17 @@ object T2T {
 
     val expectedT2TDepositV1: AmmDepositV1 = AmmDepositV1(
       depositT2T,
-      ERG(7000000),
-      PoolId.unsafeFromString("f1fb942ebd039dc782fd9109acdb60aabea4dc7e75e9c813b6528c62692fc781"),
-      PublicKeyRedeemer(PubKey.unsafeFromString("03c900eda9e1c2a199ec844c0515279fae0c764ba9dd174b4d9e43ec74c6bfff2e")),
+      ERG(6000000),
+      PoolId.unsafeFromString("facd58505693bccbf7281492fba58f38594d9b4924f253789bf99c49e5d34bd3"),
+      PublicKeyRedeemer(PubKey.unsafeFromString("03abaf717045fcf5ad0a4058b9895e6d5343bf61a12884618a278b0b81ea630971")),
       AmmDepositParams(
         AssetAmount(
-          TokenId.unsafeFromString("ef802b475c06189fdbf844153cdc1d449a5ba87cce13d11bb47b5a539f27f12b"),
-          200000000000L
+          TokenId.unsafeFromString("706fb118782c421b0b00e01e5403efb64b68e31e01048dc398f3a143eaa05b26"),
+          1394638966
         ),
         AssetAmount(
-          TokenId.unsafeFromString("30974274078845f263b4f21787e33cc99e9ec19a17ad85a5bc6da2cca91c5a2e"),
-          96138352753L
+          TokenId.unsafeFromString("c07bde48465708577d0e0b401300245987d297de2a6004116c825ba09dd26b7d"),
+          8500
         )
       ),
       2000000,

@@ -22,55 +22,65 @@ object Compound {
   val compoundNotLastEpochOutput = decode[Output](
     s"""
        |{
-       |    "boxId": "24bf92d7af14a2e56d83fc1d9e335ec629672f89763f9e33cf30f45d53595b49",
-       |    "transactionId": "38503bcdbca4925dbc99b2d94e17f8e4ab998fec6e56a418f846c54109025a35",
-       |    "blockId": "7ccd3d91784b6873025b57b5260fa51f7635c157c2669e0616cc0518c194d1c2",
-       |    "value": 300000,
-       |    "index": 2,
-       |    "globalIndex": 26483092,
-       |    "creationHeight": 938652,
-       |    "settlementHeight": 938657,
-       |    "ergoTree": "19a3041f040004000404040404000402060101040005000402040404020400040004020502040405020402040005feffffffffffffffff010408050205000404040004060404040205fcffffffffffffffff010100d80cd601b2a5730000d602db63087201d603e4c6a7050ed604b2a4730100d605db63087204d6068cb2720573020002d607998cb27202730300027206d608e4c6a70408d609db6308a7d60ab27209730400d60bb27205730500d60c7306d1ed938cb27202730700017203959372077308d80cd60db2a5e4e3000400d60eb2a5e4e3010400d60fb2e4c672040410730900d610c672010804d61199720f95e67210e47210e4c672010704d6128cb27209730a0001d613db6308720ed614b27209730b00d6158c721402d6167e721105d6179972159c72168c720a02d618b2db6308720d730c00eded93c2720dd07208edededed93e4c6720e0408720893e4c6720e050e720393c2720ec2a795917211730dd801d619b27213730e00eded9386027212730fb27213731000938c7219018c721401939972158c721902721793860272127311b2721373120093b27213731300720aed938c7218018c720b01927e8c7218020699999d9c99997e8c720b02069d9c7ee4c672040505067e7211067e720f06720c7e7217067e999973148cb27205731500029c9972067316721606720c720c958f7207731793b2db6308b2a473180073190086029593b17209731a8cb27209731b00018cb27209731c0001731d731e",
-       |    "address": "YyLFSfjMQw5AJEuchDNPzziDH7CpLX8EbtGbddMpTpDoYYCc5xKJUbDuFnwsJ4qcpARjLmTQdRUTDiftnkb4kuNAaM7enwfxbWvh9SAbpvxAtJzhQApmedrEH9BBrPYzHdWbR354ZXZJkazhvfWMLyijyFeJ7aTDYmhDn8YvF3HeBMJiLByT32wTfNVEWQf4SEp3eN66ppqZs7bJAxrsZo3PDGJgTtZ2qPypMv3x9fcE6zYoLiCzHbAWC8WCfn5wNno9NAwSgWgHKcz3Gx4kXAe5DJnMDZJeiAuckS4e8J5sUfgFSPHTysvkfPw5pxBBNoxrsQ8y2jHSjB3KhSKKsNoZLnWZpbLQ7TurFc34TZJn9FNsRzpmQc9ftcZNa1QxKNoBtFzCpRXwvKd1RaSEZc5er7TwiyL9ebcfh1x3b3k2qXZhi6eXnktGBhEcNiJoJe7FdRA7gTXs9MCQewX8r7u3ay6i94bT9BrdXZy7xnmFU1DvyCcNP3sHHC1gDbNxdzVYsyF9tuxuXhmmD3rTc7hCPX4uo1dahq5HFaaQifp8kwe6iVuzp3Qo5vNPgV8tJBzXhGx7wgYoozGznh1ecYdBtCpHdEwzbME4bQy8qLXsBRB7TVnhQ2GYUL8XyCpzaziWEe1tdKrgbFFE1CNnLuGR7FEFikx5PfJVFTmFvpEvvtM7Qq9TMFjgsaoP58M7BajhU74EgqVRX3hi8pmmzxnjAzVKK5wZR62RcpowjrYsNLGjcWL8B",
+       |    "boxId": "000173076615f5ec1a9a2116152f7e5d864ae119648287297d351a76f6137778",
+       |    "transactionId": "5675e607f52a6551ba30fd12413783b72067d9a825b802f113eece58c85ae5a3",
+       |    "blockId": "a1542f96d66b9397c62de3981f658b2aaa67746ca5a83e844a0e21f5b7380e4e",
+       |    "value": 522000,
+       |    "index": 5,
+       |    "globalIndex": 28521377,
+       |    "creationHeight": 988634,
+       |    "settlementHeight": 988636,
+       |    "ergoTree": "19bc04210400040004040404040004020601010601000400050004020404040205feffffffffffffffff010408040004020502040405020402040004000101010005000404040004060404040205fcffffffffffffffff010100d80dd601b2a5730000d602db63087201d603e4c6a7070ed604b2a4730100d605db63087204d6068cb2720573020002d607998cb27202730300027206d608e4c6a70608d609db6308a7d60ab27209730400d60bb27205730500d60c7306d60d7307d1ed938cb27202730800017203959372077309d80cd60eb2a5e4e3000400d60fb2a5e4e3010400d610b2e4c672040410730a00d611c672010804d61299721095e67211e47211e4c672010704d6138cb27209730b0001d614db6308720fd615b27209730c00d6168c721502d6177e721205d6189972169c72178c720a02d6199d9c99997e8c720b02069d9c7ee4c672040505067e7212067e721006720c7e7218067e9999730d8cb27205730e00029c7206721706eded93c2720ed07208edededed93e4c6720f0608720893e4c6720f070e720393c2720fc2a795917212730fd801d61ab27214731000eded93860272137311b27214731200938c721a018c721501939972168c721a02721893860272137313b2721473140093b27214731500720a95917219720dd801d61ab2db6308720e731600ed938c721a018c720b01927e8c721a0206997219720c95937219720d73177318958f7207731993b2db6308b2a4731a00731b0086029593b17209731c8cb27209731d00018cb27209731e0001731f7320",
+       |    "address": "ynjTHNBGREHKAAK1CCraEPaaoVNSPeHDkyLv7AwgxCCeQc3wNUp36gHN7YwDVyg3M3gpwNgAvtswazW4aHC3gmTTnfgZMPrKnyVq3uhWGSchyjDpHc5B4YXstUvS6EBrxoZ8wYqiMUed3hAKfFA7Ug1fy7vE5T4SiuWbFj4sfY1o8DJZbyNYbxm4N6pALh87qvmFg3NJY6aFNpZ295LJ5R3D2U69uMrrwa2KSoHD9uCaJxwwiXp6GZoAh8LvyDibg4PT8dZFg8S4q9a3oPYJP84aJaAJiJF2u7BFw9peGiD8VJQHCCbvMd8P4vD2mEXpEhEdpNgaQT55v9RigTbayN93RnvV6SFQGHvmRoXAT2RDvXM7ZJjn7nTqzJGjZ5dQ3NKc91sRqeyGBwUysrFSWBq6tKexf4KMhcM1eX13BNrjqszDmchjgVFAzjXoxwyX5juDjwA1zwob8rcAjL8C9rF8E4KVAQBhnsAMzue6n5XqdSncuLEGjxnQAsutni8uKBtsq6nmft3zLFvdTkSFvYT811anBigszrFvnKz5ZyGaE7nZahsSUbMaag9cTxCB36iQQLSDdfzgxvJVFibF6sZ2A47Hc1eqgziM2o5NChd9GtHysRN2VjzmpZEbkXBnuc1wziKTAMLWRLvKa3vHuJtV4yfC3UTbvuBm3ScM51Cw8oi1JugqWSZGgYS2hrXgC5iumVpssBXnKgo4CTyDWP2wP7Fyyt1Trc1C5raEYcNoMisQDrtcPcpunsRvCYPAGEbAcxbGvYewh3BzHtdQD2P",
        |    "assets": [
        |        {
-       |            "tokenId": "ab987cc7de3127055872d36d88256d854944fe541cf8d70e7cc5c92d4647daf0",
+       |            "tokenId": "a875b8dd63b401d988ab8af0f46b89afe5c6c264edde02f6b8819f094e24cf5e",
        |            "index": 0,
-       |            "amount": 444898,
-       |            "name": null,
-       |            "decimals": null,
-       |            "type": null
+       |            "amount": 17455519172,
+       |            "name": "",
+       |            "decimals": 0,
+       |            "type": "EIP-004"
        |        },
        |        {
-       |            "tokenId": "bc58f841398f84fd0a72e2de50f8f3aed14e6234f7502bb7fe90729fba9c74f2",
+       |            "tokenId": "a6822e28f865c39f96004ded6f63c4fda4bcef48714d374775b886bc9f0dc313",
        |            "index": 1,
-       |            "amount": 889796,
-       |            "name": null,
-       |            "decimals": null,
-       |            "type": null
+       |            "amount": 1797918474716,
+       |            "name": "",
+       |            "decimals": 0,
+       |            "type": "EIP-004"
        |        },
        |        {
-       |            "tokenId": "00738c0e3c4d89a1a2d5e71a20e4a00262340f289e58d9d866719564a933bad5",
+       |            "tokenId": "5665b8155c2b4420612f6a10ff5b789ded577ddd738d640d027557f506f081cf",
        |            "index": 2,
        |            "amount": 1,
-       |            "name": null,
-       |            "decimals": null,
-       |            "type": null
+       |            "name": "Spectrum YF staking bundle",
+       |            "decimals": 0,
+       |            "type": "EIP-004"
        |        }
        |    ],
        |    "additionalRegisters": {
        |        "R4": {
-       |            "serializedValue": "08cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec",
-       |            "sigmaType": "SSigmaProp",
-       |            "renderedValue": "03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec"
+       |            "serializedValue": "0e1a537065637472756d205946207374616b696e672062756e646c65",
+       |            "sigmaType": "Coll[SByte]",
+       |            "renderedValue": "537065637472756d205946207374616b696e672062756e646c65"
        |        },
        |        "R5": {
-       |            "serializedValue": "0e200f30b560b6c396cc3fc2bdbcf41dd036070ed8b1df2df31ca292cfc5bbb38c0f",
+       |            "serializedValue": "0ea80154686520726570726573656e746174696f6e206f6620796f757220736861726520696e20746865207969656c64206661726d696e6720706f6f6c2028706f6f6c2069643a203864343965663730616230313564373963623961623532336164663363636230623764303535333463353938653464646638616362386232623432306234363329206f6e2074686520537065637472756d2046696e616e636520706c6174666f726d2e",
        |            "sigmaType": "Coll[SByte]",
-       |            "renderedValue": "0f30b560b6c396cc3fc2bdbcf41dd036070ed8b1df2df31ca292cfc5bbb38c0f"
+       |            "renderedValue": "54686520726570726573656e746174696f6e206f6620796f757220736861726520696e20746865207969656c64206661726d696e6720706f6f6c2028706f6f6c2069643a203864343965663730616230313564373963623961623532336164663363636230623764303535333463353938653464646638616362386232623432306234363329206f6e2074686520537065637472756d2046696e616e636520706c6174666f726d2e"
+       |        },
+       |        "R6": {
+       |            "serializedValue": "08cd0297f5cc7e4736c5bfb8fecb302edde17998b0d2832781920e3f7f5f38674bc9cf",
+       |            "sigmaType": "SSigmaProp",
+       |            "renderedValue": "0297f5cc7e4736c5bfb8fecb302edde17998b0d2832781920e3f7f5f38674bc9cf"
+       |        },
+       |        "R7": {
+       |            "serializedValue": "0e208d49ef70ab015d79cb9ab523adf3ccb0b7d05534c598e4ddf8acb8b2b420b463",
+       |            "sigmaType": "Coll[SByte]",
+       |            "renderedValue": "8d49ef70ab015d79cb9ab523adf3ccb0b7d05534c598e4ddf8acb8b2b420b463"
        |        }
        |    },
-       |    "spentTransactionId": "3156e7598a5944accd90232d8eb18da3ab1b72e7340445d75ad23ce4c0951f7b",
+       |    "spentTransactionId": "e627e21da80df01a2022419cd0dcc7cb6f2d26573bfaa06029e92dab8e538855",
        |    "mainChain": true
        |}
        |""".stripMargin
@@ -80,67 +90,85 @@ object Compound {
     compoundNotLastEpochOutput,
     LmCompoundParams(
       AssetAmount(
-        TokenId.unsafeFromString("ab987cc7de3127055872d36d88256d854944fe541cf8d70e7cc5c92d4647daf0"),
-        444898
+        TokenId.unsafeFromString("a875b8dd63b401d988ab8af0f46b89afe5c6c264edde02f6b8819f094e24cf5e"),
+        17455519172L
       ),
       AssetAmount(
-        TokenId.unsafeFromString("bc58f841398f84fd0a72e2de50f8f3aed14e6234f7502bb7fe90729fba9c74f2"),
-        889796
+        TokenId.unsafeFromString("a6822e28f865c39f96004ded6f63c4fda4bcef48714d374775b886bc9f0dc313"),
+        1797918474716L
       ).some,
       AssetAmount(
-        TokenId.unsafeFromString("00738c0e3c4d89a1a2d5e71a20e4a00262340f289e58d9d866719564a933bad5"),
+        TokenId.unsafeFromString("5665b8155c2b4420612f6a10ff5b789ded577ddd738d640d027557f506f081cf"),
         1
       ).tokenId
     ),
-    PoolId.unsafeFromString("0f30b560b6c396cc3fc2bdbcf41dd036070ed8b1df2df31ca292cfc5bbb38c0f"),
-    PublicKeyRedeemer(PubKey.unsafeFromString("03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec")),
+    PoolId.unsafeFromString("8d49ef70ab015d79cb9ab523adf3ccb0b7d05534c598e4ddf8acb8b2b420b463"),
+    PublicKeyRedeemer(PubKey.unsafeFromString("0297f5cc7e4736c5bfb8fecb302edde17998b0d2832781920e3f7f5f38674bc9cf")),
     V1
   )
 
   val compoundLastEpochOutput = decode[Output](
     s"""
        |{
-       |    "boxId": "24bf92d7af14a2e56d83fc1d9e335ec629672f89763f9e33cf30f45d53595b49",
-       |    "transactionId": "38503bcdbca4925dbc99b2d94e17f8e4ab998fec6e56a418f846c54109025a35",
-       |    "blockId": "7ccd3d91784b6873025b57b5260fa51f7635c157c2669e0616cc0518c194d1c2",
-       |    "value": 300000,
-       |    "index": 2,
-       |    "globalIndex": 26483092,
-       |    "creationHeight": 938652,
-       |    "settlementHeight": 938657,
-       |    "ergoTree": "19a3041f040004000404040404000402060101040005000402040404020400040004020502040405020402040005feffffffffffffffff010408050205000404040004060404040205fcffffffffffffffff010100d80cd601b2a5730000d602db63087201d603e4c6a7050ed604b2a4730100d605db63087204d6068cb2720573020002d607998cb27202730300027206d608e4c6a70408d609db6308a7d60ab27209730400d60bb27205730500d60c7306d1ed938cb27202730700017203959372077308d80cd60db2a5e4e3000400d60eb2a5e4e3010400d60fb2e4c672040410730900d610c672010804d61199720f95e67210e47210e4c672010704d6128cb27209730a0001d613db6308720ed614b27209730b00d6158c721402d6167e721105d6179972159c72168c720a02d618b2db6308720d730c00eded93c2720dd07208edededed93e4c6720e0408720893e4c6720e050e720393c2720ec2a795917211730dd801d619b27213730e00eded9386027212730fb27213731000938c7219018c721401939972158c721902721793860272127311b2721373120093b27213731300720aed938c7218018c720b01927e8c7218020699999d9c99997e8c720b02069d9c7ee4c672040505067e7211067e720f06720c7e7217067e999973148cb27205731500029c9972067316721606720c720c958f7207731793b2db6308b2a473180073190086029593b17209731a8cb27209731b00018cb27209731c0001731d731e",
-       |    "address": "YyLFSfjMQw5AJEuchDNPzziDH7CpLX8EbtGbddMpTpDoYYCc5xKJUbDuFnwsJ4qcpARjLmTQdRUTDiftnkb4kuNAaM7enwfxbWvh9SAbpvxAtJzhQApmedrEH9BBrPYzHdWbR354ZXZJkazhvfWMLyijyFeJ7aTDYmhDn8YvF3HeBMJiLByT32wTfNVEWQf4SEp3eN66ppqZs7bJAxrsZo3PDGJgTtZ2qPypMv3x9fcE6zYoLiCzHbAWC8WCfn5wNno9NAwSgWgHKcz3Gx4kXAe5DJnMDZJeiAuckS4e8J5sUfgFSPHTysvkfPw5pxBBNoxrsQ8y2jHSjB3KhSKKsNoZLnWZpbLQ7TurFc34TZJn9FNsRzpmQc9ftcZNa1QxKNoBtFzCpRXwvKd1RaSEZc5er7TwiyL9ebcfh1x3b3k2qXZhi6eXnktGBhEcNiJoJe7FdRA7gTXs9MCQewX8r7u3ay6i94bT9BrdXZy7xnmFU1DvyCcNP3sHHC1gDbNxdzVYsyF9tuxuXhmmD3rTc7hCPX4uo1dahq5HFaaQifp8kwe6iVuzp3Qo5vNPgV8tJBzXhGx7wgYoozGznh1ecYdBtCpHdEwzbME4bQy8qLXsBRB7TVnhQ2GYUL8XyCpzaziWEe1tdKrgbFFE1CNnLuGR7FEFikx5PfJVFTmFvpEvvtM7Qq9TMFjgsaoP58M7BajhU74EgqVRX3hi8pmmzxnjAzVKK5wZR62RcpowjrYsNLGjcWL8B",
+       |    "boxId": "fc7495dc9471798b5371ee0701baf0912209eccd234cadb0d80c3fb69f6031f7",
+       |    "transactionId": "5675e607f52a6551ba30fd12413783b72067d9a825b802f113eece58c85ae5a3",
+       |    "blockId": "a1542f96d66b9397c62de3981f658b2aaa67746ca5a83e844a0e21f5b7380e4e",
+       |    "value": 522000,
+       |    "index": 11,
+       |    "globalIndex": 28521383,
+       |    "creationHeight": 988634,
+       |    "settlementHeight": 988636,
+       |    "ergoTree": "19bc04210400040004040404040004020601010601000400050004020404040205feffffffffffffffff010408040004020502040405020402040004000101010005000404040004060404040205fcffffffffffffffff010100d80dd601b2a5730000d602db63087201d603e4c6a7070ed604b2a4730100d605db63087204d6068cb2720573020002d607998cb27202730300027206d608e4c6a70608d609db6308a7d60ab27209730400d60bb27205730500d60c7306d60d7307d1ed938cb27202730800017203959372077309d80cd60eb2a5e4e3000400d60fb2a5e4e3010400d610b2e4c672040410730a00d611c672010804d61299721095e67211e47211e4c672010704d6138cb27209730b0001d614db6308720fd615b27209730c00d6168c721502d6177e721205d6189972169c72178c720a02d6199d9c99997e8c720b02069d9c7ee4c672040505067e7212067e721006720c7e7218067e9999730d8cb27205730e00029c7206721706eded93c2720ed07208edededed93e4c6720f0608720893e4c6720f070e720393c2720fc2a795917212730fd801d61ab27214731000eded93860272137311b27214731200938c721a018c721501939972168c721a02721893860272137313b2721473140093b27214731500720a95917219720dd801d61ab2db6308720e731600ed938c721a018c720b01927e8c721a0206997219720c95937219720d73177318958f7207731993b2db6308b2a4731a00731b0086029593b17209731c8cb27209731d00018cb27209731e0001731f7320",
+       |    "address": "ynjTHNBGREHKAAK1CCraEPaaoVNSPeHDkyLv7AwgxCCeQc3wNUp36gHN7YwDVyg3M3gpwNgAvtswazW4aHC3gmTTnfgZMPrKnyVq3uhWGSchyjDpHc5B4YXstUvS6EBrxoZ8wYqiMUed3hAKfFA7Ug1fy7vE5T4SiuWbFj4sfY1o8DJZbyNYbxm4N6pALh87qvmFg3NJY6aFNpZ295LJ5R3D2U69uMrrwa2KSoHD9uCaJxwwiXp6GZoAh8LvyDibg4PT8dZFg8S4q9a3oPYJP84aJaAJiJF2u7BFw9peGiD8VJQHCCbvMd8P4vD2mEXpEhEdpNgaQT55v9RigTbayN93RnvV6SFQGHvmRoXAT2RDvXM7ZJjn7nTqzJGjZ5dQ3NKc91sRqeyGBwUysrFSWBq6tKexf4KMhcM1eX13BNrjqszDmchjgVFAzjXoxwyX5juDjwA1zwob8rcAjL8C9rF8E4KVAQBhnsAMzue6n5XqdSncuLEGjxnQAsutni8uKBtsq6nmft3zLFvdTkSFvYT811anBigszrFvnKz5ZyGaE7nZahsSUbMaag9cTxCB36iQQLSDdfzgxvJVFibF6sZ2A47Hc1eqgziM2o5NChd9GtHysRN2VjzmpZEbkXBnuc1wziKTAMLWRLvKa3vHuJtV4yfC3UTbvuBm3ScM51Cw8oi1JugqWSZGgYS2hrXgC5iumVpssBXnKgo4CTyDWP2wP7Fyyt1Trc1C5raEYcNoMisQDrtcPcpunsRvCYPAGEbAcxbGvYewh3BzHtdQD2P",
        |    "assets": [
        |        {
-       |            "tokenId": "ab987cc7de3127055872d36d88256d854944fe541cf8d70e7cc5c92d4647daf0",
+       |            "tokenId": "a875b8dd63b401d988ab8af0f46b89afe5c6c264edde02f6b8819f094e24cf5e",
        |            "index": 0,
-       |            "amount": 444898,
-       |            "name": null,
-       |            "decimals": null,
-       |            "type": null
+       |            "amount": 21309708902,
+       |            "name": "",
+       |            "decimals": 0,
+       |            "type": "EIP-004"
        |        },
        |        {
-       |            "tokenId": "00738c0e3c4d89a1a2d5e71a20e4a00262340f289e58d9d866719564a933bad5",
+       |            "tokenId": "a6822e28f865c39f96004ded6f63c4fda4bcef48714d374775b886bc9f0dc313",
        |            "index": 1,
+       |            "amount": 2194900016906,
+       |            "name": "",
+       |            "decimals": 0,
+       |            "type": "EIP-004"
+       |        },
+       |        {
+       |            "tokenId": "62c8554720d8f396169dbfc2fd9b8ce44a82e000eb7d3363f861d15fe0387929",
+       |            "index": 2,
        |            "amount": 1,
-       |            "name": null,
-       |            "decimals": null,
-       |            "type": null
+       |            "name": "Spectrum YF staking bundle",
+       |            "decimals": 0,
+       |            "type": "EIP-004"
        |        }
        |    ],
        |    "additionalRegisters": {
        |        "R4": {
-       |            "serializedValue": "08cd03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec",
-       |            "sigmaType": "SSigmaProp",
-       |            "renderedValue": "03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec"
+       |            "serializedValue": "0e1a537065637472756d205946207374616b696e672062756e646c65",
+       |            "sigmaType": "Coll[SByte]",
+       |            "renderedValue": "537065637472756d205946207374616b696e672062756e646c65"
        |        },
        |        "R5": {
-       |            "serializedValue": "0e200f30b560b6c396cc3fc2bdbcf41dd036070ed8b1df2df31ca292cfc5bbb38c0f",
+       |            "serializedValue": "0ea80154686520726570726573656e746174696f6e206f6620796f757220736861726520696e20746865207969656c64206661726d696e6720706f6f6c2028706f6f6c2069643a203864343965663730616230313564373963623961623532336164663363636230623764303535333463353938653464646638616362386232623432306234363329206f6e2074686520537065637472756d2046696e616e636520706c6174666f726d2e",
        |            "sigmaType": "Coll[SByte]",
-       |            "renderedValue": "0f30b560b6c396cc3fc2bdbcf41dd036070ed8b1df2df31ca292cfc5bbb38c0f"
+       |            "renderedValue": "54686520726570726573656e746174696f6e206f6620796f757220736861726520696e20746865207969656c64206661726d696e6720706f6f6c2028706f6f6c2069643a203864343965663730616230313564373963623961623532336164663363636230623764303535333463353938653464646638616362386232623432306234363329206f6e2074686520537065637472756d2046696e616e636520706c6174666f726d2e"
+       |        },
+       |        "R6": {
+       |            "serializedValue": "08cd03eaf5c35c863a98f174c6bcbb1c0b51045aa34453c137eb35b4baf96c39ec85c2",
+       |            "sigmaType": "SSigmaProp",
+       |            "renderedValue": "03eaf5c35c863a98f174c6bcbb1c0b51045aa34453c137eb35b4baf96c39ec85c2"
+       |        },
+       |        "R7": {
+       |            "serializedValue": "0e208d49ef70ab015d79cb9ab523adf3ccb0b7d05534c598e4ddf8acb8b2b420b463",
+       |            "sigmaType": "Coll[SByte]",
+       |            "renderedValue": "8d49ef70ab015d79cb9ab523adf3ccb0b7d05534c598e4ddf8acb8b2b420b463"
        |        }
        |    },
-       |    "spentTransactionId": "3156e7598a5944accd90232d8eb18da3ab1b72e7340445d75ad23ce4c0951f7b",
+       |    "spentTransactionId": "e627e21da80df01a2022419cd0dcc7cb6f2d26573bfaa06029e92dab8e538855",
        |    "mainChain": true
        |}
        |""".stripMargin
@@ -150,19 +178,42 @@ object Compound {
     compoundLastEpochOutput,
     LmCompoundParams(
       AssetAmount(
-        TokenId.unsafeFromString("ab987cc7de3127055872d36d88256d854944fe541cf8d70e7cc5c92d4647daf0"),
-        444898
+        TokenId.unsafeFromString("a875b8dd63b401d988ab8af0f46b89afe5c6c264edde02f6b8819f094e24cf5e"),
+        21309708902L
       ),
-      none,
+      Some(
+        AssetAmount(
+          TokenId.unsafeFromString("a6822e28f865c39f96004ded6f63c4fda4bcef48714d374775b886bc9f0dc313"),
+          2194900016906L
+        )
+      ),
       AssetAmount(
-        TokenId.unsafeFromString("00738c0e3c4d89a1a2d5e71a20e4a00262340f289e58d9d866719564a933bad5"),
+        TokenId.unsafeFromString("62c8554720d8f396169dbfc2fd9b8ce44a82e000eb7d3363f861d15fe0387929"),
         1
       ).tokenId
     ),
-    PoolId.unsafeFromString("0f30b560b6c396cc3fc2bdbcf41dd036070ed8b1df2df31ca292cfc5bbb38c0f"),
-    PublicKeyRedeemer(PubKey.unsafeFromString("03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec")),
+    PoolId.unsafeFromString("8d49ef70ab015d79cb9ab523adf3ccb0b7d05534c598e4ddf8acb8b2b420b463"),
+    PublicKeyRedeemer(PubKey.unsafeFromString("03eaf5c35c863a98f174c6bcbb1c0b51045aa34453c137eb35b4baf96c39ec85c2")),
     V1
   )
+
+//  val compoundLastEpoch = CompoundV1(
+//    compoundLastEpochOutput,
+//    LmCompoundParams(
+//      AssetAmount(
+//        TokenId.unsafeFromString("a875b8dd63b401d988ab8af0f46b89afe5c6c264edde02f6b8819f094e24cf5e"),
+//        21309708902L
+//      ),
+//      none,
+//      AssetAmount(
+//        TokenId.unsafeFromString("00738c0e3c4d89a1a2d5e71a20e4a00262340f289e58d9d866719564a933bad5"),
+//        1
+//      ).tokenId
+//    ),
+//    PoolId.unsafeFromString("0f30b560b6c396cc3fc2bdbcf41dd036070ed8b1df2df31ca292cfc5bbb38c0f"),
+//    PublicKeyRedeemer(PubKey.unsafeFromString("03b196b978d77488fba3138876a40a40b9a046c2fbb5ecfa13d4ecf8f1eec52aec")),
+//    V1
+//  )
 
   val compoundTx = decode[TransactionTest](
     """{
@@ -513,55 +564,65 @@ object Compound {
   val expectedOutput = decode[Output](
     s"""
        |{
-       |    "boxId": "d43f9cd556853127181b2aa5f2bedc1c1e4719b5237caa53d1d6f851e988116b",
-       |    "transactionId": "b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e",
-       |    "blockId": "39a3222f60392d7fd0fc0069f919930e81a5bc722024dfefd490446220d0fd9e",
-       |    "value": 1250000,
+       |    "boxId": "95fac03fe9a0b9bd7d6d8da5c88eaf450f5448ea0678e0050bd8b6776e56199e",
+       |    "transactionId": "5675e607f52a6551ba30fd12413783b72067d9a825b802f113eece58c85ae5a3",
+       |    "blockId": "a1542f96d66b9397c62de3981f658b2aaa67746ca5a83e844a0e21f5b7380e4e",
+       |    "value": 522000,
        |    "index": 2,
-       |    "globalIndex": 25847031,
-       |    "creationHeight": 923467,
-       |    "settlementHeight": 923469,
-       |    "ergoTree": "19a3041f040004000404040404000402060101040005000402040404020400040004020502040405020402040005feffffffffffffffff010408050205000404040004060404040205fcffffffffffffffff010100d80cd601b2a5730000d602db63087201d603e4c6a7050ed604b2a4730100d605db63087204d6068cb2720573020002d607998cb27202730300027206d608e4c6a70408d609db6308a7d60ab27209730400d60bb27205730500d60c7306d1ed938cb27202730700017203959372077308d80cd60db2a5e4e3000400d60eb2a5e4e3010400d60fb2e4c672040410730900d610c672010804d61199720f95e67210e47210e4c672010704d6128cb27209730a0001d613db6308720ed614b27209730b00d6158c721402d6167e721105d6179972159c72168c720a02d618b2db6308720d730c00eded93c2720dd07208edededed93e4c6720e0408720893e4c6720e050e720393c2720ec2a795917211730dd801d619b27213730e00eded9386027212730fb27213731000938c7219018c721401939972158c721902721793860272127311b2721373120093b27213731300720aed938c7218018c720b01927e8c7218020699999d9c99997e8c720b02069d9c7ee4c672040505067e7211067e720f06720c7e7217067e999973148cb27205731500029c9972067316721606720c720c958f7207731793b2db6308b2a473180073190086029593b17209731a8cb27209731b00018cb27209731c0001731d731e",
-       |    "address": "LDQVxoiCdZqP7uW7FP1DMaqiZQ9dfMob93zMYKX9X7sXupnJZ6Lmn8u5C3T2Qgiw9gQoiw9xQfLCn8zWagMECeQDUEsKUnbUk4fAYLeySrg2DRuC7BsUYM2Cwux55bz5QuvpEsQeE8iM9xxr4t4YNrhKrY9T8ytB4y8bWVjuSPHzTJSr4gfqieD3agt4Avf5Ctf461aBqS4v4H2XvHsfrbokmqEUE7G94PPLP6p4EsdNXqzX9jqQyGZSiXz2vuxx3H3WZM4ZcKFfva1T3NKyKxRQ9FfZM5wsEdL2WcrntSnRcNdjn541ewYoeYEHMV5Jbvu9sgb75Cm8EBpcj31Jox4TVdfQ87w94LCnvU2RvNdc5JnBq149KDnugY3SjNJ81ZZF57LuMWqm6JQfEUANjw3CiZQpdm6LFKmGy3jdk4tr2KiToZj71JNjRCnqH5VCSJJLERXHj6BKDM9V4rjycRxhCN79auYSWvGxgbSSeZRJD7xkeGSxbAG56hN9is3BGSaBBVa7TNDwYMDG7juTVVCCP3K1WNyVJpfZJK6EDANECWgeqrFLSVZ42JafrhdWjE1KwEttz39MF67nELBuQsXpWYQV2VmEhcv",
+       |    "globalIndex": 28521374,
+       |    "creationHeight": 988634,
+       |    "settlementHeight": 988636,
+       |    "ergoTree": "19bc04210400040004040404040004020601010601000400050004020404040205feffffffffffffffff010408040004020502040405020402040004000101010005000404040004060404040205fcffffffffffffffff010100d80dd601b2a5730000d602db63087201d603e4c6a7070ed604b2a4730100d605db63087204d6068cb2720573020002d607998cb27202730300027206d608e4c6a70608d609db6308a7d60ab27209730400d60bb27205730500d60c7306d60d7307d1ed938cb27202730800017203959372077309d80cd60eb2a5e4e3000400d60fb2a5e4e3010400d610b2e4c672040410730a00d611c672010804d61299721095e67211e47211e4c672010704d6138cb27209730b0001d614db6308720fd615b27209730c00d6168c721502d6177e721205d6189972169c72178c720a02d6199d9c99997e8c720b02069d9c7ee4c672040505067e7212067e721006720c7e7218067e9999730d8cb27205730e00029c7206721706eded93c2720ed07208edededed93e4c6720f0608720893e4c6720f070e720393c2720fc2a795917212730fd801d61ab27214731000eded93860272137311b27214731200938c721a018c721501939972168c721a02721893860272137313b2721473140093b27214731500720a95917219720dd801d61ab2db6308720e731600ed938c721a018c720b01927e8c721a0206997219720c95937219720d73177318958f7207731993b2db6308b2a4731a00731b0086029593b17209731c8cb27209731d00018cb27209731e0001731f7320",
+       |    "address": "ynjTHNBGREHKAAK1CCraEPaaoVNSPeHDkyLv7AwgxCCeQc3wNUp36gHN7YwDVyg3M3gpwNgAvtswazW4aHC3gmTTnfgZMPrKnyVq3uhWGSchyjDpHc5B4YXstUvS6EBrxoZ8wYqiMUed3hAKfFA7Ug1fy7vE5T4SiuWbFj4sfY1o8DJZbyNYbxm4N6pALh87qvmFg3NJY6aFNpZ295LJ5R3D2U69uMrrwa2KSoHD9uCaJxwwiXp6GZoAh8LvyDibg4PT8dZFg8S4q9a3oPYJP84aJaAJiJF2u7BFw9peGiD8VJQHCCbvMd8P4vD2mEXpEhEdpNgaQT55v9RigTbayN93RnvV6SFQGHvmRoXAT2RDvXM7ZJjn7nTqzJGjZ5dQ3NKc91sRqeyGBwUysrFSWBq6tKexf4KMhcM1eX13BNrjqszDmchjgVFAzjXoxwyX5juDjwA1zwob8rcAjL8C9rF8E4KVAQBhnsAMzue6n5XqdSncuLEGjxnQAsutni8uKBtsq6nmft3zLFvdTkSFvYT811anBigszrFvnKz5ZyGaE7nZahsSUbMaag9cTxCB36iQQLSDdfzgxvJVFibF6sZ2A47Hc1eqgziM2o5NChd9GtHysRN2VjzmpZEbkXBnuc1wziKTAMLWRLvKa3vHuJtV4yfC3UTbvuBm3ScM51Cw8oi1JugqWSZGgYS2hrXgC5iumVpssBXnKgo4CTyDWP2wP7Fyyt1Trc1C5raEYcNoMisQDrtcPcpunsRvCYPAGEbAcxbGvYewh3BzHtdQD2P",
        |    "assets": [
        |        {
-       |            "tokenId": "3fdce3da8d364f13bca60998c20660c79c19923f44e141df01349d2e63651e86",
+       |            "tokenId": "a875b8dd63b401d988ab8af0f46b89afe5c6c264edde02f6b8819f094e24cf5e",
        |            "index": 0,
-       |            "amount": 100,
-       |            "name": null,
-       |            "decimals": null,
-       |            "type": null
+       |            "amount": 10654937968,
+       |            "name": "",
+       |            "decimals": 0,
+       |            "type": "EIP-004"
        |        },
        |        {
-       |            "tokenId": "c256908dd9fd477bde350be6a41c0884713a1b1d589357ae731763455ef28c10",
+       |            "tokenId": "a6822e28f865c39f96004ded6f63c4fda4bcef48714d374775b886bc9f0dc313",
        |            "index": 1,
-       |            "amount": 1400,
-       |            "name": null,
-       |            "decimals": null,
-       |            "type": null
+       |            "amount": 1097458610704,
+       |            "name": "",
+       |            "decimals": 0,
+       |            "type": "EIP-004"
        |        },
        |        {
-       |            "tokenId": "251177a50ed3d4df8fc8575b3d9e03a0ba81f506a329a3ba7d8bb20994303794",
+       |            "tokenId": "4f719347f6ced486fa34fc5b7c5e4d535de422051dff7da1cc52c520aa6f1f36",
        |            "index": 2,
        |            "amount": 1,
-       |            "name": null,
-       |            "decimals": null,
-       |            "type": null
+       |            "name": "Spectrum YF staking bundle",
+       |            "decimals": 0,
+       |            "type": "EIP-004"
        |        }
        |    ],
        |    "additionalRegisters": {
        |        "R4": {
-       |            "serializedValue": "08cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491",
-       |            "sigmaType": "SSigmaProp",
-       |            "renderedValue": "03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491"
+       |            "serializedValue": "0e1a537065637472756d205946207374616b696e672062756e646c65",
+       |            "sigmaType": "Coll[SByte]",
+       |            "renderedValue": "537065637472756d205946207374616b696e672062756e646c65"
        |        },
        |        "R5": {
-       |            "serializedValue": "0e207956620de75192984d639cab2c989269d9a5310ad870ad547426952a9e660699",
+       |            "serializedValue": "0ea80154686520726570726573656e746174696f6e206f6620796f757220736861726520696e20746865207969656c64206661726d696e6720706f6f6c2028706f6f6c2069643a203864343965663730616230313564373963623961623532336164663363636230623764303535333463353938653464646638616362386232623432306234363329206f6e2074686520537065637472756d2046696e616e636520706c6174666f726d2e",
        |            "sigmaType": "Coll[SByte]",
-       |            "renderedValue": "7956620de75192984d639cab2c989269d9a5310ad870ad547426952a9e660699"
+       |            "renderedValue": "54686520726570726573656e746174696f6e206f6620796f757220736861726520696e20746865207969656c64206661726d696e6720706f6f6c2028706f6f6c2069643a203864343965663730616230313564373963623961623532336164663363636230623764303535333463353938653464646638616362386232623432306234363329206f6e2074686520537065637472756d2046696e616e636520706c6174666f726d2e"
+       |        },
+       |        "R6": {
+       |            "serializedValue": "08cd02d800b2515acdd8c3784cf6f7e1e36eede5410c002d819cf61c187fa96ec83c05",
+       |            "sigmaType": "SSigmaProp",
+       |            "renderedValue": "02d800b2515acdd8c3784cf6f7e1e36eede5410c002d819cf61c187fa96ec83c05"
+       |        },
+       |        "R7": {
+       |            "serializedValue": "0e208d49ef70ab015d79cb9ab523adf3ccb0b7d05534c598e4ddf8acb8b2b420b463",
+       |            "sigmaType": "Coll[SByte]",
+       |            "renderedValue": "8d49ef70ab015d79cb9ab523adf3ccb0b7d05534c598e4ddf8acb8b2b420b463"
        |        }
        |    },
-       |    "spentTransactionId": null,
+       |    "spentTransactionId": "e627e21da80df01a2022419cd0dcc7cb6f2d26573bfaa06029e92dab8e538855",
        |    "mainChain": true
        |}
        |""".stripMargin
@@ -570,19 +631,27 @@ object Compound {
   val expectedCompound = CompoundV1(
     expectedOutput,
     LmCompoundParams(
-      AssetAmount(TokenId.unsafeFromString("3fdce3da8d364f13bca60998c20660c79c19923f44e141df01349d2e63651e86"), 100),
-      Some(
-        AssetAmount(TokenId.unsafeFromString("c256908dd9fd477bde350be6a41c0884713a1b1d589357ae731763455ef28c10"), 1400)
+      AssetAmount(
+        TokenId.unsafeFromString("a875b8dd63b401d988ab8af0f46b89afe5c6c264edde02f6b8819f094e24cf5e"),
+        10654937968L
       ),
-      TokenId.unsafeFromString("251177a50ed3d4df8fc8575b3d9e03a0ba81f506a329a3ba7d8bb20994303794")
+      Some(
+        AssetAmount(
+          TokenId.unsafeFromString("a6822e28f865c39f96004ded6f63c4fda4bcef48714d374775b886bc9f0dc313"),
+          1097458610704L
+        )
+      ),
+      TokenId.unsafeFromString("4f719347f6ced486fa34fc5b7c5e4d535de422051dff7da1cc52c520aa6f1f36")
     ),
-    PoolId.unsafeFromString("7956620de75192984d639cab2c989269d9a5310ad870ad547426952a9e660699"),
-    PublicKeyRedeemer(PubKey.unsafeFromString("03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491")),
+    PoolId.unsafeFromString("8d49ef70ab015d79cb9ab523adf3ccb0b7d05534c598e4ddf8acb8b2b420b463"),
+    PublicKeyRedeemer(PubKey.unsafeFromString("02d800b2515acdd8c3784cf6f7e1e36eede5410c002d819cf61c187fa96ec83c05")),
     V1
   )
 
   val compoundBatchTxTest = decode[TransactionTest] {
-    val file   = new File("/ergo-analytics/modules/parsers/src/test/scala/fi/spectrum/parser/evaluation/EvalTxCompound.json")
+    val file = new File(
+      "/Users/oskin/Desktop/Dev/scala_dev/ergo-analytics/modules/parsers/src/test/scala/fi/spectrum/parser/evaluation/EvalTxCompound.json"
+    )
     val source = Source.fromFile(file)
     val res    = source.getLines().mkString("")
     source.close()
@@ -608,7 +677,10 @@ object Compound {
 
   val expectedBatchCompoundsRegister = compoundBatchTxTest.outputs
     .flatMap { out =>
-      CompoundParserV1.v1Compound.compound(OutputTest.fromExplorerOut(out), ErgoTreeSerializer.default.deserialize(out.ergoTree))
+      CompoundParserV1.v1Compound.compound(
+        OutputTest.fromExplorerOut(out),
+        ErgoTreeSerializer.default.deserialize(out.ergoTree)
+      )
     }
     .map { c =>
       Processed.make(
@@ -938,47 +1010,65 @@ object Compound {
     decode[Output](
       """
         |{
-        |    "boxId": "353fb1e32f52c4353daf8c66c8426b36f2d1989a88efd64bd38ac3173dc3c4ca",
-        |    "transactionId": "37137705008bf57ee71f3133d4af515e2a631dc34f89d10657eb62ba24ac5f27",
-        |    "blockId": "a5df1a7937b961e1e5c8bea01e8cbd8d954af98ef6fa880ec991959a13e26601",
-        |    "value": 1250000,
-        |    "index": 3,
-        |    "globalIndex": 26418732,
-        |    "creationHeight": 937187,
-        |    "settlementHeight": 937189,
-        |    "ergoTree": "19a3041f040004000404040404000402060101040005000402040404020400040004020502040405020402040005feffffffffffffffff010408050205000404040004060404040205fcffffffffffffffff010100d80cd601b2a5730000d602db63087201d603e4c6a7050ed604b2a4730100d605db63087204d6068cb2720573020002d607998cb27202730300027206d608e4c6a70408d609db6308a7d60ab27209730400d60bb27205730500d60c7306d1ed938cb27202730700017203959372077308d80cd60db2a5e4e3000400d60eb2a5e4e3010400d60fb2e4c672040410730900d610c672010804d61199720f95e67210e47210e4c672010704d6128cb27209730a0001d613db6308720ed614b27209730b00d6158c721402d6167e721105d6179972159c72168c720a02d618b2db6308720d730c00eded93c2720dd07208edededed93e4c6720e0408720893e4c6720e050e720393c2720ec2a795917211730dd801d619b27213730e00eded9386027212730fb27213731000938c7219018c721401939972158c721902721793860272127311b2721373120093b27213731300720aed938c7218018c720b01927e8c7218020699999d9c99997e8c720b02069d9c7ee4c672040505067e7211067e720f06720c7e7217067e999973148cb27205731500029c9972067316721606720c720c958f7207731793b2db6308b2a473180073190086029593b17209731a8cb27209731b00018cb27209731c0001731d731e",
-        |    "address": "YyLFSfjMQw5AJEuchDNPzziDH7CpLX8EbtGbddMpTpDoYYCc5xKJUbDuFnwsJ4qcpARjLmTQdRUTDiftnkb4kuNAaM7enwfxbWvh9SAbpvxAtJzhQApmedrEH9BBrPYzHdWbR354ZXZJkazhvfWMLyijyFeJ7aTDYmhDn8YvF3HeBMJiLByT32wTfNVEWQf4SEp3eN66ppqZs7bJAxrsZo3PDGJgTtZ2qPypMv3x9fcE6zYoLiCzHbAWC8WCfn5wNno9NAwSgWgHKcz3Gx4kXAe5DJnMDZJeiAuckS4e8J5sUfgFSPHTysvkfPw5pxBBNoxrsQ8y2jHSjB3KhSKKsNoZLnWZpbLQ7TurFc34TZJn9FNsRzpmQc9ftcZNa1QxKNoBtFzCpRXwvKd1RaSEZc5er7TwiyL9ebcfh1x3b3k2qXZhi6eXnktGBhEcNiJoJe7FdRA7gTXs9MCQewX8r7u3ay6i94bT9BrdXZy7xnmFU1DvyCcNP3sHHC1gDbNxdzVYsyF9tuxuXhmmD3rTc7hCPX4uo1dahq5HFaaQifp8kwe6iVuzp3Qo5vNPgV8tJBzXhGx7wgYoozGznh1ecYdBtCpHdEwzbME4bQy8qLXsBRB7TVnhQ2GYUL8XyCpzaziWEe1tdKrgbFFE1CNnLuGR7FEFikx5PfJVFTmFvpEvvtM7Qq9TMFjgsaoP58M7BajhU74EgqVRX3hi8pmmzxnjAzVKK5wZR62RcpowjrYsNLGjcWL8B",
+        |    "boxId": "c622e40595f7edfdb26ae3709fbcbc8584f26ef258461e247d2516015ae42a43",
+        |    "transactionId": "a54cdd19001501b6ebf867912055175c07be2e55a7bf7d3bed9a0fbd1c988c9e",
+        |    "blockId": "a872e7562fc2cdc514d492094b65558bd887974d310ed7c0faf07c605276bce7",
+        |    "value": 522000,
+        |    "index": 2,
+        |    "globalIndex": 28978383,
+        |    "creationHeight": 1000320,
+        |    "settlementHeight": 1000324,
+        |    "ergoTree": "19bc04210400040004040404040004020601010601000400050004020404040205feffffffffffffffff010408040004020502040405020402040004000101010005000404040004060404040205fcffffffffffffffff010100d80dd601b2a5730000d602db63087201d603e4c6a7070ed604b2a4730100d605db63087204d6068cb2720573020002d607998cb27202730300027206d608e4c6a70608d609db6308a7d60ab27209730400d60bb27205730500d60c7306d60d7307d1ed938cb27202730800017203959372077309d80cd60eb2a5e4e3000400d60fb2a5e4e3010400d610b2e4c672040410730a00d611c672010804d61299721095e67211e47211e4c672010704d6138cb27209730b0001d614db6308720fd615b27209730c00d6168c721502d6177e721205d6189972169c72178c720a02d6199d9c99997e8c720b02069d9c7ee4c672040505067e7212067e721006720c7e7218067e9999730d8cb27205730e00029c7206721706eded93c2720ed07208edededed93e4c6720f0608720893e4c6720f070e720393c2720fc2a795917212730fd801d61ab27214731000eded93860272137311b27214731200938c721a018c721501939972168c721a02721893860272137313b2721473140093b27214731500720a95917219720dd801d61ab2db6308720e731600ed938c721a018c720b01927e8c721a0206997219720c95937219720d73177318958f7207731993b2db6308b2a4731a00731b0086029593b17209731c8cb27209731d00018cb27209731e0001731f7320",
+        |    "address": "ynjTHNBGREHKAAK1CCraEPaaoVNSPeHDkyLv7AwgxCCeQc3wNUp36gHN7YwDVyg3M3gpwNgAvtswazW4aHC3gmTTnfgZMPrKnyVq3uhWGSchyjDpHc5B4YXstUvS6EBrxoZ8wYqiMUed3hAKfFA7Ug1fy7vE5T4SiuWbFj4sfY1o8DJZbyNYbxm4N6pALh87qvmFg3NJY6aFNpZ295LJ5R3D2U69uMrrwa2KSoHD9uCaJxwwiXp6GZoAh8LvyDibg4PT8dZFg8S4q9a3oPYJP84aJaAJiJF2u7BFw9peGiD8VJQHCCbvMd8P4vD2mEXpEhEdpNgaQT55v9RigTbayN93RnvV6SFQGHvmRoXAT2RDvXM7ZJjn7nTqzJGjZ5dQ3NKc91sRqeyGBwUysrFSWBq6tKexf4KMhcM1eX13BNrjqszDmchjgVFAzjXoxwyX5juDjwA1zwob8rcAjL8C9rF8E4KVAQBhnsAMzue6n5XqdSncuLEGjxnQAsutni8uKBtsq6nmft3zLFvdTkSFvYT811anBigszrFvnKz5ZyGaE7nZahsSUbMaag9cTxCB36iQQLSDdfzgxvJVFibF6sZ2A47Hc1eqgziM2o5NChd9GtHysRN2VjzmpZEbkXBnuc1wziKTAMLWRLvKa3vHuJtV4yfC3UTbvuBm3ScM51Cw8oi1JugqWSZGgYS2hrXgC5iumVpssBXnKgo4CTyDWP2wP7Fyyt1Trc1C5raEYcNoMisQDrtcPcpunsRvCYPAGEbAcxbGvYewh3BzHtdQD2P",
         |    "assets": [
         |        {
-        |            "tokenId": "81f307da6c294bb9ee1c8789dfeff5b97c2399451e099ab6c9985a55551e41dd",
+        |            "tokenId": "c625ee2d518920387a4e343bfc01933cfc7ab4ccd255599261e367b531581f09",
         |            "index": 0,
-        |            "amount": 10000,
-        |            "name": null,
-        |            "decimals": null,
-        |            "type": null
+        |            "amount": 121699619,
+        |            "name": "",
+        |            "decimals": 0,
+        |            "type": "EIP-004"
         |        },
         |        {
-        |            "tokenId": "cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109",
+        |            "tokenId": "45e46d2a9a92b0571939437126cdb73f3b9274fb425058c4767ce7adc3176bbe",
         |            "index": 1,
+        |            "amount": 10101068377,
+        |            "name": "",
+        |            "decimals": 0,
+        |            "type": "EIP-004"
+        |        },
+        |        {
+        |            "tokenId": "003877e7df2c4c57e1bcb0f9287e2701865fe6dec9330d65aecadc297211483f",
+        |            "index": 2,
         |            "amount": 1,
-        |            "name": null,
-        |            "decimals": null,
-        |            "type": null
+        |            "name": "SPF_Ergo_Spectrum Finance_LP_YF",
+        |            "decimals": 0,
+        |            "type": "EIP-004"
         |        }
         |    ],
         |    "additionalRegisters": {
         |        "R4": {
-        |            "serializedValue": "08cd03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491",
-        |            "sigmaType": "SSigmaProp",
-        |            "renderedValue": "03e02fa2bbd85e9298aa37fe2634602a0fba746234fe2a67f04d14deda55fac491"
+        |            "serializedValue": "0e1f5350465f4572676f5f537065637472756d2046696e616e63655f4c505f5946",
+        |            "sigmaType": "Coll[SByte]",
+        |            "renderedValue": "5350465f4572676f5f537065637472756d2046696e616e63655f4c505f5946"
         |        },
         |        "R5": {
-        |            "serializedValue": "0e2048e744055c9e49b26d1c70eca3c848afc8f50eddf8962a33f3d4b5df3d771ac2",
+        |            "serializedValue": "0ec50154686520726570726573656e746174696f6e206f6620796f757220736861726520696e20746865205350462f4572676f5f537065637472756d2046696e616e63655f4c502028706f6f6c2069643a203234653966396133653061613839303932643836393039343139303033323364656132656533363033636137333638633063333531373532353964663639333029207969656c64206661726d696e6720706f6f6c206f6e2074686520537065637472756d2046696e616e636520706c6174666f726d2e",
         |            "sigmaType": "Coll[SByte]",
-        |            "renderedValue": "48e744055c9e49b26d1c70eca3c848afc8f50eddf8962a33f3d4b5df3d771ac2"
+        |            "renderedValue": "54686520726570726573656e746174696f6e206f6620796f757220736861726520696e20746865205350462f4572676f5f537065637472756d2046696e616e63655f4c502028706f6f6c2069643a203234653966396133653061613839303932643836393039343139303033323364656132656533363033636137333638633063333531373532353964663639333029207969656c64206661726d696e6720706f6f6c206f6e2074686520537065637472756d2046696e616e636520706c6174666f726d2e"
+        |        },
+        |        "R6": {
+        |            "serializedValue": "08cd02311621629e0995a0ff174bb410cc0ff35ac97a3f2a9e3dd5ef230d8a6c973785",
+        |            "sigmaType": "SSigmaProp",
+        |            "renderedValue": "02311621629e0995a0ff174bb410cc0ff35ac97a3f2a9e3dd5ef230d8a6c973785"
+        |        },
+        |        "R7": {
+        |            "serializedValue": "0e2024e9f9a3e0aa89092d8690941900323dea2ee3603ca7368c0c35175259df6930",
+        |            "sigmaType": "Coll[SByte]",
+        |            "renderedValue": "24e9f9a3e0aa89092d8690941900323dea2ee3603ca7368c0c35175259df6930"
         |        }
         |    },
-        |    "spentTransactionId": "3fed3dbde8efd9e913486269872cc85ba211a63b5045f1008a754044b658d941",
+        |    "spentTransactionId": "ab5bb73a26f4f84befcbb5edc29345b7eb33257fb62d6364d174f2e45325f040",
         |    "mainChain": true
         |}
         |""".stripMargin

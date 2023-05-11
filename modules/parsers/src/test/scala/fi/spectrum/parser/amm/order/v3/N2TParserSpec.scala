@@ -1,21 +1,21 @@
 package fi.spectrum.parser.amm.order.v3
 
 import cats.syntax.eq._
-import fi.spectrum.core.domain.{ErgoTreeTemplate, PubKey, TokenId}
+import fi.spectrum.core.domain.TokenId
 import fi.spectrum.core.domain.analytics.Version
 import fi.spectrum.core.domain.order.Order
-import fi.spectrum.core.domain.order.Redeemer.{ErgoTreeRedeemer, PublicKeyRedeemer}
-import fi.spectrum.core.domain.transaction.Output
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.parser.CatsPlatform
 import fi.spectrum.parser.amm.order.AmmOrderParser
 import fi.spectrum.parser.domain.AmmType
-import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress, Pay2SAddress, Pay2SHAddress}
+import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 
 class N2TParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
-  implicit val spf: TokenId          = TokenId.unsafeFromString("")
+
+  implicit val spf: TokenId =
+    TokenId.unsafeFromString("9a06d9e545a41fd51eeffc5e20d818073bf820c635e2a9d922269913e0de369d")
   implicit val e: ErgoAddressEncoder = new ErgoAddressEncoder((ErgoAddressEncoder.MainnetNetworkPrefix))
 
   val parser: AmmOrderParser[Version.V3, AmmType.N2T] = N2TAmmOrderParser.n2tV3
