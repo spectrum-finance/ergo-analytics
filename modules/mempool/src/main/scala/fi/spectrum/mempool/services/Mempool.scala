@@ -122,11 +122,17 @@ object Mempool {
 
       val script = scripts.map(_._1).fold("")(_ ++ _)
       for {
-        _ <- trace"Logging script del: $script, ${scripts.map(_._2)}, List.empty"
-        _ <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, scripts.map(_._2), List.empty))
-        _ <- processed.traverse(order => orders.update(_ - MempoolKey(order)))
+        now <- millis
+        _   <- trace"Logging script del: $script, ${scripts.map(_._2)}, List.empty"
+        _   <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, scripts.map(_._2), List.empty))
+        _ <- processed.traverse(order =>
+               orders.update { orders =>
+                 (orders - MempoolKey(order)).filter { case (key, _) =>
+                   now - key.added < config.ttl.toMillis
+                 }
+               }
+             )
         _ <- pool.traverse(pool => pools.update(_ - poolKey(pool.box.boxId.value)))
-        _ <- clearTtl
       } yield ()
     }
 
@@ -156,11 +162,17 @@ object Mempool {
       val script = elems.map(_.script).fold("")(_ ++ _)
 
       for {
-        _ <- trace"Logging script put: $script, ${elems.map(_.key)}, ${elems.flatMap(_.values)}"
-        _ <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, elems.map(_.key), elems.flatMap(_.values)))
-        _ <- order.traverse(order => orders.update(_ ++ Map(MempoolKey(order) -> order)))
+        now <- millis
+        _   <- trace"Logging script put: $script, ${elems.map(_.key)}, ${elems.flatMap(_.values)}"
+        _   <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, elems.map(_.key), elems.flatMap(_.values)))
+        _ <- order.traverse(order =>
+               orders.update { orders =>
+                 orders.filter { case (key, _) =>
+                   now - key.added < config.ttl.toMillis
+                 } ++ Map(MempoolKey(order) -> order)
+               }
+             )
         _ <- pool.traverse(pool => pools.update(_ ++ Map(poolKey(pool.box.boxId.value) -> pool)))
-        _ <- clearTtl
       } yield ()
     }
 
@@ -175,14 +187,6 @@ object Mempool {
           .flatMap(pools.get)
           .headOption
       }
-
-    private def clearTtl: F[Unit] = millis.flatMap { now =>
-      orders.update {
-        _.filter { case (key, _) =>
-          now - key.added < config.ttl.toMillis
-        }
-      }
-    }
 
     private def poolKey(poolBoxId: String): String =
       s"pool_$poolBoxId"
