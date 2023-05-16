@@ -44,7 +44,7 @@ trait Mempool[F[_]] {
 object Mempool {
 
   @derive(loggable)
-  final case class MempoolKey(address: String, orderId: String, orderType: String, added: Long) {
+  final case class MempoolKey(address: String, orderId: String, orderType: String) {
     def redisKey = s"${address}_${orderId}_$orderType"
   }
 
@@ -54,8 +54,7 @@ object Mempool {
       MempoolKey(
         order.order.redeemer.show,
         order.order.id.value,
-        mapToMempool(order.state.status).entryName,
-        order.state.timestamp
+        mapToMempool(order.state.status).entryName
       )
   }
 
@@ -76,9 +75,9 @@ object Mempool {
       (ordersK, poolsK) =
         keys.toSet[String].foldLeft(List.empty[MempoolKey], List.empty[String]) { case ((acc1, acc2), next) =>
           next.split("_").toList match {
-            case address :: orderId :: orderType :: Nil => (MempoolKey(address, orderId, orderType, 0L) :: acc1) -> acc2
-            case head :: Nil                            => acc1                                                  -> (head :: acc2)
-            case _                                      => acc1                                                  -> acc2
+            case address :: orderId :: orderType :: Nil => (MempoolKey(address, orderId, orderType) :: acc1) -> acc2
+            case head :: Nil                            => acc1                                              -> (head :: acc2)
+            case _                                      => acc1                                              -> acc2
           }
         }
       orders <- ordersK
@@ -122,11 +121,17 @@ object Mempool {
 
       val script = scripts.map(_._1).fold("")(_ ++ _)
       for {
-        _ <- trace"Logging script del: $script, ${scripts.map(_._2)}, List.empty"
-        _ <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, scripts.map(_._2), List.empty))
-        _ <- processed.traverse(order => orders.update(_ - MempoolKey(order)))
+        now <- millis
+        _   <- trace"Logging script del: $script, ${scripts.map(_._2)}, List.empty"
+        _   <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, scripts.map(_._2), List.empty))
+        _ <- processed.traverse(order =>
+               orders.update { orders =>
+                 (orders - MempoolKey(order)).filter { case (_, value) =>
+                   now - value.state.timestamp < config.ttl.toMillis
+                 }
+               }
+             )
         _ <- pool.traverse(pool => pools.update(_ - poolKey(pool.box.boxId.value)))
-        _ <- clearTtl
       } yield ()
     }
 
@@ -156,11 +161,17 @@ object Mempool {
       val script = elems.map(_.script).fold("")(_ ++ _)
 
       for {
-        _ <- trace"Logging script put: $script, ${elems.map(_.key)}, ${elems.flatMap(_.values)}"
-        _ <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, elems.map(_.key), elems.flatMap(_.values)))
-        _ <- order.traverse(order => orders.update(_ ++ Map(MempoolKey(order) -> order)))
+        now <- millis
+        _   <- trace"Logging script put: $script, ${elems.map(_.key)}, ${elems.flatMap(_.values)}"
+        _   <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, elems.map(_.key), elems.flatMap(_.values)))
+        _ <- order.traverse(order =>
+               orders.update { orders =>
+                 orders.filter { case (_, value) =>
+                   now - value.state.timestamp < config.ttl.toMillis
+                 } ++ Map(MempoolKey(order) -> order)
+               }
+             )
         _ <- pool.traverse(pool => pools.update(_ ++ Map(poolKey(pool.box.boxId.value) -> pool)))
-        _ <- clearTtl
       } yield ()
     }
 
@@ -175,14 +186,6 @@ object Mempool {
           .flatMap(pools.get)
           .headOption
       }
-
-    private def clearTtl: F[Unit] = millis.flatMap { now =>
-      orders.update {
-        _.filter { case (key, _) =>
-          now - key.added < config.ttl.toMillis
-        }
-      }
-    }
 
     private def poolKey(poolBoxId: String): String =
       s"pool_$poolBoxId"
