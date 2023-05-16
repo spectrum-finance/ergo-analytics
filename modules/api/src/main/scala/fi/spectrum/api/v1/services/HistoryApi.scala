@@ -64,7 +64,8 @@ object HistoryApi {
           history.getLmDeposits(paging, tw, request, skipOrders).map(_.flatMap(_.toApi[LmDepositApi](now)))
         case Some(OrderType.LmRedeem) =>
           history.getLmRedeems(paging, tw, request, skipOrders).map(_.flatMap(_.toApi[LmRedeemApi](now)))
-        case None => history.getAnyOrders(paging, tw, request, skipOrders).map(_.flatMap(_.toApi[ApiOrder](now)))
+        case None =>
+          history.getAnyOrders(paging, tw, request, skipOrders).map(_.flatMap(_.toApi[ApiOrder](now)))
       }
     }
   }

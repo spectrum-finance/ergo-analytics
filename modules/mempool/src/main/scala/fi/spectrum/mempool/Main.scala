@@ -104,8 +104,8 @@ object Main extends IOApp {
       implicit0(ordersParser: ProcessedOrderParser[F]) = ProcessedOrderParser.make[F]
       implicit0(poolsParser: PoolParser)               = PoolParser.make
       implicit0(redis: RedisCommands[F, String, String]) <- mkRedis[String, String, F]
-      implicit0(redisCache: RedisCache[F])               <- RedisCache.make[F].toResource
-      implicit0(mempool: Mempool[F])                     <- Mempool.make[F].toResource
+      implicit0(redisCache: RedisCache[F]) = RedisCache.make[F]
+      implicit0(mempool: Mempool[F]) <- Mempool.make[F].toResource
       implicit0(mempoolTx: MempoolTx[F])                 = MempoolTx.make[F]
       implicit0(metricsMiddleware: MetricsMiddleware[F]) = MetricsMiddleware.make[F]
       csProcessor                                        = ChainSyncProcessor.make[Chunk, F, S]
