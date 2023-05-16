@@ -24,6 +24,8 @@ import tofu.logging.Logging
 import tofu.logging.derivation.loggable
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
+import tofu.syntax.time.now.millis
+import tofu.time.Clock
 
 @derive(representableK)
 trait Mempool[F[_]] {
@@ -42,14 +44,19 @@ trait Mempool[F[_]] {
 object Mempool {
 
   @derive(loggable)
-  final case class MempoolKey(address: String, orderId: String, orderType: String) {
+  final case class MempoolKey(address: String, orderId: String, orderType: String, added: Long) {
     def redisKey = s"${address}_${orderId}_$orderType"
   }
 
   object MempoolKey {
 
     def apply(order: Processed.Any): MempoolKey =
-      MempoolKey(order.order.redeemer.show, order.order.id.value, mapToMempool(order.state.status).entryName)
+      MempoolKey(
+        order.order.redeemer.show,
+        order.order.id.value,
+        mapToMempool(order.state.status).entryName,
+        order.state.timestamp
+      )
   }
 
   private def redisKey(processed: Processed.Any): String =
@@ -69,9 +76,9 @@ object Mempool {
       (ordersK, poolsK) =
         keys.toSet[String].foldLeft(List.empty[MempoolKey], List.empty[String]) { case ((acc1, acc2), next) =>
           next.split("_").toList match {
-            case address :: orderId :: orderType :: Nil => (MempoolKey(address, orderId, orderType) :: acc1) -> acc2
-            case head :: Nil                            => acc1                                              -> (head :: acc2)
-            case _                                      => acc1                                              -> acc2
+            case address :: orderId :: orderType :: Nil => (MempoolKey(address, orderId, orderType, 0L) :: acc1) -> acc2
+            case head :: Nil                            => acc1                                                  -> (head :: acc2)
+            case _                                      => acc1                                                  -> acc2
           }
         }
       orders <- ordersK
@@ -83,7 +90,7 @@ object Mempool {
       _     <- ref2.set(pools.map(o => o.box.boxId.value -> o).toMap)
     } yield new Tracing[F] attach new Live[F](config, ref, ref2)
 
-  final private class Live[F[_]: Monad: Logging](
+  final private class Live[F[_]: Monad: Logging: Clock](
     config: MempoolConfig,
     orders: Ref[F, Map[MempoolKey, Processed.Any]],
     pools: Ref[F, Map[String, Pool]]
@@ -119,6 +126,7 @@ object Mempool {
         _ <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, scripts.map(_._2), List.empty))
         _ <- processed.traverse(order => orders.update(_ - MempoolKey(order)))
         _ <- pool.traverse(pool => pools.update(_ - poolKey(pool.box.boxId.value)))
+        _ <- clearTtl
       } yield ()
     }
 
@@ -152,6 +160,7 @@ object Mempool {
         _ <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, elems.map(_.key), elems.flatMap(_.values)))
         _ <- order.traverse(order => orders.update(_ ++ Map(MempoolKey(order) -> order)))
         _ <- pool.traverse(pool => pools.update(_ ++ Map(poolKey(pool.box.boxId.value) -> pool)))
+        _ <- clearTtl
       } yield ()
     }
 
@@ -166,6 +175,14 @@ object Mempool {
           .flatMap(pools.get)
           .headOption
       }
+
+    private def clearTtl: F[Unit] = millis.flatMap { now =>
+      orders.update {
+        _.filter { case (key, _) =>
+          now - key.added < config.ttl.toMillis
+        }
+      }
+    }
 
     private def poolKey(poolBoxId: String): String =
       s"pool_$poolBoxId"
