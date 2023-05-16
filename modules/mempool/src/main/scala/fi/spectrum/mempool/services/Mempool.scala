@@ -44,7 +44,7 @@ trait Mempool[F[_]] {
 object Mempool {
 
   @derive(loggable)
-  final case class MempoolKey(address: String, orderId: String, orderType: String, added: Long) {
+  final case class MempoolKey(address: String, orderId: String, orderType: String) {
     def redisKey = s"${address}_${orderId}_$orderType"
   }
 
@@ -54,8 +54,7 @@ object Mempool {
       MempoolKey(
         order.order.redeemer.show,
         order.order.id.value,
-        mapToMempool(order.state.status).entryName,
-        order.state.timestamp
+        mapToMempool(order.state.status).entryName
       )
   }
 
@@ -76,9 +75,9 @@ object Mempool {
       (ordersK, poolsK) =
         keys.toSet[String].foldLeft(List.empty[MempoolKey], List.empty[String]) { case ((acc1, acc2), next) =>
           next.split("_").toList match {
-            case address :: orderId :: orderType :: Nil => (MempoolKey(address, orderId, orderType, 0L) :: acc1) -> acc2
-            case head :: Nil                            => acc1                                                  -> (head :: acc2)
-            case _                                      => acc1                                                  -> acc2
+            case address :: orderId :: orderType :: Nil => (MempoolKey(address, orderId, orderType) :: acc1) -> acc2
+            case head :: Nil                            => acc1                                              -> (head :: acc2)
+            case _                                      => acc1                                              -> acc2
           }
         }
       orders <- ordersK
@@ -127,8 +126,8 @@ object Mempool {
         _   <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, scripts.map(_._2), List.empty))
         _ <- processed.traverse(order =>
                orders.update { orders =>
-                 (orders - MempoolKey(order)).filter { case (key, _) =>
-                   now - key.added < config.ttl.toMillis
+                 (orders - MempoolKey(order)).filter { case (_, value) =>
+                   now - value.state.timestamp < config.ttl.toMillis
                  }
                }
              )
@@ -167,8 +166,8 @@ object Mempool {
         _   <- Monad[F].whenA(script.nonEmpty)(redis.eval(script, elems.map(_.key), elems.flatMap(_.values)))
         _ <- order.traverse(order =>
                orders.update { orders =>
-                 orders.filter { case (key, _) =>
-                   now - key.added < config.ttl.toMillis
+                 orders.filter { case (_, value) =>
+                   now - value.state.timestamp < config.ttl.toMillis
                  } ++ Map(MempoolKey(order) -> order)
                }
              )
