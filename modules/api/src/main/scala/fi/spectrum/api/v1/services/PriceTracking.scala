@@ -7,15 +7,17 @@ import derevo.derive
 import fi.spectrum.api.currencies.UsdUnits
 import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.repositories.Pools
-import fi.spectrum.api.domain.TotalValueLocked
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.services._
 import fi.spectrum.api.v1.endpoints.models.TimeWindow
 import fi.spectrum.api.v1.endpoints.monthMillis
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.amm.types.MarketId
+import fi.spectrum.api.db.models.lm.LmPoolSnapshot
+import fi.spectrum.api.v1.models.lm.LMPoolStat
 import fi.spectrum.graphite.Metrics
 import tofu.doobie.transactor.Txr
+import fi.spectrum.api.db.models.amm.AssetInfo
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
 import tofu.logging.{Logging, Logs}
@@ -25,7 +27,6 @@ import tofu.syntax.monadic._
 import tofu.syntax.foption._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
-
 import scala.math.BigDecimal.RoundingMode
 
 @derive(representableK)
@@ -50,7 +51,6 @@ object PriceTracking {
     volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
     lmStats: LmStatsApi[F],
-    lmStatss: LmStats[F],
     lmSnapshots: LMSnapshots[F],
     assets: Assets[F],
     metrics: Metrics[F],
@@ -68,102 +68,49 @@ object PriceTracking {
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     lmStats: LmStatsApi[F],
-    lmStatss: LmStats[F],
     lmSnapshots: LMSnapshots[F],
     assets: Assets[F]
   ) extends PriceTracking[F] {
 
     def getCmcYFInfo: F[CMCYFInfo] =
-      evalPoolsCMCInfo
-        .map { pools =>
-          CMCYFInfo(
-            "",
-            "",
-            "",
-            List.empty,
-            pools
-          )
-        }
-
-    private def evalPoolsCMCInfo: F[List[PoolCMCInfo]] =
       for {
-        poolSnapshots <- snapshots.get
-        lmSnaps <- lmSnapshots.get
-        apr <- lmStats.lmStatsApi
-        assets <- assets.get
-        poolsTvl <- poolSnapshots.flatTraverse(p => processPoolTvl(p).map(_.map(tvl => (tvl, p))).map(_.toList))
-        poolsWithApr =
-          apr.flatMap { lmPool =>
-            lmSnaps.find(_.poolId == lmPool.poolId).flatMap { lm =>
-              poolsTvl.find(_._2.id == lmPool.poolId).flatMap { case (tvl, snap) =>
-                assets
-                  .find(_.id == lm.reward.tokenId)
-                  .flatMap(_.ticker)
-                  .flatMap(rewardTicker =>
-                    evalPairTicker(snap).flatMap { ticker =>
-                      lmPool.yearProfit.map(apr => (rewardTicker.value, ticker, tvl, apr))
-                    }
-                  )
-              }
-            }
-          }
-      } yield poolsWithApr.map { case (reward, pair, tvl, apy) =>
-        PoolCMCInfo("", pair, "", "", List(reward), apy.setScale(1), tvl.value.toLong)
-      }
+        ammPools    <- snapshots.get
+        lmPools     <- lmSnapshots.get
+        assets      <- assets.get
+        lmPoolStats <- lmStats.lmStatsApi
+        result      <- lmPools.flatTraverse(snap => processLmPoolInfo(snap, assets, lmPoolStats, ammPools).map(_.toList))
+      } yield CMCYFInfo(
+        "",
+        "",
+        "",
+        List.empty,
+        result
+      )
 
-    private def evalPoolsCMCInfoTest: F[List[PoolCMCInfo]] =
-      for {
-        _ <- lmSnapshots.update
-        ass           <- assets.update
-        _             <- snapshots.update(ass)
-        poolSnapshots <- snapshots.get
-        _ = println(poolSnapshots)
-        lmSnaps <- lmSnapshots.get
-        _ <- lmStatss.update(poolSnapshots, 1000, lmSnaps)
-        apr <- lmStats.lmStatsApi
-        _ = println(apr)
-        _ = println(lmSnaps)
-        assets <- assets.get
-        _ = println(assets)
-        poolsTvl <- poolSnapshots.flatTraverse(p => processPoolTvl(p).map(_.map(tvl => (tvl, p))).map(_.toList))
-        _ = println(poolsTvl)
-
-
-        jj =  apr.flatMap { lmPool =>
-          lmSnaps.find(_.poolId == lmPool.poolId).flatMap { lm =>
-            poolsTvl.find(_._2.id == lmPool.poolId).map { case (tvl, snap) => (lmPool.yearProfit, lm, tvl, snap)}}}
-
-        yy =  apr.flatMap { lmPool =>
-            poolsTvl.find(_._2.id == lmPool.poolId).map { case (tvl, snap) => (lmPool.yearProfit, tvl, snap)}}
-
-        _ = println(yy)
-
-        poolsWithApr =
-          apr.flatMap { lmPool =>
-            lmSnaps.find(_.poolId == lmPool.poolId).flatMap { lm =>
-              poolsTvl.find(_._2.id == lmPool.poolId).flatMap { case (tvl, snap) =>
-                assets
-                  .find(_.id == lm.reward.tokenId)
-                  .flatMap(_.ticker)
-                  .flatMap(rewardTicker =>
-                    evalPairTicker(snap).flatMap { ticker =>
-                      lmPool.yearProfit.map(apr => (rewardTicker.value, ticker, tvl, apr))
-                    }
-                  )
-              }
-            }
-          }
-      } yield poolsWithApr.map { case (reward, pair, tvl, apy) =>
-        PoolCMCInfo("", pair, "", "", List(reward), apy.setScale(1), tvl.value.toLong)
-      }
-
-    private def processPoolTvl(pool: PoolSnapshot): F[Option[TotalValueLocked]] =
+    private def processLmPoolInfo(
+      pool: LmPoolSnapshot,
+      assets: List[AssetInfo],
+      poolStats: List[LMPoolStat],
+      ammPools: List[PoolSnapshot]
+    ) =
       (for {
-        poolSnapshots <- OptionT.liftF(snapshots.get)
-        lockedX       <- OptionT(solver.convert(pool.lockedX, UsdUnits, poolSnapshots))
-        lockedY       <- OptionT(solver.convert(pool.lockedY, UsdUnits, poolSnapshots))
-        tvl = TotalValueLocked(lockedX.value + lockedY.value, UsdUnits)
-      } yield tvl).value
+        ammPool      <- OptionT.fromOption[F](ammPools.find(_.lp.tokenId == pool.lq.tokenId))
+        apy          <- OptionT.fromOption[F](poolStats.find(_.poolId == pool.poolId).flatMap(_.yearProfit))
+        rewardTicker <- OptionT.fromOption[F](assets.find(_.id == pool.reward.tokenId).flatMap(_.ticker))
+        lockedX      <- OptionT(solver.convert(ammPool.lockedX, UsdUnits, ammPools))
+        lockedY      <- OptionT(solver.convert(ammPool.lockedY, UsdUnits, ammPools))
+        pairTicker   <- OptionT.fromOption[F](evalPairTicker(ammPool))
+        tvl    = lockedX.value + lockedY.value
+        staked = tvl.toLong * pool.lq.amount / (Long.MaxValue - ammPool.lp.amount)
+      } yield PoolCMCInfo(
+        "",
+        pairTicker,
+        "",
+        "",
+        List(rewardTicker.value),
+        apy.setScale(1),
+        staked
+      )).value
 
     private def evalPairTicker(pool: PoolSnapshot) =
       for {
