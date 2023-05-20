@@ -7,23 +7,22 @@ import doobie.ConnectionIO
 import doobie.implicits._
 import fi.spectrum.api.db.repositories.History
 import fi.spectrum.api.db.{Api, PGContainer}
-import fi.spectrum.api.mocks.{InsertLmCompound, InsertLmDeposit, InsertLmRedeem, MetricsMock, NetworkMock}
+import fi.spectrum.api.mocks.{InsertLmDeposit, InsertLmRedeem, MetricsMock, NetworkMock}
 import fi.spectrum.api.models.MempoolData
 import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.AssetAmountApi
 import fi.spectrum.api.v1.models.history.ApiOrder.{LmDepositApi, LmRedeemApi}
 import fi.spectrum.api.v1.models.history.{HistoryApiQuery, OrderStatus, TxData}
+import fi.spectrum.core.domain._
 import fi.spectrum.core.domain.analytics.OrderEvaluation.{LmDepositCompoundEvaluation, LmRedeemEvaluation}
 import fi.spectrum.core.domain.analytics.Processed
-import fi.spectrum.core.domain.order.Order.Compound.CompoundV1
 import fi.spectrum.core.domain.order.Order.Deposit.LmDeposit.LmDepositV1
 import fi.spectrum.core.domain.order.Order.Redeem.LmRedeem.LmRedeemV1
-import fi.spectrum.core.domain.order.{OrderState, Redeemer}
 import fi.spectrum.core.domain.order.OrderStatus.Registered
-import fi.spectrum.core.domain.{Address, PubKey, TokenId, TxId}
+import fi.spectrum.core.domain.order.{OrderState, Redeemer}
 import fi.spectrum.graphite.Metrics
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
-import fi.spectrum.parser.lm.compound.v1.Compound
+import fi.spectrum.parser.lm.compound.v1.Compound.compoundBatchTx
 import fi.spectrum.parser.lm.order.v1.LM
 import fi.spectrum.parser.lm.pool.v1.SelfHosted
 import org.scalatest.flatspec.AnyFlatSpec
@@ -38,7 +37,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
   "Mempool api" should "process lm register deposit correct" in {
     val registerOrder = Processed(
-      LM.deposit,
+      LM.altDeposit,
       OrderState(TxId("b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e"), 0, Registered),
       None,
       None,
@@ -74,14 +73,18 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
   "Mempool api" should "process lm eval (both orders are in mempool) deposit correct" in {
     val registerOrder = Processed(
-      LM.deposit,
+      LM.altDeposit,
       OrderState(TxId("b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e"), 0, Registered),
       None,
       None,
       None
     ).asInstanceOf[Processed.Any]
     val evalOrder =
-      ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, registerOrder, SelfHosted.pool, 0, List.empty).unsafeRunSync().get
+      ProcessedOrderParser
+        .make[IO]
+        .evaluated(LM.tx, 0, registerOrder, SelfHosted.pool, 0, List.empty)
+        .unsafeRunSync()
+        .get
 
     val data = MempoolData(
       Address.fromStringUnsafe("9i245HdmSYwYsVR2qudtULu3BRBenPagNbT6uLi2Np9QZzdQWGH"),
@@ -99,7 +102,10 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
       SelfHosted.pool.poolId,
       LM.deposit.params.expectedNumEpochs,
       AssetAmountApi.fromAssetAmount(LM.deposit.params.tokens),
-      evalOrder.evaluation.flatMap(_.widen[LmDepositCompoundEvaluation]).map(_.tokens).map(AssetAmountApi.fromAssetAmount),
+      evalOrder.evaluation
+        .flatMap(_.widen[LmDepositCompoundEvaluation])
+        .map(_.tokens)
+        .map(AssetAmountApi.fromAssetAmount),
       evalOrder.evaluation
         .flatMap(_.widen[LmDepositCompoundEvaluation])
         .map(_.bundle.id)
@@ -114,14 +120,18 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
   "Mempool api" should "process lm eval (only eval order is in mempool) deposit correct" in {
     val registerOrder = Processed(
-      LM.deposit,
+      LM.altDeposit,
       OrderState(TxId("b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e"), 0, Registered),
       None,
       None,
       None
     ).asInstanceOf[Processed.Any]
     val evalOrder =
-      ProcessedOrderParser.make[IO].evaluated(LM.tx, 0, registerOrder, SelfHosted.pool, 0, List.empty).unsafeRunSync().get
+      ProcessedOrderParser
+        .make[IO]
+        .evaluated(compoundBatchTx, 0, registerOrder, SelfHosted.pool, 0, List.empty)
+        .unsafeRunSync()
+        .get
 
     val data = MempoolData(
       Address.fromStringUnsafe("9i245HdmSYwYsVR2qudtULu3BRBenPagNbT6uLi2Np9QZzdQWGH"),
@@ -147,7 +157,10 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
       SelfHosted.pool.poolId,
       LM.deposit.params.expectedNumEpochs,
       AssetAmountApi.fromAssetAmount(LM.deposit.params.tokens),
-      evalOrder.evaluation.flatMap(_.widen[LmDepositCompoundEvaluation]).map(_.tokens).map(AssetAmountApi.fromAssetAmount),
+      evalOrder.evaluation
+        .flatMap(_.widen[LmDepositCompoundEvaluation])
+        .map(_.tokens)
+        .map(AssetAmountApi.fromAssetAmount),
       evalOrder.evaluation
         .flatMap(_.widen[LmDepositCompoundEvaluation])
         .map(_.bundle.id)
@@ -223,7 +236,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
     val expected = LmRedeemApi(
       registerOrder.order.id,
       OrderStatus.Pending,
-      SelfHosted.pool.poolId.some,
+      none,
       LM.redeem.bundleKeyId,
       AssetAmountApi.fromAssetAmount(LM.redeem.expectedLq),
       evalOrder.evaluation.flatMap(_.widen[LmRedeemEvaluation]).map(_.out).map(AssetAmountApi.fromAssetAmount),
@@ -241,7 +254,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
 
   "Mempool api" should "process lm eval (only eval order is in mempool) redeem correct" in {
     val registerOrder = Processed(
-      LM.redeem,
+      LM.altRedeem,
       OrderState(TxId("b5038999043e6ecd617a0a292976fe339d0e4d9ec85296f13610be0c7b16752e"), 0, Registered),
       None,
       None,
@@ -250,7 +263,7 @@ final class MempoolApiSpec extends AnyFlatSpec with Matchers with PGContainer wi
     val evalOrder =
       ProcessedOrderParser
         .make[IO]
-        .evaluated(LM.redeemEvaluate, 0, registerOrder, SelfHosted.pool, 0, List.empty)
+        .evaluated(LM.redeemEval, 0, registerOrder, SelfHosted.pool, 0, List.empty)
         .unsafeRunSync()
         .get
 
