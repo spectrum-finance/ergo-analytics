@@ -28,6 +28,7 @@ import fi.spectrum.parser.evaluation.ProcessedOrderParser
 import fi.spectrum.parser.evaluation.Transactions._
 import fi.spectrum.parser.lm.order.v1.{LM, LmOrderParserV1}
 import fi.spectrum.parser.lm.compound.v1.Compound
+import fi.spectrum.parser.lm.compound.v1.Compound.compoundBatchTx
 import fi.spectrum.parser.lm.pool.v1.SelfHosted
 import glass.classic.Optional
 import org.scalatest.flatspec.AnyFlatSpec
@@ -342,7 +343,7 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
       None
     ).asInstanceOf[Processed.Any]
     val eval =
-      ProcessedOrderParser.make[IO].evaluated(Compound.compoundTx, 0, register, SelfHosted.pool, 0, List.empty).unsafeRunSync().get
+      ProcessedOrderParser.make[IO].evaluated(compoundBatchTx, 0, register, SelfHosted.pool, 0, List.empty).unsafeRunSync().get
 
     def run = for {
       insertResult  <- repo.insertAnyOrder.traverse(_(register)).trans
@@ -357,8 +358,8 @@ class PersistSpec extends AnyFlatSpec with Matchers with PGContainer with Indexe
     } yield {
       insertResult.sum shouldEqual 1
       resolveResult.sum shouldEqual 1
-      insertResult2.sum shouldEqual 2
-      resolveResul2.sum shouldEqual 2
+      insertResult2.sum shouldEqual 1
+      resolveResul2.sum shouldEqual 1
 
       expected1.get shouldEqual implicitly[ToDB[Processed[Compound], LmCompoundDB]]
         .toDB(register.asInstanceOf[Processed[Compound]])

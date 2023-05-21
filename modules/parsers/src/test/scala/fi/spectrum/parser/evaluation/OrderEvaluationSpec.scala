@@ -65,16 +65,16 @@ class OrderEvaluationSpec extends AnyPropSpec with Matchers with CatsPlatform {
     import fi.spectrum.parser.lm.pool.v1.SelfHosted._
     import fi.spectrum.parser.lm.compound.v1.Compound._
     val order = orderParser.parse(depositOrder).get
-    val eval  = parser.parse(order, tx.outputs.toList, pool, pool, List.empty).get.asInstanceOf[LmDepositCompoundEvaluation]
+    val eval  = parser.parse(order, compoundBatchTx.outputs.toList, pool, pool, List.empty).get.asInstanceOf[LmDepositCompoundEvaluation]
     eval.bundle shouldEqual CompoundParserV1.v1Compound
       .compound(
-        LM.compoundCreateForDeposit,
-        ErgoTreeSerializer.default.deserialize(LM.compoundCreateForDeposit.ergoTree)
+        LM.depositCompoundEval,
+        ErgoTreeSerializer.default.deserialize(LM.depositCompoundEval.ergoTree)
       )
       .get
     eval.tokens shouldEqual AssetAmount(
-      TokenId.unsafeFromString("cba6fabbc040c49873d3dea062a7fc81ff3262e1799dfd41e05014c5e8d91109"),
-      9223372036854775806L
+      TokenId.unsafeFromString("50eab1afc495420c17c0df5154584cf09d9167263fffc99c25e3e0ae4b26fe00"),
+      1823507
     )
   }
 }
