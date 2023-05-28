@@ -1,14 +1,16 @@
 package fi.spectrum.api.v1.services
 
+import cats.data.OptionT
 import cats.syntax.traverse._
 import cats.{Functor, Monad, Parallel}
 import derevo.derive
 import fi.spectrum.api.currencies.UsdUnits
-import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
+import fi.spectrum.api.db.models.amm.{AssetInfo, PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.repositories.Pools
+import fi.spectrum.api.models.FullAsset
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.services._
-import fi.spectrum.api.v1.endpoints.models.{CMCMarket, CoinGeckoPairs, CoinGeckoTicker, TimeWindow}
+import fi.spectrum.api.v1.endpoints.models.{CMCMarket, CoinGeckoPairs, CoinGeckoTicker, TimeWindow, TokenSupply}
 import fi.spectrum.api.v1.endpoints.monthMillis
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.graphite.Metrics
@@ -22,6 +24,7 @@ import tofu.syntax.monadic._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
 import fi.spectrum.api.v1.models.amm.types.MarketId
+import fi.spectrum.core.domain.{Address, BoxId, TokenId}
 import tofu.syntax.foption._
 
 import scala.math.BigDecimal.RoundingMode
@@ -37,6 +40,8 @@ trait PriceTracking[F[_]] {
 
   def getTickersCoinGecko: F[List[CoinGeckoTicker]]
 
+  def getTokenSupply: F[TokenSupply]
+
 }
 
 object PriceTracking {
@@ -48,7 +53,10 @@ object PriceTracking {
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
+    assets: Assets[F],
+    explorer: Network[F],
     metrics: Metrics[F],
+    lmSnapshots: LMSnapshots[F],
     logs: Logs[I, F]
   ): I[PriceTracking[F]] =
     logs
@@ -61,8 +69,28 @@ object PriceTracking {
     tokens: VerifiedTokens[F],
     solver: FiatPriceSolver[F],
     snapshots: Snapshots[F],
+    assets: Assets[F],
+    explorer: Network[F],
+    lmSnapshots: LMSnapshots[F],
     volumes24H: Volumes24H[F]
   ) extends PriceTracking[F] {
+
+    val spfId      = TokenId.unsafeFromString("9a06d9e545a41fd51eeffc5e20d818073bf820c635e2a9d922269913e0de369d")
+    val spfAddr  = Address.fromStringUnsafe("9erSt7duDopSLqdcPoM4kGJwUpqvPeBJfTPxrFGwy58rCAEPZHg")
+    val spfBox   = BoxId("00f01bf575a795266606dded7f5b710a7e48dab1589864ff46e7e3034016b0f6")
+    val totalSup = 1000000000
+
+    def getTokenSupply: F[TokenSupply] =
+      for {
+        boxes <- OptionT.liftF(explorer.getUnspentBoxes(spfAddr))
+        hhh <- OptionT.liftF(explorer.getUnspentBoxes(spfAddr))
+        spfBalance = boxes.flatMap(_.assets).filter(_.tokenId == spfId).map(_.amount).sum / math.pow(10, 6).toLong
+        snapshots <- OptionT.liftF(snapshots.get)
+        spf       <- OptionT(assets.get.map(_.find(_.id == spfId)))
+        dilutedMc <- OptionT(solver.convert(FullAsset(spf.id, totalSup, spf.ticker, spf.decimals), UsdUnits, snapshots))
+        lockedSpf <- OptionT.liftF(lmSnapshots.get.map(_.filter(_.lq.tokenId == spfId).map(_.reward.amount).sum))
+
+      } yield ???
 
     def getPairsCoinGecko: F[List[CoinGeckoPairs]] =
       for {

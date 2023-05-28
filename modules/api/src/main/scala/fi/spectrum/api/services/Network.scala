@@ -7,7 +7,8 @@ import derevo.circe.decoder
 import derevo.derive
 import fi.spectrum.api.configs.NetworkConfig
 import fi.spectrum.api.models.{BlockInfo, CmcResponse, Items, MempoolData}
-import fi.spectrum.core.domain.{Address, TokenId}
+import fi.spectrum.core.domain.transaction.Output
+import fi.spectrum.core.domain.{Address, BoxId, TokenId}
 import fi.spectrum.core.syntax.HttpOps.ResponseOps
 import fi.spectrum.graphite.Metrics
 import retry.RetryPolicies.{constantDelay, limitRetries}
@@ -36,6 +37,10 @@ trait Network[F[_]] {
   def getCurrentNetworkHeight: F[Int]
 
   def getMempoolData(addresses: List[Address]): F[List[MempoolData]]
+
+  def getUnspentBoxes(address: Address): F[List[Output]]
+
+  def getBoxById(id: BoxId): F[Option[Output]]
 }
 
 object Network {
@@ -115,6 +120,20 @@ object Network {
         .response(asJson[List[MempoolData]])
         .send(backend)
         .absorbError
+
+    def getBoxById(id: BoxId): F[Option[Output]] =
+      basicRequest
+        .get(config.explorerUri.withPathSegment(Segment(s"/api/v1/boxes/$id", identity)))
+        .response(asJson[Output])
+        .send(backend)
+        .map(_.body.toOption)
+
+    def getUnspentBoxes(address: Address): F[List[Output]] =
+      basicRequest
+        .get(config.explorerUri.withPathSegment(Segment(s"api/v1/boxes/byAddress/$address", identity)))
+        .response(asJson[List[Output]])
+        .send(backend)
+        .absorbError
   }
 
   final private class Retry[F[_]: MonadError[*[_], Throwable]: Sleep: Logging](config: NetworkConfig)(implicit
@@ -161,6 +180,22 @@ object Network {
           warn"Failed to get mempool data. ${err.getMessage}. Retrying..." >>
           metrics.sendCount("mempool.data.request.failed", 1.0)
       )(_)
+
+    def getUnspentBoxes(address: Address): Mid[F, List[Output]] =
+      retryingOnAllErrors(
+        explorerPolicy,
+        (err: Throwable, _: RetryDetails) =>
+          warn"Failed to get boxes by address. ${err.getMessage}. Retrying..." >>
+          metrics.sendCount("explorer.boxes.request.failed", 1.0)
+      )(_)
+
+    def getBoxById(id: BoxId): Mid[F, Option[Output]] =
+      retryingOnAllErrors(
+        explorerPolicy,
+        (err: Throwable, _: RetryDetails) =>
+          warn"Failed to get box by id. ${err.getMessage}. Retrying..." >>
+          metrics.sendCount("explorer.box.request.failed", 1.0)
+      )(_)
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Network[Mid[F, *]] {
@@ -191,6 +226,20 @@ object Network {
         _ <- info"getMempoolData($addresses)"
         r <- _
         _ <- info"getMempoolData($addresses) -> ${r.map(_.orders.length)}"
+      } yield r
+
+    def getUnspentBoxes(address: Address): Mid[F, List[Output]] =
+      for {
+        _ <- info"getUnspentBoxes($address)"
+        r <- _
+        _ <- info"getUnspentBoxes($address) -> $r"
+      } yield r
+
+    def getBoxById(id: BoxId): Mid[F, Option[Output]] =
+      for {
+        _ <- info"getBoxById($id)"
+        r <- _
+        _ <- info"getBoxById($id) -> $r"
       } yield r
   }
 
@@ -226,6 +275,22 @@ object Network {
         r      <- _
         finish <- millis
         _      <- metrics.sendTs("mempool.data.request", (finish - start).toDouble)
+      } yield r
+
+    def getUnspentBoxes(address: Address): Mid[F, List[Output]] =
+      for {
+        start  <- millis
+        r      <- _
+        finish <- millis
+        _      <- metrics.sendTs("explorer.boxes.request", (finish - start).toDouble)
+      } yield r
+
+    def getBoxById(id: BoxId): Mid[F, Option[Output]] =
+      for {
+        start  <- millis
+        r      <- _
+        finish <- millis
+        _      <- metrics.sendTs("explorer.box.request", (finish - start).toDouble)
       } yield r
   }
 }
