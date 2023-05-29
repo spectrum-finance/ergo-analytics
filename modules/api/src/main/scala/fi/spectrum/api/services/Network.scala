@@ -7,14 +7,14 @@ import derevo.circe.decoder
 import derevo.derive
 import fi.spectrum.api.configs.NetworkConfig
 import fi.spectrum.api.models.{BlockInfo, CmcResponse, Items, MempoolData}
-import fi.spectrum.core.domain.transaction.Output
-import fi.spectrum.core.domain.{Address, BoxId, TokenId}
+import fi.spectrum.api.services.models.explorer.{ExplorerOutput, ExplorerTx}
+import fi.spectrum.core.domain.{Address, BoxId, TokenId, TxId}
 import fi.spectrum.core.syntax.HttpOps.ResponseOps
 import fi.spectrum.graphite.Metrics
 import retry.RetryPolicies.{constantDelay, limitRetries}
-import retry.{retryingOnAllErrors, RetryDetails, Sleep}
+import retry.{RetryDetails, Sleep, retryingOnAllErrors}
 import sttp.client3.circe.asJson
-import sttp.client3.{basicRequest, SttpBackend}
+import sttp.client3.{SttpBackend, basicRequest}
 import sttp.model.Uri.Segment
 import tofu.Throws
 import tofu.higherKind.Mid
@@ -38,9 +38,11 @@ trait Network[F[_]] {
 
   def getMempoolData(addresses: List[Address]): F[List[MempoolData]]
 
-  def getUnspentBoxes(address: Address): F[List[Output]]
+  def getUnspentBoxes(address: Address): F[List[ExplorerOutput]]
 
-  def getBoxById(id: BoxId): F[Option[Output]]
+  def getBoxById(id: BoxId): F[Option[ExplorerOutput]]
+
+  def getTransactionById(id: TxId): F[Option[ExplorerTx]]
 }
 
 object Network {
@@ -121,17 +123,24 @@ object Network {
         .send(backend)
         .absorbError
 
-    def getBoxById(id: BoxId): F[Option[Output]] =
+    def getBoxById(id: BoxId): F[Option[ExplorerOutput]] =
       basicRequest
         .get(config.explorerUri.withPathSegment(Segment(s"/api/v1/boxes/$id", identity)))
-        .response(asJson[Output])
+        .response(asJson[ExplorerOutput])
         .send(backend)
         .map(_.body.toOption)
 
-    def getUnspentBoxes(address: Address): F[List[Output]] =
+    def getTransactionById(id: TxId): F[Option[ExplorerTx]] =
+      basicRequest
+        .get(config.explorerUri.withPathSegment(Segment(s"/api/v1/transactions/$id", identity)))
+        .response(asJson[ExplorerTx])
+        .send(backend)
+        .map(_.body.toOption)
+
+    def getUnspentBoxes(address: Address): F[List[ExplorerOutput]] =
       basicRequest
         .get(config.explorerUri.withPathSegment(Segment(s"api/v1/boxes/byAddress/$address", identity)))
-        .response(asJson[List[Output]])
+        .response(asJson[List[ExplorerOutput]])
         .send(backend)
         .absorbError
   }
@@ -181,7 +190,7 @@ object Network {
           metrics.sendCount("mempool.data.request.failed", 1.0)
       )(_)
 
-    def getUnspentBoxes(address: Address): Mid[F, List[Output]] =
+    def getUnspentBoxes(address: Address): Mid[F, List[ExplorerOutput]] =
       retryingOnAllErrors(
         explorerPolicy,
         (err: Throwable, _: RetryDetails) =>
@@ -189,12 +198,20 @@ object Network {
           metrics.sendCount("explorer.boxes.request.failed", 1.0)
       )(_)
 
-    def getBoxById(id: BoxId): Mid[F, Option[Output]] =
+    def getBoxById(id: BoxId): Mid[F, Option[ExplorerOutput]] =
       retryingOnAllErrors(
         explorerPolicy,
         (err: Throwable, _: RetryDetails) =>
           warn"Failed to get box by id. ${err.getMessage}. Retrying..." >>
           metrics.sendCount("explorer.box.request.failed", 1.0)
+      )(_)
+
+    def getTransactionById(id: TxId): Mid[F, Option[ExplorerTx]] =
+      retryingOnAllErrors(
+        explorerPolicy,
+        (err: Throwable, _: RetryDetails) =>
+          warn"Failed to get transaction by id. ${err.getMessage}. Retrying..." >>
+          metrics.sendCount("explorer.transaction.request.failed", 1.0)
       )(_)
   }
 
@@ -228,18 +245,25 @@ object Network {
         _ <- info"getMempoolData($addresses) -> ${r.map(_.orders.length)}"
       } yield r
 
-    def getUnspentBoxes(address: Address): Mid[F, List[Output]] =
+    def getUnspentBoxes(address: Address): Mid[F, List[ExplorerOutput]] =
       for {
         _ <- info"getUnspentBoxes($address)"
         r <- _
         _ <- info"getUnspentBoxes($address) -> $r"
       } yield r
 
-    def getBoxById(id: BoxId): Mid[F, Option[Output]] =
+    def getBoxById(id: BoxId): Mid[F, Option[ExplorerOutput]] =
       for {
         _ <- info"getBoxById($id)"
         r <- _
         _ <- info"getBoxById($id) -> $r"
+      } yield r
+
+    def getTransactionById(id: TxId): Mid[F, Option[ExplorerTx]] =
+      for {
+        _ <- info"getTransactionById($id)"
+        r <- _
+        _ <- info"getTransactionById($id) -> $r"
       } yield r
   }
 
@@ -277,7 +301,7 @@ object Network {
         _      <- metrics.sendTs("mempool.data.request", (finish - start).toDouble)
       } yield r
 
-    def getUnspentBoxes(address: Address): Mid[F, List[Output]] =
+    def getUnspentBoxes(address: Address): Mid[F, List[ExplorerOutput]] =
       for {
         start  <- millis
         r      <- _
@@ -285,12 +309,20 @@ object Network {
         _      <- metrics.sendTs("explorer.boxes.request", (finish - start).toDouble)
       } yield r
 
-    def getBoxById(id: BoxId): Mid[F, Option[Output]] =
+    def getBoxById(id: BoxId): Mid[F, Option[ExplorerOutput]] =
       for {
         start  <- millis
         r      <- _
         finish <- millis
         _      <- metrics.sendTs("explorer.box.request", (finish - start).toDouble)
+      } yield r
+
+    def getTransactionById(id: TxId): Mid[F, Option[ExplorerTx]] =
+      for {
+        start  <- millis
+        r      <- _
+        finish <- millis
+        _      <- metrics.sendTs("explorer.transaction.request", (finish - start).toDouble)
       } yield r
   }
 }

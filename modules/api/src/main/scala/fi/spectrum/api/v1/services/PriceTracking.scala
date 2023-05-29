@@ -2,31 +2,33 @@ package fi.spectrum.api.v1.services
 
 import cats.data.OptionT
 import cats.syntax.traverse._
-import cats.{Functor, Monad, Parallel}
+import cats.{Monad, Parallel}
 import derevo.derive
+import fi.spectrum.api.configs.PriceTrackingConfig
 import fi.spectrum.api.currencies.UsdUnits
-import fi.spectrum.api.db.models.amm.{AssetInfo, PoolSnapshot, PoolVolumeSnapshot}
+import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.repositories.Pools
 import fi.spectrum.api.models.FullAsset
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.services._
-import fi.spectrum.api.v1.endpoints.models.{CMCMarket, CoinGeckoPairs, CoinGeckoTicker, TimeWindow, TokenSupply}
+import fi.spectrum.api.v1.endpoints.models._
 import fi.spectrum.api.v1.endpoints.monthMillis
 import fi.spectrum.api.v1.models.amm._
+import fi.spectrum.api.v1.models.amm.types.MarketId
+import fi.spectrum.core.domain.{Address, BoxId, TokenId, TxId}
 import fi.spectrum.graphite.Metrics
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
+import tofu.lift.Lift
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.doobie.txr._
+import tofu.syntax.foption._
+import tofu.syntax.lift._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
-import fi.spectrum.api.v1.models.amm.types.MarketId
-import fi.spectrum.core.domain.{Address, BoxId, TokenId}
-import tofu.syntax.foption._
-
 import scala.math.BigDecimal.RoundingMode
 
 @derive(representableK)
@@ -40,13 +42,14 @@ trait PriceTracking[F[_]] {
 
   def getTickersCoinGecko: F[List[CoinGeckoTicker]]
 
-  def getTokenSupply: F[TokenSupply]
+  def getTokenSupply: F[Option[TokenSupply]]
 
 }
 
 object PriceTracking {
 
-  def make[I[_]: Functor, F[_]: Monad: Clock: Parallel, D[_]: Monad](implicit
+  def make[I[_]: Monad, F[_]: Monad: Clock: Parallel: PriceTrackingConfig.Has, D[_]: Monad](implicit
+    lift: Lift[F, I],
     txr: Txr[F, D],
     pools: Pools[D],
     tokens: VerifiedTokens[F],
@@ -61,9 +64,13 @@ object PriceTracking {
   ): I[PriceTracking[F]] =
     logs
       .forService[PriceTracking[F]]
-      .map(implicit __ => new PriceTrackingMetrics[F] attach (new Tracing[F] attach new Live[F, D]))
+      .flatMap(implicit __ =>
+        PriceTrackingConfig.access.lift.map { config =>
+          new PriceTrackingMetrics[F] attach (new Tracing[F] attach new Live[F, D](config))
+        }
+      )
 
-  final class Live[F[_]: Monad: Clock: Parallel: Logging, D[_]: Monad](implicit
+  final class Live[F[_]: Monad: Clock: Parallel: Logging, D[_]: Monad](conf: PriceTrackingConfig)(implicit
     txr: Txr[F, D],
     pools: Pools[D],
     tokens: VerifiedTokens[F],
@@ -75,22 +82,43 @@ object PriceTracking {
     volumes24H: Volumes24H[F]
   ) extends PriceTracking[F] {
 
-    val spfId      = TokenId.unsafeFromString("9a06d9e545a41fd51eeffc5e20d818073bf820c635e2a9d922269913e0de369d")
-    val spfAddr  = Address.fromStringUnsafe("9erSt7duDopSLqdcPoM4kGJwUpqvPeBJfTPxrFGwy58rCAEPZHg")
-    val spfBox   = BoxId("00f01bf575a795266606dded7f5b710a7e48dab1589864ff46e7e3034016b0f6")
-    val totalSup = 1000000000
-
-    def getTokenSupply: F[TokenSupply] =
-      for {
-        boxes <- OptionT.liftF(explorer.getUnspentBoxes(spfAddr))
-        hhh <- OptionT.liftF(explorer.getUnspentBoxes(spfAddr))
-        spfBalance = boxes.flatMap(_.assets).filter(_.tokenId == spfId).map(_.amount).sum / math.pow(10, 6).toLong
+    def getTokenSupply: F[Option[TokenSupply]] =
+      (for {
+        ass <- OptionT.liftF(assets.update)
+        _ <- OptionT.liftF(snapshots.update(ass))
         snapshots <- OptionT.liftF(snapshots.get)
-        spf       <- OptionT(assets.get.map(_.find(_.id == spfId)))
-        dilutedMc <- OptionT(solver.convert(FullAsset(spf.id, totalSup, spf.ticker, spf.decimals), UsdUnits, snapshots))
-        lockedSpf <- OptionT.liftF(lmSnapshots.get.map(_.filter(_.lq.tokenId == spfId).map(_.reward.amount).sum))
+        spfAddress = Address.fromStringUnsafe(conf.spfMintingAddress)
+        spfTokenId = TokenId.unsafeFromString(conf.spfTokenId)
+        boxes         <- OptionT.liftF(explorer.getUnspentBoxes(spfAddress))
+        initBox       <- OptionT(explorer.getBoxById(BoxId(conf.initAirdropOutput)))
+        airdropAmount <- initBox.spentTransactionId.fold(OptionT.some[F](initBox.assets.map(_.amount).sum))(trackOutput)
+        spfInfo       <- OptionT(assets.get.map(_.find(_.id == spfTokenId)))
+        spfAsset = FullAsset(spfInfo.id, conf.totalSpfSupply, spfInfo.ticker, spfInfo.decimals)
+        dilutedMc <- OptionT(solver.convert(spfAsset, UsdUnits, snapshots))
+        addrSpfBalance = boxes.flatMap(_.assets).filter(_.tokenId == spfTokenId).map(_.amount).sum
+        lockedSpf <-
+          OptionT.liftF(lmSnapshots.get.map(_.filter(_.lq.tokenId == spfTokenId).map(_.reward.amount).sum))
 
-      } yield ???
+        circulatingSupply =
+          conf.totalSpfSupply - ((addrSpfBalance + lockedSpf + airdropAmount) / math
+            .pow(10, spfInfo.evalDecimals)
+            .toLong)
+        mcUsd    = (dilutedMc.value / conf.totalSpfSupply) * circulatingSupply
+        supplyPc = circulatingSupply / conf.totalSpfSupply * 100
+      } yield TokenSupply(
+        mcUsd,
+        dilutedMc.value,
+        circulatingSupply,
+        conf.totalSpfSupply,
+        supplyPc
+      )).value
+
+    private def trackOutput(txId: TxId): OptionT[F, Long] =
+      for {
+        tx     <- OptionT(explorer.getTransactionById(txId))
+        box    <- OptionT.fromOption[F](tx.outputs.headOption)
+        amount <- box.spentTransactionId.fold(OptionT.some[F](box.assets.map(_.amount).sum))(trackOutput)
+      } yield amount
 
     def getPairsCoinGecko: F[List[CoinGeckoPairs]] =
       for {
@@ -275,6 +303,14 @@ object PriceTracking {
         _ <- info"getPairsCoinGecko() finished"
         _ <- trace"getPairsCoinGecko() - $r"
       } yield r
+
+    def getTokenSupply: Mid[F, Option[TokenSupply]] =
+      for {
+        _ <- info"getTokenSupply()"
+        r <- _
+        _ <- info"getTokenSupply() finished"
+        _ <- trace"getTokenSupply() - $r"
+      } yield r
   }
 
   final private class PriceTrackingMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F])
@@ -297,5 +333,7 @@ object PriceTracking {
     def getPairsCoinGecko: Mid[F, List[CoinGeckoPairs]] = unit >> _
 
     def getTickersCoinGecko: Mid[F, List[CoinGeckoTicker]] = unit >> _
+
+    def getTokenSupply: Mid[F, Option[TokenSupply]] = unit >> _
   }
 }

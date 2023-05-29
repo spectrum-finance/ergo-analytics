@@ -6,7 +6,7 @@ import fi.spectrum.api.v1.services.PriceTracking
 import fi.spectrum.common.http.AdaptThrowable.AdaptThrowableEitherT
 import fi.spectrum.common.http.HttpError
 import cats.syntax.semigroupk._
-import fi.spectrum.common.http.syntax.toAdaptThrowableOps
+import fi.spectrum.common.http.syntax.{toAdaptThrowableOps, toRoutesOps}
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
 
@@ -22,6 +22,10 @@ final class PriceTrackingRoutes[
   private val interpreter = Http4sServerInterpreter(opts)
 
   def routes: HttpRoutes[F] = getVerifiedMarketsR <+> getMarketsR <+> getPairsCoinGeckoR <+> getTickersCoinGeckoR
+
+  def getTokenSupplyR: HttpRoutes[F] = interpreter.toRoutes(getTokenSupplyE.serverLogic { _ =>
+    pt.getTokenSupply.adaptThrowable.orNotFound(s"TokenSupply").value
+  })
 
   def getVerifiedMarketsR: HttpRoutes[F] = interpreter.toRoutes(getVerifiedMarketsE.serverLogic { _ =>
     pt.getVerifiedMarkets.adaptThrowable.value
