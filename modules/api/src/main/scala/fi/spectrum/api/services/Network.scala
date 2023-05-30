@@ -8,9 +8,10 @@ import derevo.derive
 import fi.spectrum.api.configs.NetworkConfig
 import fi.spectrum.api.models.{BlockInfo, CmcResponse, Items, MempoolData}
 import fi.spectrum.api.services.models.explorer.{ExplorerOutput, ExplorerTx}
-import fi.spectrum.core.domain.{Address, BoxId, TokenId, TxId}
+import fi.spectrum.core.domain.{Address, TokenId, TxId}
 import fi.spectrum.core.syntax.HttpOps.ResponseOps
 import fi.spectrum.graphite.Metrics
+import io.circe.generic.auto._
 import retry.RetryPolicies.{constantDelay, limitRetries}
 import retry.{RetryDetails, Sleep, retryingOnAllErrors}
 import sttp.client3.circe.asJson
@@ -39,8 +40,6 @@ trait Network[F[_]] {
   def getMempoolData(addresses: List[Address]): F[List[MempoolData]]
 
   def getUnspentBoxes(address: Address): F[List[ExplorerOutput]]
-
-  def getBoxById(id: BoxId): F[Option[ExplorerOutput]]
 
   def getTransactionById(id: TxId): F[Option[ExplorerTx]]
 }
@@ -123,26 +122,20 @@ object Network {
         .send(backend)
         .absorbError
 
-    def getBoxById(id: BoxId): F[Option[ExplorerOutput]] =
-      basicRequest
-        .get(config.explorerUri.withPathSegment(Segment(s"/api/v1/boxes/$id", identity)))
-        .response(asJson[ExplorerOutput])
-        .send(backend)
-        .map(_.body.toOption)
-
     def getTransactionById(id: TxId): F[Option[ExplorerTx]] =
       basicRequest
-        .get(config.explorerUri.withPathSegment(Segment(s"/api/v1/transactions/$id", identity)))
+        .get(config.explorerUri.withPathSegment(Segment(s"api/v1/transactions/$id", identity)))
         .response(asJson[ExplorerTx])
         .send(backend)
         .map(_.body.toOption)
 
     def getUnspentBoxes(address: Address): F[List[ExplorerOutput]] =
       basicRequest
-        .get(config.explorerUri.withPathSegment(Segment(s"api/v1/boxes/byAddress/$address", identity)))
-        .response(asJson[List[ExplorerOutput]])
+        .get(config.explorerUri.withPathSegment(Segment(s"api/v1/boxes/unspent/byAddress/$address", identity)))
+        .response(asJson[Items[ExplorerOutput]])
         .send(backend)
         .absorbError
+        .map(_.items)
   }
 
   final private class Retry[F[_]: MonadError[*[_], Throwable]: Sleep: Logging](config: NetworkConfig)(implicit
@@ -198,14 +191,6 @@ object Network {
           metrics.sendCount("explorer.boxes.request.failed", 1.0)
       )(_)
 
-    def getBoxById(id: BoxId): Mid[F, Option[ExplorerOutput]] =
-      retryingOnAllErrors(
-        explorerPolicy,
-        (err: Throwable, _: RetryDetails) =>
-          warn"Failed to get box by id. ${err.getMessage}. Retrying..." >>
-          metrics.sendCount("explorer.box.request.failed", 1.0)
-      )(_)
-
     def getTransactionById(id: TxId): Mid[F, Option[ExplorerTx]] =
       retryingOnAllErrors(
         explorerPolicy,
@@ -250,13 +235,6 @@ object Network {
         _ <- info"getUnspentBoxes($address)"
         r <- _
         _ <- info"getUnspentBoxes($address) -> $r"
-      } yield r
-
-    def getBoxById(id: BoxId): Mid[F, Option[ExplorerOutput]] =
-      for {
-        _ <- info"getBoxById($id)"
-        r <- _
-        _ <- info"getBoxById($id) -> $r"
       } yield r
 
     def getTransactionById(id: TxId): Mid[F, Option[ExplorerTx]] =
@@ -307,14 +285,6 @@ object Network {
         r      <- _
         finish <- millis
         _      <- metrics.sendTs("explorer.boxes.request", (finish - start).toDouble)
-      } yield r
-
-    def getBoxById(id: BoxId): Mid[F, Option[ExplorerOutput]] =
-      for {
-        start  <- millis
-        r      <- _
-        finish <- millis
-        _      <- metrics.sendTs("explorer.box.request", (finish - start).toDouble)
       } yield r
 
     def getTransactionById(id: TxId): Mid[F, Option[ExplorerTx]] =

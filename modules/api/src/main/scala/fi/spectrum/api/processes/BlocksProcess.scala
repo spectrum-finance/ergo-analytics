@@ -42,6 +42,7 @@ object BlocksProcess {
     heightService: Height[F],
     lMSnapshots: LMSnapshots[F],
     lmStats: LmStats[F],
+    airdropSpf: AirdropSPFAmount[F],
     lift: Lift[F, I],
     metrics: Metrics[F],
     logs: Logs[I, F]
@@ -56,6 +57,7 @@ object BlocksProcess {
       newHeight    <- heightService.update(height).lift[I]
       lmSnapshotsL <- lMSnapshots.update.lift[I]
       _            <- lmStats.update(poolsL, newHeight, lmSnapshotsL, assetsL).lift[I]
+      _            <- airdropSpf.update.lift[I]
     } yield new Live[F, S, C](height)
   }
 
@@ -73,6 +75,7 @@ object BlocksProcess {
     caching: HttpResponseCaching[F],
     heightService: Height[F],
     lMSnapshots: LMSnapshots[F],
+    airdropSpf: AirdropSPFAmount[F],
     lmStats: LmStats[F],
     metrics: Metrics[F]
   ) extends BlocksProcess[S] {
@@ -96,6 +99,7 @@ object BlocksProcess {
                          newHeight    <- heightService.update(lastHeight)
                          lmSnapshotsL <- lMSnapshots.update
                          _            <- lmStats.update(snapshotsL, newHeight, lmSnapshotsL, assetsL)
+                         _            <- airdropSpf.update
                          _            <- caching.invalidateAll
                        } yield ()
                      }

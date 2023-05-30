@@ -9,7 +9,7 @@ import tofu.logging.derivation.loggable
 case class PriceTrackingConfig(
   spfTokenId: String,
   spfMintingAddress: String,
-  initAirdropOutput: String,
+  initAirdropTx: String,
   totalSpfSupply: Long
 )
 

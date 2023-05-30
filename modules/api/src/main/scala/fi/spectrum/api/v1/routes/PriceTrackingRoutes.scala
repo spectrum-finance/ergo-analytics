@@ -21,7 +21,8 @@ final class PriceTrackingRoutes[
 
   private val interpreter = Http4sServerInterpreter(opts)
 
-  def routes: HttpRoutes[F] = getVerifiedMarketsR <+> getMarketsR <+> getPairsCoinGeckoR <+> getTickersCoinGeckoR
+  def routes: HttpRoutes[F] =
+    getTokenSupplyR <+> getVerifiedMarketsR <+> getMarketsR <+> getPairsCoinGeckoR <+> getTickersCoinGeckoR
 
   def getTokenSupplyR: HttpRoutes[F] = interpreter.toRoutes(getTokenSupplyE.serverLogic { _ =>
     pt.getTokenSupply.adaptThrowable.orNotFound(s"TokenSupply").value

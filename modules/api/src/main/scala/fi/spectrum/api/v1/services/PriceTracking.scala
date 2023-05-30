@@ -6,7 +6,7 @@ import cats.{Monad, Parallel}
 import derevo.derive
 import fi.spectrum.api.configs.PriceTrackingConfig
 import fi.spectrum.api.currencies.UsdUnits
-import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
+import fi.spectrum.api.db.models.amm.{AssetInfo, PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.repositories.Pools
 import fi.spectrum.api.models.FullAsset
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
@@ -29,6 +29,7 @@ import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
+
 import scala.math.BigDecimal.RoundingMode
 
 @derive(representableK)
@@ -60,6 +61,7 @@ object PriceTracking {
     explorer: Network[F],
     metrics: Metrics[F],
     lmSnapshots: LMSnapshots[F],
+    adSpfAmount: AirdropSPFAmount[F],
     logs: Logs[I, F]
   ): I[PriceTracking[F]] =
     logs
@@ -79,32 +81,30 @@ object PriceTracking {
     assets: Assets[F],
     explorer: Network[F],
     lmSnapshots: LMSnapshots[F],
+    adSpfAmount: AirdropSPFAmount[F],
     volumes24H: Volumes24H[F]
   ) extends PriceTracking[F] {
 
     def getTokenSupply: F[Option[TokenSupply]] =
       (for {
-        ass <- OptionT.liftF(assets.update)
-        _ <- OptionT.liftF(snapshots.update(ass))
         snapshots <- OptionT.liftF(snapshots.get)
         spfAddress = Address.fromStringUnsafe(conf.spfMintingAddress)
         spfTokenId = TokenId.unsafeFromString(conf.spfTokenId)
         boxes         <- OptionT.liftF(explorer.getUnspentBoxes(spfAddress))
-        initBox       <- OptionT(explorer.getBoxById(BoxId(conf.initAirdropOutput)))
-        airdropAmount <- initBox.spentTransactionId.fold(OptionT.some[F](initBox.assets.map(_.amount).sum))(trackOutput)
+        airdropAmount <- OptionT(adSpfAmount.get)
         spfInfo       <- OptionT(assets.get.map(_.find(_.id == spfTokenId)))
-        spfAsset = FullAsset(spfInfo.id, conf.totalSpfSupply, spfInfo.ticker, spfInfo.decimals)
+        spfAsset = FullAsset(
+                     spfInfo.id,
+                     conf.totalSpfSupply * math.pow(10, spfInfo.evalDecimals).toLong,
+                     spfInfo.ticker,
+                     spfInfo.decimals
+                   )
         dilutedMc <- OptionT(solver.convert(spfAsset, UsdUnits, snapshots))
-        addrSpfBalance = boxes.flatMap(_.assets).filter(_.tokenId == spfTokenId).map(_.amount).sum
-        lockedSpf <-
-          OptionT.liftF(lmSnapshots.get.map(_.filter(_.lq.tokenId == spfTokenId).map(_.reward.amount).sum))
-
-        circulatingSupply =
-          conf.totalSpfSupply - ((addrSpfBalance + lockedSpf + airdropAmount) / math
-            .pow(10, spfInfo.evalDecimals)
-            .toLong)
-        mcUsd    = (dilutedMc.value / conf.totalSpfSupply) * circulatingSupply
-        supplyPc = circulatingSupply / conf.totalSpfSupply * 100
+        lockedSpf <- OptionT.liftF(lmSnapshots.get.map(_.filter(_.lq.tokenId == spfTokenId).map(_.reward.amount).sum))
+        addrSpfBalance    = boxes.flatMap(_.assets).filter(_.tokenId == spfTokenId).map(_.amount).sum
+        circulatingSupply = evalCirculatingSupply(addrSpfBalance, lockedSpf, airdropAmount, spfInfo)
+        mcUsd             = (dilutedMc.value / conf.totalSpfSupply) * circulatingSupply
+        supplyPc          = (circulatingSupply / conf.totalSpfSupply) * 100
       } yield TokenSupply(
         mcUsd,
         dilutedMc.value,
@@ -113,12 +113,8 @@ object PriceTracking {
         supplyPc
       )).value
 
-    private def trackOutput(txId: TxId): OptionT[F, Long] =
-      for {
-        tx     <- OptionT(explorer.getTransactionById(txId))
-        box    <- OptionT.fromOption[F](tx.outputs.headOption)
-        amount <- box.spentTransactionId.fold(OptionT.some[F](box.assets.map(_.amount).sum))(trackOutput)
-      } yield amount
+    private def evalCirculatingSupply(spfBalance: Long, lockedSpf: Long, adAmount: Long, spf: AssetInfo) =
+      conf.totalSpfSupply - (BigDecimal(spfBalance + lockedSpf + adAmount) / math.pow(10, spf.evalDecimals))
 
     def getPairsCoinGecko: F[List[CoinGeckoPairs]] =
       for {

@@ -17,7 +17,8 @@ final class PriceTrackingEndpoints {
     getVerifiedMarketsE,
     getMarketsE,
     getPairsCoinGeckoE,
-    getTickersCoinGeckoE
+    getTickersCoinGeckoE,
+    getTokenSupplyE
   )
 
   def getTokenSupplyE: Endpoint[Unit, Unit, HttpError, TokenSupply, Any] =
