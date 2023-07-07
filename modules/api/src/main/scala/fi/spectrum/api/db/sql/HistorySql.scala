@@ -6,12 +6,38 @@ import doobie.implicits._
 import doobie.util.log.LogHandler
 import fi.spectrum.api.db.models.OrderDB._
 import fi.spectrum.api.db.models._
-import fi.spectrum.api.v1.endpoints.models.TimeWindow
+import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.history.{OrderStatusApi, TokenPair}
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.core.domain.{PubKey, TokenId, TxId}
 
 final class HistorySql(implicit lh: LogHandler) {
+
+  def countAllAddresses: Query0[Long] =
+    sql"""
+         |select count(*) from (
+         |select s.redeemer from swaps s
+         |	UNION
+         |select d.redeemer from deposits d
+         |	UNION
+         |select r.redeemer from redeems r
+         |) sub
+         |""".stripMargin.query[Long]
+
+  def getAllAddresses(paging: Paging): Query0[PubKey] =
+    sql"""
+         |select distinct * from (
+         |select redeemer from (
+         |select s.redeemer, s.registered_transaction_timestamp from swaps s
+         |	UNION
+         |select d.redeemer, d.registered_transaction_timestamp from deposits d
+         |	UNION
+         |select r.redeemer, r.registered_transaction_timestamp from redeems r
+         |) sub
+         |order by registered_transaction_timestamp
+         |) sub
+         |offset ${paging.offset} limit ${paging.limit}
+         |""".stripMargin.query[PubKey]
 
   def addressCount(list: List[PubKey]): doobie.Query0[Long] =
     sql"""

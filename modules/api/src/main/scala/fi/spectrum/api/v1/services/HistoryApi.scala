@@ -3,7 +3,13 @@ package fi.spectrum.api.v1.services
 import cats.{Functor, Monad}
 import fi.spectrum.api.db.repositories.History
 import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
-import fi.spectrum.api.v1.models.history.{ApiOrder, HistoryApiQuery, OrderHistoryResponse, OrderType}
+import fi.spectrum.api.v1.models.history.{
+  AddressesHistoryResponse,
+  ApiOrder,
+  HistoryApiQuery,
+  OrderHistoryResponse,
+  OrderType
+}
 import tofu.doobie.transactor.Txr
 import tofu.syntax.monadic._
 import tofu.syntax.time.now._
@@ -17,6 +23,7 @@ import tofu.time.Clock
 
 trait HistoryApi[F[_]] {
   def orderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[OrderHistoryResponse]
+  def addressesHistory(paging: Paging): F[AddressesHistoryResponse]
 }
 
 object HistoryApi {
@@ -36,6 +43,12 @@ object HistoryApi {
     txr: Txr[F, D],
     e: ErgoAddressEncoder
   ) extends HistoryApi[F] {
+
+    def addressesHistory(paging: Paging): F[AddressesHistoryResponse] =
+      (for {
+        count <- history.countAllAddresses
+        result <- history.getAllAddresses(paging)
+      } yield AddressesHistoryResponse(result, count)).trans
 
     def orderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[OrderHistoryResponse] =
       mempoolApi.ordersByAddress(request.addresses).flatMap { mempoolOrders =>
