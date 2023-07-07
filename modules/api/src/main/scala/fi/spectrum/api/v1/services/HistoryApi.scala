@@ -16,7 +16,8 @@ import tofu.syntax.time.now._
 import tofu.syntax.doobie.txr._
 import fi.spectrum.api.classes.ToAPI._
 import fi.spectrum.api.v1.models.history.ApiOrder._
-import fi.spectrum.core.domain.order.OrderId
+import fi.spectrum.core.domain.address.formAddress
+import fi.spectrum.core.domain.order.{OrderId, Redeemer}
 import org.ergoplatform.ErgoAddressEncoder
 import tofu.logging.Logs
 import tofu.time.Clock
@@ -46,8 +47,9 @@ object HistoryApi {
 
     def addressesHistory(paging: Paging): F[AddressesHistoryResponse] =
       (for {
-        count <- history.countAllAddresses
-        result <- history.getAllAddresses(paging)
+        count     <- history.countAllAddresses
+        addresses <- history.getAllAddresses(paging)
+        result = addresses.flatMap(pk => formAddress(Redeemer.PublicKeyRedeemer(pk)))
       } yield AddressesHistoryResponse(result, count)).trans
 
     def orderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[OrderHistoryResponse] =

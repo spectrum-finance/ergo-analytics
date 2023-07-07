@@ -2,12 +2,12 @@ package fi.spectrum.api.v1.models.history
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import fi.spectrum.core.domain.PubKey
+import fi.spectrum.core.domain.Address
 import sttp.tapir.Schema
 import tofu.logging.derivation.loggable
 
 @derive(loggable, encoder, decoder)
-final case class AddressesHistoryResponse(addresses: List[PubKey], total: Long)
+final case class AddressesHistoryResponse(addresses: List[Address], total: Long)
 
 object AddressesHistoryResponse {
 

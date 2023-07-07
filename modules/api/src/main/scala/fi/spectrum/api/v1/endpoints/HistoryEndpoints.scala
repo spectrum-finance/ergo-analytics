@@ -41,5 +41,5 @@ final class HistoryEndpoints {
       .out(jsonBody[AddressesHistoryResponse])
       .tag(Group)
       .name("Addresses history")
-      .description("Provides list of addresses that interacted with platform")
+      .description("Provides list of addresses that interacted with amm dex platform")
 }

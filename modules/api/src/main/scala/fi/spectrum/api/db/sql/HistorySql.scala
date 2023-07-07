@@ -15,28 +15,28 @@ final class HistorySql(implicit lh: LogHandler) {
 
   def countAllAddresses: Query0[Long] =
     sql"""
-         |select count(*) from (
-         |select s.redeemer from swaps s
-         |	UNION
-         |select d.redeemer from deposits d
-         |	UNION
-         |select r.redeemer from redeems r
+         |SELECT COUNT(*) FROM (
+         |  SELECT s.redeemer FROM swaps s
+         |	  UNION
+         |  SELECT d.redeemer FROM deposits d
+         |	  UNION
+         |  SELECT r.redeemer FROM redeems r
          |) sub
          |""".stripMargin.query[Long]
 
   def getAllAddresses(paging: Paging): Query0[PubKey] =
     sql"""
-         |select distinct * from (
-         |select redeemer from (
-         |select s.redeemer, s.registered_transaction_timestamp from swaps s
-         |	UNION
-         |select d.redeemer, d.registered_transaction_timestamp from deposits d
-         |	UNION
-         |select r.redeemer, r.registered_transaction_timestamp from redeems r
+         |SELECT DISTINCT * FROM (
+         |  SELECT redeemer FROM (
+         |    SELECT s.redeemer, s.registered_transaction_timestamp FROM swaps s
+         |    	UNION
+         |    SELECT d.redeemer, d.registered_transaction_timestamp FROM deposits d
+         |	    UNION
+         |    SELECT r.redeemer, r.registered_transaction_timestamp FROM redeems r
+         |    ) sub
+         |  ORDER BY registered_transaction_timestamp
          |) sub
-         |order by registered_transaction_timestamp
-         |) sub
-         |offset ${paging.offset} limit ${paging.limit}
+         |OFFSET ${paging.offset} LIMIT ${paging.limit}
          |""".stripMargin.query[PubKey]
 
   def addressCount(list: List[PubKey]): doobie.Query0[Long] =
