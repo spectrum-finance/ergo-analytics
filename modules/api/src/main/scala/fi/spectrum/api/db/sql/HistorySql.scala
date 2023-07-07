@@ -36,6 +36,7 @@ final class HistorySql(implicit lh: LogHandler) {
          |    ) sub
          |  ORDER BY registered_transaction_timestamp
          |) sub
+         |WHERE sub.redeemer IS NOT NULL
          |OFFSET ${paging.offset} LIMIT ${paging.limit}
          |""".stripMargin.query[PubKey]
 
