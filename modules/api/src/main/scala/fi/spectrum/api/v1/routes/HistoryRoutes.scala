@@ -21,7 +21,7 @@ final class HistoryRoutes[
 
   private val interpreter = Http4sServerInterpreter(opts)
 
-  def routes: HttpRoutes[F] = mempoolHistoryR <+> orderHistoryR
+  def routes: HttpRoutes[F] = mempoolHistoryR <+> orderHistoryR <+> addressesHistoryR
 
   def mempoolHistoryR: HttpRoutes[F] = interpreter.toRoutes(mempoolHistoryE.serverLogic { addresses =>
     mempool.ordersByAddress(addresses).adaptThrowable.value
@@ -29,6 +29,10 @@ final class HistoryRoutes[
 
   def orderHistoryR: HttpRoutes[F] = interpreter.toRoutes(orderHistoryE.serverLogic { case (paging, window, query) =>
     history.orderHistory(paging, window, query).adaptThrowable.value
+  })
+
+  def addressesHistoryR: HttpRoutes[F] = interpreter.toRoutes(addressesHistoryE.serverLogic { paging =>
+    history.addressesHistory(paging).adaptThrowable.value
   })
 
 }

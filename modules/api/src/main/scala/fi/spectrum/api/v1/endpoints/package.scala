@@ -15,10 +15,11 @@ package object endpoints {
 
   val monthMillis = 2629746000L
 
-  def paging: EndpointInput[Paging] =
+  def paging(maxLimit: Int): EndpointInput[Paging] =
     (query[Option[Int]]("offset").validateOption(Validator.min(0)) and
-      query[Option[Int]]("limit").validateOption(Validator.min(1))
-        .validateOption(Validator.max(50)))
+      query[Option[Int]]("limit")
+        .validateOption(Validator.min(1))
+        .validateOption(Validator.max(maxLimit)))
       .map { input =>
         Paging(input._1.getOrElse(0), input._2.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }

@@ -8,7 +8,7 @@ import fi.spectrum.api.db.models._
 import fi.spectrum.api.db.sql.HistorySql
 import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.history.HistoryApiQuery
-import fi.spectrum.core.domain.Address
+import fi.spectrum.core.domain.{Address, PubKey}
 import fi.spectrum.core.domain.address._
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.graphite.Metrics
@@ -27,6 +27,10 @@ trait History[F[_]] {
   def depositRegister(orderId: OrderId): F[Option[RegisterDeposit]]
   def lmDepositRegister(orderId: OrderId): F[Option[RegisterLmDeposit]]
   def lmRedeemRegister(orderId: OrderId): F[Option[RegisterLmRedeem]]
+
+  def getAllAddresses(paging: Paging): F[List[PubKey]]
+
+  def countAllAddresses: F[Long]
 
   def getAnyOrders(
     paging: Paging,
@@ -92,6 +96,12 @@ object History {
       val keys = list.flatMap(formPKRedeemer).map(_.value)
       sql.addressCount(keys).option.map(_.getOrElse(0L))
     }
+
+    def getAllAddresses(paging: Paging): ConnectionIO[List[PubKey]] =
+      sql.getAllAddresses(paging).to[List]
+
+    def countAllAddresses: ConnectionIO[Long] =
+      sql.countAllAddresses.option.map(_.getOrElse(0L))
 
     def lmDepositRegister(orderId: OrderId): ConnectionIO[Option[RegisterLmDeposit]] =
       sql.lmDepositRegister(orderId).option
@@ -238,6 +248,12 @@ object History {
 
   final class HistoryMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F]) extends History[Mid[F, *]] {
 
+    def countAllAddresses: Mid[F, Long] =
+      processMetric(_, s"db.history.addresses.count")
+
+    def getAllAddresses(paging: Paging): Mid[F, List[PubKey]] =
+      processMetric(_, s"db.history.addresses")
+
     def swapRegister(orderId: OrderId): Mid[F, Option[RegisterSwap]] =
       processMetric(_, s"db.history.mempool.swap")
 
@@ -314,6 +330,20 @@ object History {
   }
 
   final class HistoryTracing[F[_]: FlatMap: Logging] extends History[Mid[F, *]] {
+
+    def countAllAddresses: Mid[F, Long] =
+      for {
+        _ <- trace"countAllAddresses()"
+        r <- _
+        _ <- trace"countAllAddresses() -> $r"
+      } yield r
+
+    def getAllAddresses(paging: Paging): Mid[F, List[PubKey]] =
+      for {
+        _ <- trace"getAllAddresses(paging=$paging)"
+        r <- _
+        _ <- trace"getAllAddresses(paging=$paging) -> $r"
+      } yield r
 
     def swapRegister(orderId: OrderId): Mid[F, Option[RegisterSwap]] =
       for {

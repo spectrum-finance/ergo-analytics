@@ -3,20 +3,28 @@ package fi.spectrum.api.v1.services
 import cats.{Functor, Monad}
 import fi.spectrum.api.db.repositories.History
 import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
-import fi.spectrum.api.v1.models.history.{ApiOrder, HistoryApiQuery, OrderHistoryResponse, OrderType}
+import fi.spectrum.api.v1.models.history.{
+  AddressesHistoryResponse,
+  ApiOrder,
+  HistoryApiQuery,
+  OrderHistoryResponse,
+  OrderType
+}
 import tofu.doobie.transactor.Txr
 import tofu.syntax.monadic._
 import tofu.syntax.time.now._
 import tofu.syntax.doobie.txr._
 import fi.spectrum.api.classes.ToAPI._
 import fi.spectrum.api.v1.models.history.ApiOrder._
-import fi.spectrum.core.domain.order.OrderId
+import fi.spectrum.core.domain.address.formAddress
+import fi.spectrum.core.domain.order.{OrderId, Redeemer}
 import org.ergoplatform.ErgoAddressEncoder
 import tofu.logging.Logs
 import tofu.time.Clock
 
 trait HistoryApi[F[_]] {
   def orderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[OrderHistoryResponse]
+  def addressesHistory(paging: Paging): F[AddressesHistoryResponse]
 }
 
 object HistoryApi {
@@ -36,6 +44,13 @@ object HistoryApi {
     txr: Txr[F, D],
     e: ErgoAddressEncoder
   ) extends HistoryApi[F] {
+
+    def addressesHistory(paging: Paging): F[AddressesHistoryResponse] =
+      (for {
+        count     <- history.countAllAddresses
+        addresses <- history.getAllAddresses(paging)
+        result = addresses.flatMap(pk => formAddress(Redeemer.PublicKeyRedeemer(pk)))
+      } yield AddressesHistoryResponse(result, count)).trans
 
     def orderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[OrderHistoryResponse] =
       mempoolApi.ordersByAddress(request.addresses).flatMap { mempoolOrders =>

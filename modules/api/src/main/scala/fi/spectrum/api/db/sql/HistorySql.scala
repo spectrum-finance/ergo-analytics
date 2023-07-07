@@ -6,12 +6,39 @@ import doobie.implicits._
 import doobie.util.log.LogHandler
 import fi.spectrum.api.db.models.OrderDB._
 import fi.spectrum.api.db.models._
-import fi.spectrum.api.v1.endpoints.models.TimeWindow
+import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.history.{OrderStatusApi, TokenPair}
 import fi.spectrum.core.domain.order.OrderId
 import fi.spectrum.core.domain.{PubKey, TokenId, TxId}
 
 final class HistorySql(implicit lh: LogHandler) {
+
+  def countAllAddresses: Query0[Long] =
+    sql"""
+         |SELECT COUNT(*) FROM (
+         |  SELECT s.redeemer FROM swaps s
+         |	  UNION
+         |  SELECT d.redeemer FROM deposits d
+         |	  UNION
+         |  SELECT r.redeemer FROM redeems r
+         |) sub
+         |""".stripMargin.query[Long]
+
+  def getAllAddresses(paging: Paging): Query0[PubKey] =
+    sql"""
+         |SELECT DISTINCT * FROM (
+         |  SELECT redeemer FROM (
+         |    SELECT s.redeemer, s.registered_transaction_timestamp FROM swaps s
+         |    	UNION
+         |    SELECT d.redeemer, d.registered_transaction_timestamp FROM deposits d
+         |	    UNION
+         |    SELECT r.redeemer, r.registered_transaction_timestamp FROM redeems r
+         |    ) sub
+         |  ORDER BY registered_transaction_timestamp
+         |) sub
+         |WHERE sub.redeemer IS NOT NULL
+         |OFFSET ${paging.offset} LIMIT ${paging.limit}
+         |""".stripMargin.query[PubKey]
 
   def addressCount(list: List[PubKey]): doobie.Query0[Long] =
     sql"""
