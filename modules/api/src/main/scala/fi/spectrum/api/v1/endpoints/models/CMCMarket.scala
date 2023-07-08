@@ -5,6 +5,7 @@ import derevo.derive
 import fi.spectrum.api.models.Ticker
 import fi.spectrum.api.v1.models.amm.types.MarketId
 import fi.spectrum.core.domain.TokenId
+import fi.spectrum.core.domain.order.PoolId
 import sttp.tapir.Schema
 import tofu.logging.derivation.loggable
 
@@ -15,6 +16,7 @@ import tofu.logging.derivation.loggable
 )
 final case class CMCMarket(
   id: MarketId,
+  poolId: PoolId,
   baseId: TokenId,
   baseSymbol: Option[Ticker],
   baseName: Option[Ticker],
