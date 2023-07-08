@@ -21,7 +21,7 @@ final class HistoryRoutes[
 
   private val interpreter = Http4sServerInterpreter(opts)
 
-  def routes: HttpRoutes[F] = mempoolHistoryR <+> orderHistoryR <+> addressesHistoryR
+  def routes: HttpRoutes[F] = mempoolHistoryR <+> orderHistoryR
 
   def cachingRoutes: HttpRoutes[F] = addressesHistoryR
 
