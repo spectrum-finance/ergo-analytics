@@ -2,12 +2,13 @@ package fi.spectrum.api.v1.endpoints
 
 import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.history.{AddressesHistoryResponse, ApiOrder, HistoryApiQuery, OrderHistoryResponse}
-import fi.spectrum.common.http.{HttpError, baseEndpoint}
+import fi.spectrum.common.http.{baseEndpoint, HttpError}
 import fi.spectrum.core.domain.Address
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
-final class HistoryEndpoints {
+final class HistoryEndpoints[F[_]] {
 
   val PathPrefix = "history"
   val Group      = "History"
@@ -30,6 +31,18 @@ final class HistoryEndpoints {
       .in(timeWindow)
       .in(jsonBody[HistoryApiQuery])
       .out(jsonBody[OrderHistoryResponse])
+      .tag(Group)
+      .name("Orders history")
+      .description("Provides orders history with different filters by given addresses")
+
+  def streamOrderHistoryE
+    : Endpoint[Unit, (Paging, TimeWindow, HistoryApiQuery), HttpError, fs2.Stream[F, Byte], Fs2Streams[F]] =
+    baseEndpoint.post
+      .in(PathPrefix / "order" / "stream")
+      .in(paging(50))
+      .in(timeWindow)
+      .in(jsonBody[HistoryApiQuery])
+      .out(streamBody(Fs2Streams[F])(Schema.derived[List[ApiOrder]], CodecFormat.Json(), None))
       .tag(Group)
       .name("Orders history")
       .description("Provides orders history with different filters by given addresses")

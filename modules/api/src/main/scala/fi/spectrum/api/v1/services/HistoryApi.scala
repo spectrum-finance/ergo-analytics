@@ -24,6 +24,7 @@ import tofu.time.Clock
 
 trait HistoryApi[F[_]] {
   def orderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[OrderHistoryResponse]
+  def streamOrderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): fs2.Stream[F, OrderHistoryResponse]
   def addressesHistory(paging: Paging): F[AddressesHistoryResponse]
 }
 
@@ -44,6 +45,12 @@ object HistoryApi {
     txr: Txr[F, D],
     e: ErgoAddressEncoder
   ) extends HistoryApi[F] {
+
+    def streamOrderHistory(
+      paging: Paging,
+      tw: TimeWindow,
+      request: HistoryApiQuery
+    ): fs2.Stream[F, OrderHistoryResponse] = ???
 
     def addressesHistory(paging: Paging): F[AddressesHistoryResponse] =
       (for {

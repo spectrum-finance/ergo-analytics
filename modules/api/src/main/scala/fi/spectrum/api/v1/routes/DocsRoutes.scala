@@ -35,7 +35,7 @@ final class DocsRoutes[F[_]: Concurrent: Async](implicit
   val ammStatsEndpoints      = new AmmStatsEndpoints
   val priceTrackingEndpoints = new PriceTrackingEndpoints
   val lmStatsEndpoints       = new LmStatsEndpoints
-  val historyEndpoints       = new HistoryEndpoints
+  val historyEndpoints       = new HistoryEndpoints[F]
 
   private def allEndpoints =
     ammStatsEndpoints.endpoints ++ priceTrackingEndpoints.endpoints ++ lmStatsEndpoints.endpoints ++
