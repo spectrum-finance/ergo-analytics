@@ -84,21 +84,21 @@ object HistoryStreaming {
   implicit def representableK: RepresentableK[HistoryStreaming] =
     tofu.higherKind.derived.genRepresentableK
 
-  def make[I[_]: Functor, S[_]: LiftStream[*[_], D], D[_]: Monad: LiftConnectionIO: Clock](implicit
-    elh: EmbeddableLogHandler[D],
-    metrics: Metrics[D],
+  def make[I[_]: Functor, S[_]: LiftStream[*[_], D]: Monad, D[_]: Monad: LiftConnectionIO: Clock](implicit
+    elh: EmbeddableLogHandler[S],
+    metrics: Metrics[S],
     e: ErgoAddressEncoder,
-    logs: Logs[I, D]
+    logs: Logs[I, S]
   ): I[HistoryStreaming[S]] =
     logs.forService[HistoryStreaming[S]].map { implicit l =>
       elh
-        .embed(implicit lh =>
-          new HistoryStreamingMetrics[D] attach (
-            new HistoryStreamingTracing[D] attach new Live(new HistorySql())
-              .mapK(funK[fs2.Stream[ConnectionIO, *], fs2.Stream[D, *]](_.translate(LiftConnectionIO[D].liftF)))
-          )
-        )
-        .mapK(LiftStream[S, D].liftF)
+        .embed { implicit lh =>
+          new Live(new HistorySql())
+            .mapK(
+              funK[fs2.Stream[ConnectionIO, *], fs2.Stream[D, *]](_.translate(LiftConnectionIO[D].liftF))
+            )
+            .mapK(LiftStream[S, D].liftF)
+        }
     }
 
   final class Live(sql: HistorySql)(implicit e: ErgoAddressEncoder)
@@ -313,9 +313,9 @@ object HistoryStreaming {
       skipOrders: List[OrderId]
     ): Mid[fs2.Stream[F, *], AmmDepositDB] =
       for {
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamAmmDeposits(paging=$paging, tw=$tw, request=$request)")
         r <- _
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamAmmDeposits(paging=$paging, tw=$tw, request=$request)")
       } yield r
 
     override def streamAmmRedeems(
@@ -325,9 +325,9 @@ object HistoryStreaming {
       skipOrders: List[OrderId]
     ): Mid[fs2.Stream[F, *], AmmRedeemDB] =
       for {
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamAmmRedeems(paging=$paging, tw=$tw, request=$request)")
         r <- _
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamAmmRedeems(paging=$paging, tw=$tw, request=$request)")
       } yield r
 
     override def streamLmDeposits(
@@ -337,9 +337,9 @@ object HistoryStreaming {
       skipOrders: List[OrderId]
     ): Mid[fs2.Stream[F, *], LmDepositDB] =
       for {
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamLmDeposits(paging=$paging, tw=$tw, request=$request)")
         r <- _
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamLmDeposits(paging=$paging, tw=$tw, request=$request)")
       } yield r
 
     override def streamLocks(
@@ -349,9 +349,9 @@ object HistoryStreaming {
       skipOrders: List[OrderId]
     ): Mid[fs2.Stream[F, *], LockDB] =
       for {
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamLocks(paging=$paging, tw=$tw, request=$request)")
         r <- _
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamLocks(paging=$paging, tw=$tw, request=$request)")
       } yield r
 
     override def streamLmRedeems(
@@ -361,9 +361,9 @@ object HistoryStreaming {
       skipOrders: List[OrderId]
     ): Mid[fs2.Stream[F, *], LmRedeemsDB] =
       for {
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamLmRedeems(paging=$paging, tw=$tw, request=$request)")
         r <- _
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamLmRedeems(paging=$paging, tw=$tw, request=$request)")
       } yield r
 
     override def streamSwaps(
@@ -373,9 +373,9 @@ object HistoryStreaming {
       skipOrders: List[OrderId]
     ): Mid[fs2.Stream[F, *], SwapDB] =
       for {
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamSwaps(paging=$paging, tw=$tw, request=$request)")
         r <- _
-        _ <- fs2.Stream.eval(info"streamAnyOrders(paging=$paging, tw=$tw, request=$request)")
+        _ <- fs2.Stream.eval(info"streamSwaps(paging=$paging, tw=$tw, request=$request)")
       } yield r
   }
 }
