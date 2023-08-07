@@ -23,7 +23,8 @@ final case class ConfigBundle(
   @promote network: NetworkConfig,
   @promote kafka: KafkaConfig,
   @promote blocks: BlocksProcessConfig,
-  protocol: ProtocolConfig
+  protocol: ProtocolConfig,
+  priceTracking: PriceTrackingConfig
 )
 
 object ConfigBundle extends WithContext.Companion[ConfigBundle] with ConfigBundleCompanion[ConfigBundle]
