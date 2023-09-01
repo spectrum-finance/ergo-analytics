@@ -2,6 +2,7 @@ package fi.spectrum.core.domain
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import derevo.pureconfig.pureconfigReader
 import doobie.{Get, Put}
 import io.estatico.newtype.macros.newtype
 import scodec.bits.ByteVector
@@ -25,7 +26,7 @@ package object order {
         .xmap(xs => OrderId(new String(xs.toArray)), pid => ByteVector(pid.value.getBytes()))
   }
 
-  @derive(show, loggable, encoder, decoder)
+  @derive(show, loggable, encoder, decoder, pureconfigReader)
   @newtype final case class PoolId(value: TokenId) {
     def unwrapped: String = value.unwrapped
   }

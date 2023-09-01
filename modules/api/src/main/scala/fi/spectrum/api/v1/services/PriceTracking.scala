@@ -3,13 +3,16 @@ package fi.spectrum.api.v1.services
 import cats.syntax.traverse._
 import cats.{Functor, Monad, Parallel}
 import derevo.derive
+import fi.spectrum.api.configs.PriceTrackingConfig
 import fi.spectrum.api.currencies.UsdUnits
 import fi.spectrum.api.db.models.amm.{PoolSnapshot, PoolVolumeSnapshot}
 import fi.spectrum.api.db.repositories.Pools
+import fi.spectrum.api.models.AssetEquiv
 import fi.spectrum.api.modules.PriceSolver.FiatPriceSolver
 import fi.spectrum.api.services._
-import fi.spectrum.api.v1.endpoints.models.{CMCMarket, CoinGeckoPairs, CoinGeckoTicker, TimeWindow}
+import fi.spectrum.api.v1.endpoints.models._
 import fi.spectrum.api.v1.endpoints.monthMillis
+import fi.spectrum.api.v1.models.TokenPriceResponse
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.graphite.Metrics
 import tofu.doobie.transactor.Txr
@@ -37,11 +40,13 @@ trait PriceTracking[F[_]] {
 
   def getTickersCoinGecko: F[List[CoinGeckoTicker]]
 
+  def getSpfPrice: F[Option[TokenPriceResponse]]
+
 }
 
 object PriceTracking {
 
-  def make[I[_]: Functor, F[_]: Monad: Clock: Parallel, D[_]: Monad](implicit
+  def make[I[_]: Functor, F[_]: Monad: Clock: Parallel: PriceTrackingConfig.Has, D[_]: Monad](implicit
     txr: Txr[F, D],
     pools: Pools[D],
     tokens: VerifiedTokens[F],
@@ -55,7 +60,7 @@ object PriceTracking {
       .forService[PriceTracking[F]]
       .map(implicit __ => new PriceTrackingMetrics[F] attach (new Tracing[F] attach new Live[F, D]))
 
-  final class Live[F[_]: Monad: Clock: Parallel: Logging, D[_]: Monad](implicit
+  final class Live[F[_]: Monad: Clock: Parallel: Logging: PriceTrackingConfig.Has, D[_]: Monad](implicit
     txr: Txr[F, D],
     pools: Pools[D],
     tokens: VerifiedTokens[F],
@@ -83,6 +88,20 @@ object PriceTracking {
         .toList
         .map { case (id, snapshot) =>
           CoinGeckoPairs(id, snapshot.volumeByX.id, snapshot.volumeByY.id, snapshot.poolId)
+        }
+
+    def getSpfPrice: F[Option[TokenPriceResponse]] =
+      PriceTrackingConfig.access
+        .flatMap { config =>
+          snapshots.get.flatMap { x =>
+            x.find(_.id == config.spfPoolId) match {
+              case Some(value) => solver.convert(value.lockedY.withAmount(1000000), UsdUnits, x)
+              case None        => noneF[F, AssetEquiv[solver.AssetRepr]]
+            }
+          }
+        }
+        .mapIn { result =>
+          TokenPriceResponse(result.value)
         }
 
     def getTickersCoinGecko: F[List[CoinGeckoTicker]] =
@@ -249,6 +268,13 @@ object PriceTracking {
         _ <- info"getPairsCoinGecko() finished"
         _ <- trace"getPairsCoinGecko() - $r"
       } yield r
+
+    def getSpfPrice: Mid[F, Option[TokenPriceResponse]] =
+      for {
+        _ <- info"getSpfPrice()"
+        r <- _
+        _ <- info"getSpfPrice() -> $r"
+      } yield r
   }
 
   final private class PriceTrackingMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F])
@@ -271,5 +297,7 @@ object PriceTracking {
     def getPairsCoinGecko: Mid[F, List[CoinGeckoPairs]] = unit >> _
 
     def getTickersCoinGecko: Mid[F, List[CoinGeckoTicker]] = unit >> _
+
+    def getSpfPrice: Mid[F, Option[TokenPriceResponse]] = unit >> _
   }
 }
