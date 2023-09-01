@@ -1,6 +1,6 @@
 package fi.spectrum.api.v1.endpoints
 
-import fi.spectrum.api.v1.endpoints.models.{CMCMarket, CoinGeckoPairs, CoinGeckoTicker, TimeWindow}
+import fi.spectrum.api.v1.endpoints.models.{CMCMarket, CoinGeckoPairs, CoinGeckoTicker, TimeWindow, TokenSupply}
 import fi.spectrum.api.v1.models.TokenPriceResponse
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.common.http.{HttpError, baseEndpoint}
@@ -19,7 +19,8 @@ final class PriceTrackingEndpoints {
     getMarketsE,
     getPairsCoinGeckoE,
     getTickersCoinGeckoE,
-    getSpfTokenPriceE
+    getSpfTokenPriceE,
+    getTokenSupplyE
   )
 
   def getVerifiedMarketsE: Endpoint[Unit, Unit, HttpError, List[CMCMarket], Any] =
@@ -59,4 +60,12 @@ final class PriceTrackingEndpoints {
       .out(jsonBody[TokenPriceResponse])
       .tag(Group)
       .name("SPF token price")
+
+  def getTokenSupplyE: Endpoint[Unit, Unit, HttpError, TokenSupply, Any] =
+    baseEndpoint.get
+      .in(PathPrefixPriceTracking / "spf-data")
+      .out(jsonBody[TokenSupply])
+      .tag(Group)
+      .name("Token supply API")
+      .description("Provides spf token supply info")
 }
