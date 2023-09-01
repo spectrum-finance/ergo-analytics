@@ -23,8 +23,11 @@ import tofu.syntax.time.now.millis
 import tofu.time.Clock
 import fi.spectrum.api.v1.models.amm.types.MarketId
 import tofu.syntax.foption._
-
+import fi.spectrum.api.db.models.lm.LmPoolSnapshot
+import fi.spectrum.api.v1.models.lm.LMPoolStat
 import scala.math.BigDecimal.RoundingMode
+import fi.spectrum.api.db.models.amm.AssetInfo
+import cats.data.OptionT
 
 @derive(representableK)
 trait PriceTracking[F[_]] {
@@ -37,6 +40,7 @@ trait PriceTracking[F[_]] {
 
   def getTickersCoinGecko: F[List[CoinGeckoTicker]]
 
+  def getCmcYFInfo: F[CMCYFInfo]
 }
 
 object PriceTracking {
@@ -49,6 +53,9 @@ object PriceTracking {
     volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
     metrics: Metrics[F],
+    lmStats: LmStatsApi[F],
+    lmSnapshots: LMSnapshots[F],
+    assets: Assets[F],
     logs: Logs[I, F]
   ): I[PriceTracking[F]] =
     logs
@@ -61,8 +68,57 @@ object PriceTracking {
     tokens: VerifiedTokens[F],
     solver: FiatPriceSolver[F],
     snapshots: Snapshots[F],
-    volumes24H: Volumes24H[F]
+    volumes24H: Volumes24H[F],
+    lmStats: LmStatsApi[F],
+    lmSnapshots: LMSnapshots[F],
+    assets: Assets[F]
   ) extends PriceTracking[F] {
+
+    def getCmcYFInfo: F[CMCYFInfo] =
+      for {
+        ammPools    <- snapshots.get
+        lmPools     <- lmSnapshots.get
+        assets      <- assets.get
+        lmPoolStats <- lmStats.lmStatsApi
+        result      <- lmPools.flatTraverse(snap => processLmPoolInfo(snap, assets, lmPoolStats, ammPools).map(_.toList))
+      } yield CMCYFInfo(
+        "",
+        "",
+        "",
+        List.empty,
+        result
+      )
+
+    private def processLmPoolInfo(
+      pool: LmPoolSnapshot,
+      assets: List[AssetInfo],
+      poolStats: List[LMPoolStat],
+      ammPools: List[PoolSnapshot]
+    ) =
+      (for {
+        ammPool      <- OptionT.fromOption[F](ammPools.find(_.lp.tokenId == pool.lq.tokenId))
+        apy          <- OptionT.fromOption[F](poolStats.find(_.poolId == pool.poolId).flatMap(_.yearProfit))
+        rewardTicker <- OptionT.fromOption[F](assets.find(_.id == pool.reward.tokenId).flatMap(_.ticker))
+        lockedX      <- OptionT(solver.convert(ammPool.lockedX, UsdUnits, ammPools))
+        lockedY      <- OptionT(solver.convert(ammPool.lockedY, UsdUnits, ammPools))
+        pairTicker   <- OptionT.fromOption[F](evalPairTicker(ammPool))
+        tvl    = lockedX.value + lockedY.value
+        staked = tvl.toLong * pool.lq.amount / (Long.MaxValue - ammPool.lp.amount)
+      } yield PoolCMCInfo(
+        "",
+        pairTicker,
+        "",
+        "",
+        List(rewardTicker.value),
+        apy.setScale(1),
+        staked
+      )).value
+
+    private def evalPairTicker(pool: PoolSnapshot) =
+      for {
+        xTicker <- pool.lockedX.ticker
+        yTicker <- pool.lockedY.ticker
+      } yield s"${xTicker.value}-${yTicker.value}"
 
     def getPairsCoinGecko: F[List[CoinGeckoPairs]] =
       for {
@@ -247,6 +303,14 @@ object PriceTracking {
         _ <- info"getPairsCoinGecko() finished"
         _ <- trace"getPairsCoinGecko() - $r"
       } yield r
+
+    def getCmcYFInfo: Mid[F, CMCYFInfo] =
+      for {
+        _ <- info"getCmcYFInfo()"
+        r <- _
+        _ <- info"getCmcYFInfo() finished"
+        _ <- trace"getCmcYFInfo() - $r"
+      } yield r
   }
 
   final private class PriceTrackingMetrics[F[_]: Monad: Clock](implicit metrics: Metrics[F])
@@ -269,5 +333,7 @@ object PriceTracking {
     def getPairsCoinGecko: Mid[F, List[CoinGeckoPairs]] = unit >> _
 
     def getTickersCoinGecko: Mid[F, List[CoinGeckoTicker]] = unit >> _
+
+    def getCmcYFInfo: Mid[F, CMCYFInfo] = unit >> _
   }
 }

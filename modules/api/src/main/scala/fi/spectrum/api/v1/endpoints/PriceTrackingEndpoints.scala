@@ -4,6 +4,8 @@ import fi.spectrum.api.v1.endpoints.models.{CMCMarket, CoinGeckoPairs, CoinGecko
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.common.http.{HttpError, baseEndpoint}
 import sttp.tapir._
+import io.circe.generic.auto._
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 
 final class PriceTrackingEndpoints {
@@ -17,7 +19,8 @@ final class PriceTrackingEndpoints {
     getVerifiedMarketsE,
     getMarketsE,
     getPairsCoinGeckoE,
-    getTickersCoinGeckoE
+    getTickersCoinGeckoE,
+    getCmcYFInfoE
   )
 
   def getVerifiedMarketsE: Endpoint[Unit, Unit, HttpError, List[CMCMarket], Any] =
@@ -50,4 +53,11 @@ final class PriceTrackingEndpoints {
       .out(jsonBody[List[CoinGeckoTicker]])
       .tag(Group)
       .name("Coin Gecko tickers API")
+
+  def getCmcYFInfoE: Endpoint[Unit, Unit, HttpError, CMCYFInfo, Any] =
+    baseEndpoint.get
+      .in(PathPrefixPriceTracking / "cmc" / "yf")
+      .out(jsonBody[CMCYFInfo])
+      .tag(Group)
+      .name("Coin market cap yield farming API")
 }
