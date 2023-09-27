@@ -30,7 +30,7 @@ create table if not exists public.pools
 );
 
 alter table public.pools
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index pools__pool_id on public.pools using btree (pool_id);
 -- create index pools__pool_state_id on public.pools using btree (pool_state_id);
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS public.swaps
 );
 
 alter table public.swaps
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index swaps__pool_id on public.swaps using btree (pool_id);
 create index swaps__pool_state_id on public.swaps using btree (pool_state_id);
@@ -107,7 +107,7 @@ create table if not exists public.redeems
 );
 
 alter table public.redeems
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index redeems__pool_id on public.redeems using btree (pool_id);
 create index redeems__pool_state_id on public.redeems using btree (pool_state_id);
@@ -145,7 +145,7 @@ create table if not exists public.deposits
 );
 
 alter table public.deposits
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index deposits__pool_id on public.deposits using btree (pool_id);
 create index deposits__pool_state_id on public.deposits using btree (pool_state_id);
@@ -169,7 +169,7 @@ create table if not exists public.lq_locks
 );
 
 alter table public.lq_locks
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index lq_locks__asset_id on public.lq_locks using btree (token_id);
 create index lq_locks__timestamp on public.lq_locks using btree (timestamp);
@@ -185,7 +185,7 @@ create table if not exists public.off_chain_fee
 );
 
 alter table public.off_chain_fee
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index off_chain_fee__pub_key on public.off_chain_fee using btree (pub_key);
 
@@ -197,7 +197,7 @@ create table if not exists public.assets
 );
 
 alter table public.assets
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index assets__ticker on public.assets using btree (ticker);
 create index assets__id on public.assets using btree (id);
@@ -211,7 +211,7 @@ create table if not exists public.blocks
 );
 
 alter table public.blocks
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index blocks__height on public.blocks using btree (height);
 create index blocks__id on public.blocks using btree (id);
@@ -244,7 +244,7 @@ create table if not exists public.lm_pools
 );
 
 alter table public.lm_pools
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index lm_pools__pool_id on public.lm_pools using btree (pool_id);
 create index lm_pools__protocol_version on public.lm_pools using btree (protocol_version);
@@ -277,7 +277,7 @@ create table if not exists public.lm_compound
 );
 
 alter table public.lm_compound
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index lm_compound__pool_id on public.lm_compound using btree (pool_id);
 create index lm_compound__pool_state_id on public.lm_compound using btree (pool_state_id);
@@ -311,7 +311,7 @@ create table if not exists public.lm_deposits
 );
 
 alter table public.lm_deposits
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 create index lm_deposits__pool_id on public.lm_deposits using btree (pool_id);
 create index lm_deposits__pool_state_id on public.lm_deposits using btree (pool_state_id);
@@ -345,7 +345,7 @@ create table if not exists public.lm_redeems
 );
 
 alter table public.lm_redeems
-    owner to ergo_admin;
+    owner to ergo_analytics_user;
 
 
 create index lm_redeem__pool_id on public.lm_redeems using btree (pool_id);
