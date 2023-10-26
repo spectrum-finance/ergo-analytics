@@ -41,7 +41,7 @@ trait Network[F[_]] {
 object Network {
 
   @derive(decoder)
-  final case class Token(network: String, address: String, decimals: Int, name: String, ticker: String)
+  final case class Token(address: String, decimals: Int, name: String, ticker: String)
 
   @derive(decoder)
   final case class TokenResponse(tokens: List[Token])
@@ -76,10 +76,7 @@ object Network {
         .absorbError
         .map(_.price.some)
 
-    private val network = "ergo"
-
     private val ergoToken: Token = Token(
-      network,
       "0000000000000000000000000000000000000000000000000000000000000000",
       9,
       "Ergo",
@@ -93,7 +90,7 @@ object Network {
         .send(backend)
         .absorbError
         .map { resp =>
-          (ergoToken :: resp.tokens).filter(_.network == network).map(tkn => TokenId.unsafeFromString(tkn.address))
+          (ergoToken :: resp.tokens).map(tkn => TokenId.unsafeFromString(tkn.address))
         }
 
     def getCurrentNetworkHeight: F[Int] =
