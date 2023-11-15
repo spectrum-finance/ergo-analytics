@@ -7,6 +7,12 @@ import tofu.WithContext
 import tofu.logging.derivation.loggable
 
 @derive(pureconfigReader, loggable)
-final case class PriceTrackingConfig(spfPoolId: PoolId)
+case class PriceTrackingConfig(
+  spfPoolId: PoolId,
+  spfTokenId: String,
+  spfMintingAddress: String,
+  initAirdropTx: String,
+  totalSpfSupply: Long
+)
 
 object PriceTrackingConfig extends WithContext.Companion[PriceTrackingConfig]

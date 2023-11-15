@@ -7,7 +7,6 @@ import derevo.circe.decoder
 import derevo.derive
 import fi.spectrum.api.configs.NetworkConfig
 import fi.spectrum.api.models.{BlockInfo, CmcResponse, Items, MempoolData}
-import fi.spectrum.core.domain.{Address, TokenId}
 import fi.spectrum.core.syntax.HttpOps.ResponseOps
 import fi.spectrum.graphite.Metrics
 import retry.RetryPolicies.{constantDelay, limitRetries}
@@ -26,6 +25,9 @@ import tofu.syntax.monadic._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
 import sttp.client3.circe._
+import fi.spectrum.api.services.models.explorer.{ExplorerOutput, ExplorerTx}
+import io.circe.generic.auto._
+import fi.spectrum.core.domain.{Address, TokenId, TxId}
 
 @derive(representableK)
 trait Network[F[_]] {
@@ -36,6 +38,10 @@ trait Network[F[_]] {
   def getCurrentNetworkHeight: F[Int]
 
   def getMempoolData(addresses: List[Address]): F[List[MempoolData]]
+
+  def getUnspentBoxes(address: Address): F[List[ExplorerOutput]]
+
+  def getTransactionById(id: TxId): F[Option[ExplorerTx]]
 }
 
 object Network {
@@ -112,6 +118,21 @@ object Network {
         .response(asJson[List[MempoolData]])
         .send(backend)
         .absorbError
+
+    def getTransactionById(id: TxId): F[Option[ExplorerTx]] =
+      basicRequest
+        .get(config.explorerUri.withPathSegment(Segment(s"api/v1/transactions/$id", identity)))
+        .response(asJson[ExplorerTx])
+        .send(backend)
+        .map(_.body.toOption)
+
+    def getUnspentBoxes(address: Address): F[List[ExplorerOutput]] =
+      basicRequest
+        .get(config.explorerUri.withPathSegment(Segment(s"api/v1/boxes/unspent/byAddress/$address", identity)))
+        .response(asJson[Items[ExplorerOutput]])
+        .send(backend)
+        .absorbError
+        .map(_.items)
   }
 
   final private class Retry[F[_]: MonadError[*[_], Throwable]: Sleep: Logging](config: NetworkConfig)(implicit
@@ -158,6 +179,22 @@ object Network {
           warn"Failed to get mempool data. ${err.getMessage}. Retrying..." >>
           metrics.sendCount("mempool.data.request.failed", 1.0)
       )(_)
+
+    def getUnspentBoxes(address: Address): Mid[F, List[ExplorerOutput]] =
+      retryingOnAllErrors(
+        explorerPolicy,
+        (err: Throwable, _: RetryDetails) =>
+          warn"Failed to get boxes by address. ${err.getMessage}. Retrying..." >>
+          metrics.sendCount("explorer.boxes.request.failed", 1.0)
+      )(_)
+
+    def getTransactionById(id: TxId): Mid[F, Option[ExplorerTx]] =
+      retryingOnAllErrors(
+        explorerPolicy,
+        (err: Throwable, _: RetryDetails) =>
+          warn"Failed to get transaction by id. ${err.getMessage}. Retrying..." >>
+          metrics.sendCount("explorer.transaction.request.failed", 1.0)
+      )(_)
   }
 
   final private class Tracing[F[_]: Monad: Logging] extends Network[Mid[F, *]] {
@@ -188,6 +225,20 @@ object Network {
         _ <- info"getMempoolData($addresses)"
         r <- _
         _ <- info"getMempoolData($addresses) -> ${r.map(_.orders.length)}"
+      } yield r
+
+    def getUnspentBoxes(address: Address): Mid[F, List[ExplorerOutput]] =
+      for {
+        _ <- info"getUnspentBoxes($address)"
+        r <- _
+        _ <- info"getUnspentBoxes($address) -> $r"
+      } yield r
+
+    def getTransactionById(id: TxId): Mid[F, Option[ExplorerTx]] =
+      for {
+        _ <- info"getTransactionById($id)"
+        r <- _
+        _ <- info"getTransactionById($id) -> $r"
       } yield r
   }
 
@@ -223,6 +274,22 @@ object Network {
         r      <- _
         finish <- millis
         _      <- metrics.sendTs("mempool.data.request", (finish - start).toDouble)
+      } yield r
+
+    def getUnspentBoxes(address: Address): Mid[F, List[ExplorerOutput]] =
+      for {
+        start  <- millis
+        r      <- _
+        finish <- millis
+        _      <- metrics.sendTs("explorer.boxes.request", (finish - start).toDouble)
+      } yield r
+
+    def getTransactionById(id: TxId): Mid[F, Option[ExplorerTx]] =
+      for {
+        start  <- millis
+        r      <- _
+        finish <- millis
+        _      <- metrics.sendTs("explorer.transaction.request", (finish - start).toDouble)
       } yield r
   }
 }

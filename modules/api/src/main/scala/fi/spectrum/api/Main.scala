@@ -110,6 +110,7 @@ object Main extends EnvApp[AppContext] {
       implicit0(fees24H: Fees24H[F])                     <- Fees24H.make[I, F, xa.DB].toResource
       implicit0(lmSnapshots: LMSnapshots[F])             <- LMSnapshots.make[I, F, xa.DB].toResource
       implicit0(height: Height[F])                       <- Height.make[I, F].toResource
+      implicit0(spfService: AirdropSPFAmount[F])         <- AirdropSPFAmount.make[I, F].toResource
       implicit0(lmStats: LmStats[F])                     <- LmStats.make[I, F].toResource
       implicit0(poolsStats: PoolsStats24H[F])            <- PoolsStats24H.make[I, F, xa.DB].toResource
       implicit0(blocksProcess: BlocksProcess[S])         <- BlocksProcess.make[I, F, S, Chunk].toResource
