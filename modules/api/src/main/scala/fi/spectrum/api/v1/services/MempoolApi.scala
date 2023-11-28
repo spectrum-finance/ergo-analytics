@@ -95,7 +95,7 @@ object MempoolApi {
             .map(_.flatten)
         }
         .handleWith { err: Throwable =>
-          warn"THe error ${err.getMessage} occurred in mempool service." as List.empty[ApiOrder]
+          warn"The error ${err.getMessage} occurred in mempool service." as List.empty[ApiOrder]
         }
   }
 }
