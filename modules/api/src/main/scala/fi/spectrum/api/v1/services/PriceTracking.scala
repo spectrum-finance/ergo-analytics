@@ -121,22 +121,14 @@ object PriceTracking {
                             .convert(ammPool.lockedX, UsdUnits, snapshots)
                             .mapIn(_.value)
                             .map(_.getOrElse(BigDecimal(0)))
-                  xVolume <- solver
-                               .convert(snapshot.volumeByX, UsdUnits, snapshots)
-                               .mapIn(_.value)
-                               .map(_.getOrElse(BigDecimal(0)))
-                  yVolume <- solver
-                               .convert(snapshot.volumeByY, UsdUnits, snapshots)
-                               .mapIn(_.value)
-                               .map(_.getOrElse(BigDecimal(0)))
                 } yield CoinGeckoTicker(
                   id,
                   snapshot.volumeByX.id,
                   snapshot.volumeByY.id,
                   (ammPool.lockedX.withDecimals / ammPool.lockedY.withDecimals).setScale(6, RoundingMode.HALF_UP),
                   xTvl * 2,
-                  xVolume,
-                  yVolume,
+                  snapshot.volumeByX.amount,
+                  snapshot.volumeByY.amount,
                   snapshot.poolId
                 )
               }
