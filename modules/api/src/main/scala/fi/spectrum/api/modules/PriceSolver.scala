@@ -27,6 +27,12 @@ trait PriceSolver[F[_], T <: PriceSolverType] {
     target: ValueUnits[AssetRepr],
     knownPools: List[PoolSnapshot]
   ): F[Option[AssetEquiv[AssetRepr]]]
+
+  def convertWithoutUsdRounding(
+    asset: FullAsset,
+    target: ValueUnits[AssetRepr],
+    knownPools: List[PoolSnapshot]
+  ): F[Option[AssetEquiv[AssetRepr]]]
 }
 
 object PriceSolver {
@@ -85,8 +91,23 @@ object PriceSolver {
           (for {
             ergEquiv <- OptionT(cryptoSolver.convert(asset, ErgoUnits, knownPools))
             ergRate  <- OptionT(rates.rateOf(fiat))
-            fiatEquiv = ergEquiv.value * ergRate
+            fiatEquiv    = ergEquiv.value * ergRate
             fiatEquivFmt = fiatEquiv.setScale(2, RoundingMode.FLOOR)
+          } yield AssetEquiv(asset, fiat, fiatEquivFmt)).value
+      }
+
+    def convertWithoutUsdRounding(
+      asset: FullAsset,
+      target: ValueUnits[AssetRepr],
+      knownPools: List[PoolSnapshot]
+    ): F[Option[AssetEquiv[AssetRepr]]] =
+      target match {
+        case fiat @ FiatUnits(_) =>
+          (for {
+            ergEquiv <- OptionT(cryptoSolver.convert(asset, ErgoUnits, knownPools))
+            ergRate  <- OptionT(rates.rateOf(fiat))
+            fiatEquiv    = ergEquiv.value * ergRate
+            fiatEquivFmt = fiatEquiv
           } yield AssetEquiv(asset, fiat, fiatEquivFmt)).value
       }
   }
@@ -112,6 +133,12 @@ object PriceSolver {
               })
           } else AssetEquiv(asset, target, asset.withDecimals).someF
       }
+
+    def convertWithoutUsdRounding(
+      asset: FullAsset,
+      target: ValueUnits[AssetRepr],
+      knownPools: List[PoolSnapshot]
+    ): F[Option[AssetEquiv[AssetRepr]]] = convert(asset, target, knownPools)
   }
 
   final class PriceSolverTracing[F[_]: FlatMap: Logging, T <: PriceSolverType](solverType: String)
@@ -126,6 +153,17 @@ object PriceSolver {
         _ <- trace"[$solverType]: convert(asset=$asset, target=$target)"
         r <- _
         _ <- trace"[$solverType]: convert(asset=$asset, target=$target) -> $r"
+      } yield r
+
+    def convertWithoutUsdRounding(
+      asset: FullAsset,
+      target: ValueUnits[AssetRepr],
+      knownPools: List[PoolSnapshot]
+    ): Mid[F, Option[AssetEquiv[AssetRepr]]] =
+      for {
+        _ <- trace"[$solverType]: convertWithoutUsdRounding(asset=$asset, target=$target)"
+        r <- _
+        _ <- trace"[$solverType]: convertWithoutUsdRounding(asset=$asset, target=$target) -> $r"
       } yield r
   }
 }

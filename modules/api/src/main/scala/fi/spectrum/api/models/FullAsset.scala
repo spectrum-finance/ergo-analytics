@@ -16,11 +16,14 @@ final case class FullAsset(
   decimals: Option[Int]
 ) {
   def withDecimals: BigDecimal = BigDecimal(amount) / BigDecimal(10).pow(decimals.getOrElse(0))
-  def assetClass: AssetClass = AssetClass(id, ticker, decimals)
+  def assetClass: AssetClass   = AssetClass(id, ticker, decimals)
 
   def withAmount(newAmount: Long): FullAsset = this.copy(amount = newAmount)
 
   def withAmount(x: BigInt): FullAsset = copy(amount = x.toLong)
+
+  def minimalFullAssetAmount: FullAsset =
+    this.copy(amount = 1 * BigDecimal(10).pow(decimals.getOrElse(0)).toLong)
 }
 
 object FullAsset {

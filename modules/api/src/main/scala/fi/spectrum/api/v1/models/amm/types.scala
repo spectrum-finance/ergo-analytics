@@ -26,6 +26,9 @@ object types {
     def apply(volume: PoolVolumeSnapshot): MarketId =
       MarketId(volume.volumeByX.id, volume.volumeByY.id)
 
+    def apply(pool: PoolStats): MarketId =
+      MarketId(pool.lockedX.id, pool.lockedY.id)
+
     implicit val encoder: Encoder[MarketId] = deriving
     implicit val decoder: Decoder[MarketId] = deriving
 
