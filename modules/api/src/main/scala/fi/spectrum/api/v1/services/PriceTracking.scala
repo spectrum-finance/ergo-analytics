@@ -14,18 +14,18 @@ import fi.spectrum.api.v1.endpoints.models._
 import fi.spectrum.api.v1.endpoints.monthMillis
 import fi.spectrum.api.v1.models.TokenPriceResponse
 import fi.spectrum.api.v1.models.amm._
+import fi.spectrum.api.v1.models.amm.types.MarketId
 import fi.spectrum.graphite.Metrics
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
 import tofu.higherKind.derived.representableK
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.doobie.txr._
+import tofu.syntax.foption._
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.time.now.millis
 import tofu.time.Clock
-import fi.spectrum.api.v1.models.amm.types.MarketId
-import tofu.syntax.foption._
 
 import scala.math.BigDecimal.RoundingMode
 
@@ -53,7 +53,9 @@ object PriceTracking {
     snapshots: Snapshots[F],
     volumes24H: Volumes24H[F],
     solver: FiatPriceSolver[F],
+    stats: PoolsStats24H[F],
     metrics: Metrics[F],
+    amm: AmmStats[F],
     logs: Logs[I, F]
   ): I[PriceTracking[F]] =
     logs
@@ -66,7 +68,9 @@ object PriceTracking {
     tokens: VerifiedTokens[F],
     solver: FiatPriceSolver[F],
     snapshots: Snapshots[F],
-    volumes24H: Volumes24H[F]
+    volumes24H: Volumes24H[F],
+    amm: AmmStats[F],
+    stats: PoolsStats24H[F]
   ) extends PriceTracking[F] {
 
     def getPairsCoinGecko: F[List[CoinGeckoPairs]] =
@@ -105,35 +109,43 @@ object PriceTracking {
         }
 
     def getTickersCoinGecko: F[List[CoinGeckoTicker]] =
-      volumes24H.get.flatMap { volumes =>
-        snapshots.get.flatMap { snapshots =>
-          volumes
-            .map(v => MarketId(v) -> v)
-            .groupBy(_._1)
-            .map { case (_, value) =>
-              value.maxBy(s => s._2.volumeByX.amount + s._2.volumeByY.amount)
-            }
-            .toList
-            .traverse { case (id, snapshot) =>
-              snapshots.find(_.id == snapshot.poolId).traverse { ammPool =>
+      amm.getPoolsStats24h.flatMap { stats =>
+        tokens.get.flatMap { verifiedTokens =>
+          snapshots.get.flatMap { snapshots =>
+            stats
+              .filter(p => verifiedTokens.contains(p.lockedX.id) && verifiedTokens.contains(p.lockedY.id))
+              .traverse { pool =>
                 for {
-                  xTvl <- solver
-                            .convert(ammPool.lockedX, UsdUnits, snapshots)
-                            .mapIn(_.value)
-                            .map(_.getOrElse(BigDecimal(0)))
+                  xUsd <-
+                    solver
+                      .convertWithoutUsdRounding(pool.lockedX.minimalFullAssetAmount, UsdUnits, snapshots)
+                      .mapIn(_.value)
+                  yUsd <-
+                    solver
+                      .convertWithoutUsdRounding(pool.lockedY.minimalFullAssetAmount, UsdUnits, snapshots)
+                      .mapIn(_.value)
                 } yield CoinGeckoTicker(
-                  id,
-                  snapshot.volumeByX.id,
-                  snapshot.volumeByY.id,
-                  (ammPool.lockedX.withDecimals / ammPool.lockedY.withDecimals).setScale(6, RoundingMode.HALF_UP),
-                  xTvl * 2,
-                  snapshot.volumeByX.amount,
-                  snapshot.volumeByY.amount,
-                  snapshot.poolId
+                  MarketId(pool),
+                  pool.lockedX.id,
+                  pool.lockedY.id,
+                  xUsd.flatMap(x => yUsd.map(y => y / x)).getOrElse(BigDecimal(0)).setScale(10, RoundingMode.FLOOR),
+                  pool.tvl.value,
+                  xUsd.map(x => pool.volume.value / x).getOrElse(BigDecimal(0)).setScale(2, RoundingMode.FLOOR),
+                  yUsd.map(y => pool.volume.value / y).getOrElse(BigDecimal(0)).setScale(2, RoundingMode.FLOOR),
+                  pool.id
                 )
               }
-            }
-            .map(_.flatten)
+              .map { pairs =>
+                pairs
+                  .map(x => (x.baseCurrency, x.targetCurrency) -> x)
+                  .groupBy(_._1)
+                  .map(_._2.maxBy(_._2.liquidityInUsd))
+                  .values
+                  .toList
+                  .filter(_.liquidityInUsd != BigDecimal("0"))
+              }
+              .map(_.sortBy(_.liquidityInUsd)(Ordering[BigDecimal].reverse))
+          }
         }
       }
 
