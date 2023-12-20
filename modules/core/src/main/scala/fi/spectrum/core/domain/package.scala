@@ -162,6 +162,10 @@ package object domain {
 
   object TokenId {
 
+    val Erg: TokenId = TokenId(
+      HexString.unsafeFromString("0000000000000000000000000000000000000000000000000000000000000000")
+    )
+
     implicit val get: Get[TokenId] = deriving
 
     implicit val put: Put[TokenId] = deriving
@@ -179,6 +183,8 @@ package object domain {
 
     implicit def schema: Schema[TokenId] =
       Schema.schemaForString.description("Token ID").asInstanceOf[Schema[TokenId]]
+
+    implicit val eq: Eq[TokenId] = (x, y) => x.unwrapped === y.unwrapped
   }
 
   @derive(encoder, decoder, loggable, show)
@@ -222,8 +228,8 @@ package object domain {
   object Address {
 
     implicit def schemaAddress: Schema[Address] =
-      Schema
-        .schemaForString.map(fromString[Try](_).toOption)(_.unwrapped)
+      Schema.schemaForString
+        .map(fromString[Try](_).toOption)(_.unwrapped)
         .encodedExample(Address.fromStringUnsafe("9hq9xb918tK1QdktqrAkBLkMXXxTFU4DbNUxYd855ECCvZrTd2y"))
 
     implicit val show: Show[Address]         = _.value.value

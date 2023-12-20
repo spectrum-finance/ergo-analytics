@@ -10,6 +10,7 @@ import io.estatico.newtype.macros.newtype
 import sttp.tapir.{Schema, Validator}
 import tofu.logging.Loggable
 import tofu.logging.derivation.loggable
+import cats.syntax.eq._
 
 import scala.math.BigDecimal.RoundingMode
 
@@ -27,7 +28,9 @@ object types {
       MarketId(volume.volumeByX.id, volume.volumeByY.id)
 
     def apply(pool: PoolStats): MarketId =
-      MarketId(pool.lockedX.id, pool.lockedY.id)
+      if (pool.lockedX.id === TokenId.Erg)
+        MarketId(pool.lockedY.id, pool.lockedX.id)
+      else MarketId(pool.lockedX.id, pool.lockedY.id)
 
     implicit val encoder: Encoder[MarketId] = deriving
     implicit val decoder: Decoder[MarketId] = deriving

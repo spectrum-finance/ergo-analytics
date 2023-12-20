@@ -11,7 +11,6 @@ import cats.syntax.either._
 
 import scala.annotation.unused
 
-@unused
 final class MempoolRoutes[
   F[_]: Async: AdaptThrowableEitherT[*[_], HttpError]
 ](mempool: Mempool[F])(implicit

@@ -1,6 +1,7 @@
 package fi.spectrum.api.v1.services
 
 import cats.syntax.traverse._
+import cats.syntax.eq._
 import cats.{Functor, Monad, Parallel}
 import derevo.derive
 import fi.spectrum.api.configs.PriceTrackingConfig
@@ -15,6 +16,7 @@ import fi.spectrum.api.v1.endpoints.monthMillis
 import fi.spectrum.api.v1.models.TokenPriceResponse
 import fi.spectrum.api.v1.models.amm._
 import fi.spectrum.api.v1.models.amm.types.MarketId
+import fi.spectrum.core.domain.TokenId
 import fi.spectrum.graphite.Metrics
 import tofu.doobie.transactor.Txr
 import tofu.higherKind.Mid
@@ -124,14 +126,26 @@ object PriceTracking {
                     solver
                       .convertWithoutUsdRounding(pool.lockedY.minimalFullAssetAmount, UsdUnits, snapshots)
                       .mapIn(_.value)
+                  price = if (pool.lockedX.id === TokenId.Erg)
+                            yUsd.flatMap(y => xUsd.map(x => x / y))
+                          else
+                            xUsd.flatMap(x => yUsd.map(y => y / x))
+                  volumeX = if (pool.lockedX.id === TokenId.Erg)
+                              yUsd.map(y => pool.volume.value / y)
+                            else
+                              xUsd.map(x => pool.volume.value / x)
+                  volumeY = if (pool.lockedX.id === TokenId.Erg)
+                              xUsd.map(x => pool.volume.value / x)
+                            else
+                              yUsd.map(y => pool.volume.value / y)
                 } yield CoinGeckoTicker(
                   MarketId(pool),
-                  pool.lockedX.id,
-                  pool.lockedY.id,
-                  xUsd.flatMap(x => yUsd.map(y => y / x)).getOrElse(BigDecimal(0)).setScale(10, RoundingMode.FLOOR),
+                  if (pool.lockedX.id === TokenId.Erg) pool.lockedY.id else pool.lockedX.id,
+                  if (pool.lockedX.id === TokenId.Erg) pool.lockedX.id else pool.lockedY.id,
+                  price.getOrElse(BigDecimal(0)).setScale(10, RoundingMode.FLOOR),
                   pool.tvl.value,
-                  xUsd.map(x => pool.volume.value / x).getOrElse(BigDecimal(0)).setScale(2, RoundingMode.FLOOR),
-                  yUsd.map(y => pool.volume.value / y).getOrElse(BigDecimal(0)).setScale(2, RoundingMode.FLOOR),
+                  volumeX.getOrElse(BigDecimal(0)).setScale(2, RoundingMode.FLOOR),
+                  volumeY.getOrElse(BigDecimal(0)).setScale(2, RoundingMode.FLOOR),
                   pool.id
                 )
               }
