@@ -3,6 +3,7 @@ package fi.spectrum.api
 import cats.effect.{ExitCode, Resource}
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.resource._
+import cats.tagless.syntax.functorK._
 import dev.profunktor.redis4cats.RedisCommands
 import fi.spectrum.api.configs.ConfigBundle
 import fi.spectrum.api.db.repositories._
@@ -46,6 +47,7 @@ import tofu.fs2Instances._
 import tofu.lift.{IsoK, Unlift}
 import tofu.logging.Logs
 import tofu.{In, WithContext, WithLocal}
+import tofu.syntax.funk.funK
 
 object Main extends EnvApp[AppContext] {
 
@@ -76,13 +78,19 @@ object Main extends EnvApp[AppContext] {
       transactor <- PostgresTransactor.make[F]("api-postgres-pool").mapK(iso.tof)
       implicit0(xa: Txr.Continuational[F])        = Txr.continuational[F](transactor)
       implicit0(elh: EmbeddableLogHandler[xa.DB]) = makeEmbeddableHandler[F, xa.DB]("api-db")
+      implicit0(elh2: EmbeddableLogHandler[fs2.Stream[xa.DB, *]]) =
+        elh.mapK(funK[xa.DB, fs2.Stream[xa.DB, *]](fs2.Stream.eval(_)))
       implicit0(graphiteD: GraphiteClient[xa.DB]) <- GraphiteClient.make[F, xa.DB](config.graphite).mapK(iso.tof)
       implicit0(graphiteF: GraphiteClient[F])     <- GraphiteClient.make[F, F](config.graphite).mapK(iso.tof)
-      implicit0(metricsD: Metrics[xa.DB])      = Metrics.make[xa.DB]
+      implicit0(metricsD: Metrics[xa.DB]) = Metrics.make[xa.DB]
+      implicit0(metricsS: Metrics[fs2.Stream[xa.DB, *]]) =
+        metricsD.mapK(funK[xa.DB, fs2.Stream[xa.DB, *]](fs2.Stream.eval(_)))
       implicit0(metricsF: Metrics[F])          = Metrics.make[F]
       implicit0(blocksC: BlocksConsumer[S, F]) = makeConsumer[BlockId, Option[BlockEvent]](config.blockConsumer)
       implicit0(logs2: Logs[I, F])             = Logs.withContext[I, F]
       implicit0(logs: Logs[I, xa.DB])          = Logs.sync[I, xa.DB]
+      implicit0(logsS: Logs[I, fs2.Stream[xa.DB, *]]) =
+        logs.mapK(funK[xa.DB, fs2.Stream[xa.DB, *]](fs2.Stream.eval(_)))
       implicit0(sttp: SttpBackend[F, Any])     <- makeBackend
       implicit0(ammStatsMath: AmmStatsMath[F]) <- AmmStatsMath.make[I, F].toResource
       implicit0(asset: Asset[xa.DB])           <- Asset.make[I, xa.DB].toResource
@@ -90,8 +98,10 @@ object Main extends EnvApp[AppContext] {
       implicit0(pools: Pools[xa.DB])           <- Pools.make[I, xa.DB].toResource
       implicit0(locks: Locks[xa.DB])           <- Locks.make[I, xa.DB].toResource
       implicit0(history: History[xa.DB])       <- History.make[I, xa.DB].toResource
-      implicit0(lm: LM[xa.DB])                 <- LM.make[I, xa.DB].toResource
-      implicit0(redis: Plain[F])               <- mkRedis[Array[Byte], Array[Byte], F](config.redisApiCache).mapK(iso.tof)
+      implicit0(historyStreaming: HistoryStreaming[fs2.Stream[xa.DB, *]]) <-
+        HistoryStreaming.make[I, fs2.Stream[xa.DB, *], xa.DB].toResource
+      implicit0(lm: LM[xa.DB])   <- LM.make[I, xa.DB].toResource
+      implicit0(redis: Plain[F]) <- mkRedis[Array[Byte], Array[Byte], F](config.redisApiCache).mapK(iso.tof)
       implicit0(redis2: RedisCommands[F, String, String]) <-
         mkRedis[String, String, F](config.redisAppCache).mapK(iso.tof)
       implicit0(apiCache: Cache[F]) <- Cache.make[I, F].toResource

@@ -9,6 +9,7 @@ import fi.spectrum.common.http.syntax.toAdaptThrowableOps
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
 import cats.syntax.semigroupk._
+import io.circe.generic.auto._
 
 final class HistoryRoutes[
   F[_]: Async: AdaptThrowableEitherT[*[_], HttpError]
@@ -16,12 +17,12 @@ final class HistoryRoutes[
   opts: Http4sServerOptions[F]
 ) {
 
-  private val endpoints = new HistoryEndpoints
+  private val endpoints = new HistoryEndpoints[F]
   import endpoints._
 
   private val interpreter = Http4sServerInterpreter(opts)
 
-  def routes: HttpRoutes[F] = mempoolHistoryR <+> orderHistoryR <+> addressesHistoryR
+  def routes: HttpRoutes[F] = mempoolHistoryR <+> orderHistoryR <+> addressesHistoryR <+> streamOrderHistoryR
 
   def mempoolHistoryR: HttpRoutes[F] = interpreter.toRoutes(mempoolHistoryE.serverLogic { addresses =>
     mempool.ordersByAddress(addresses).adaptThrowable.value
@@ -30,6 +31,11 @@ final class HistoryRoutes[
   def orderHistoryR: HttpRoutes[F] = interpreter.toRoutes(orderHistoryE.serverLogic { case (paging, window, query) =>
     history.orderHistory(paging, window, query).adaptThrowable.value
   })
+
+  def streamOrderHistoryR: HttpRoutes[F] =
+    interpreter.toRoutes(streamOrderHistoryE.serverLogic { case (paging, window, query) =>
+      streaming.bytesStream(history.streamOrderHistory(paging, window, query))
+    })
 
   def addressesHistoryR: HttpRoutes[F] = interpreter.toRoutes(addressesHistoryE.serverLogic { paging =>
     history.addressesHistory(paging).adaptThrowable.value

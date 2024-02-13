@@ -1,7 +1,7 @@
 package fi.spectrum.api.v1.services
 
 import cats.{Functor, Monad}
-import fi.spectrum.api.db.repositories.History
+import fi.spectrum.api.db.repositories.{History, HistoryStreaming}
 import fi.spectrum.api.v1.endpoints.models.{Paging, TimeWindow}
 import fi.spectrum.api.v1.models.history.{
   AddressesHistoryResponse,
@@ -24,6 +24,7 @@ import tofu.time.Clock
 
 trait HistoryApi[F[_]] {
   def orderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): F[OrderHistoryResponse]
+  def streamOrderHistory(paging: Paging, tw: TimeWindow, request: HistoryApiQuery): fs2.Stream[F, ApiOrder]
   def addressesHistory(paging: Paging): F[AddressesHistoryResponse]
 }
 
@@ -31,6 +32,7 @@ object HistoryApi {
 
   def make[I[_]: Functor, F[_]: Monad, D[_]: Monad: Clock](implicit
     history: History[D],
+    historyStreaming: HistoryStreaming[fs2.Stream[D, *]],
     mempoolApi: MempoolApi[F],
     txr: Txr[F, D],
     e: ErgoAddressEncoder,
@@ -40,10 +42,21 @@ object HistoryApi {
 
   final private class Live[F[_]: Monad, D[_]: Monad: Clock](implicit
     history: History[D],
+    historyStreaming: HistoryStreaming[fs2.Stream[D, *]],
     mempoolApi: MempoolApi[F],
     txr: Txr[F, D],
     e: ErgoAddressEncoder
   ) extends HistoryApi[F] {
+
+    def streamOrderHistory(
+      paging: Paging,
+      tw: TimeWindow,
+      request: HistoryApiQuery
+    ): fs2.Stream[F, ApiOrder] =
+      for {
+        mempoolOrders <- fs2.Stream.eval(mempoolApi.ordersByAddress(request.addresses))
+        orders        <- resolveOrderTypeStreaming(paging, tw, request, mempoolOrders.map(_.id)).trans
+      } yield orders
 
     def addressesHistory(paging: Paging): F[AddressesHistoryResponse] =
       (for {
@@ -83,5 +96,44 @@ object HistoryApi {
           history.getAnyOrders(paging, tw, request, skipOrders).map(_.flatMap(_.toApi[ApiOrder](now)))
       }
     }
+
+    private def resolveOrderTypeStreaming(
+      paging: Paging,
+      tw: TimeWindow,
+      request: HistoryApiQuery,
+      skipOrders: List[OrderId]
+    ): fs2.Stream[D, ApiOrder] =
+      fs2.Stream.eval(millis).flatMap { now =>
+        request.orderType match {
+          case Some(OrderType.Swap) =>
+            historyStreaming
+              .streamSwaps(paging, tw, request, skipOrders)
+              .flatMap(ord => fs2.Stream.fromOption(ord.toApi[Swap](now)))
+          case Some(OrderType.AmmDeposit) =>
+            historyStreaming
+              .streamAmmDeposits(paging, tw, request, skipOrders)
+              .flatMap(ord => fs2.Stream.fromOption(ord.toApi[AmmDepositApi](now)))
+          case Some(OrderType.AmmRedeem) =>
+            historyStreaming
+              .streamAmmRedeems(paging, tw, request, skipOrders)
+              .flatMap(ord => fs2.Stream.fromOption(ord.toApi[AmmRedeemApi](now)))
+          case Some(OrderType.Lock) =>
+            historyStreaming
+              .streamLocks(paging, tw, request, skipOrders)
+              .flatMap(ord => fs2.Stream.fromOption(ord.toApi[Lock](now)))
+          case Some(OrderType.LmDeposit) =>
+            historyStreaming
+              .streamLmDeposits(paging, tw, request, skipOrders)
+              .flatMap(ord => fs2.Stream.fromOption(ord.toApi[LmDepositApi](now)))
+          case Some(OrderType.LmRedeem) =>
+            historyStreaming
+              .streamLmRedeems(paging, tw, request, skipOrders)
+              .flatMap(ord => fs2.Stream.fromOption(ord.toApi[LmRedeemApi](now)))
+          case None =>
+            historyStreaming
+              .streamAnyOrders(paging, tw, request, skipOrders)
+              .flatMap(ord => fs2.Stream.fromOption(ord.toApi[ApiOrder](now)))
+        }
+      }
   }
 }
