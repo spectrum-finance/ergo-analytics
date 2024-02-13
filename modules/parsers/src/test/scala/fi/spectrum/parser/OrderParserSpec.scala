@@ -13,8 +13,9 @@ import org.scalatest.propspec.AnyPropSpec
 class OrderParserSpec extends AnyPropSpec with Matchers with CatsPlatform {
 
   implicit val e: ErgoAddressEncoder = new ErgoAddressEncoder(ErgoAddressEncoder.MainnetNetworkPrefix)
-  implicit val spf: TokenId          = TokenId.unsafeFromString("")
-  val parser: OrderParser            = OrderParser.make
+  implicit val spf: TokenId =
+    TokenId.unsafeFromString("9a06d9e545a41fd51eeffc5e20d818073bf820c635e2a9d922269913e0de369d")
+  val parser: OrderParser = OrderParser.make
 
   val out =
     """

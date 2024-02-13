@@ -10,6 +10,7 @@ import fi.spectrum.core.domain.order.{OrderId, OrderState, OrderStatus}
 import fi.spectrum.core.protocol.ErgoTreeSerializer
 import fi.spectrum.indexer.db.Indexer
 import fi.spectrum.parser.evaluation.ProcessedOrderParser
+import fi.spectrum.parser.lm.compound.v1.Compound.compoundBatchTx
 import fi.spectrum.parser.lm.compound.v1.{Compound, CompoundParserV1}
 import fi.spectrum.parser.lm.order.v1.LM
 import fi.spectrum.parser.lm.pool.v1.SelfHosted
@@ -57,13 +58,13 @@ class OrderProcessorSpec extends AnyFlatSpec with Matchers with Indexer {
     }
 
     //    batch
-//      .map(_.order)
-//      .sortBy(_.id.value) shouldEqual (Compound.expectedBatchCompoundsEval ::: Compound.expectedBatchCompoundsRegister)
-//      .map(_.order)
-//      .sortBy(_.id.value)
+    //      .map(_.order)
+    //      .sortBy(_.id.value) shouldEqual (Compound.expectedBatchCompoundsEval ::: Compound.expectedBatchCompoundsRegister)
+    //      .map(_.order)
+    //      .sortBy(_.id.value)
 
     val one = processOrder[IO](
-      Compound.compoundTxOneOrder,
+      compoundBatchTx,
       1,
       1,
       _ => IO.pure(Compound.expectedBatchCompoundsEval.take(1)),
@@ -74,7 +75,7 @@ class OrderProcessorSpec extends AnyFlatSpec with Matchers with Indexer {
 
     println(one)
 
-    one.length shouldEqual 3
+    one.length shouldEqual 11
   }
 
   "Order processor" should "find LM deposit" in {
@@ -89,19 +90,19 @@ class OrderProcessorSpec extends AnyFlatSpec with Matchers with Indexer {
     ) shouldEqual register.head
 
     val eval =
-      processOrder[IO](LM.tx, 1, 1, _ => IO.pure(List(register.head)), _ => IO.pure(SelfHosted.pool.some), IO.unit)
+      processOrder[IO](compoundBatchTx, 1, 1, _ => IO.pure(List(register.head)), _ => IO.pure(SelfHosted.pool.some), IO.unit)
         .unsafeRunSync()
 
-    eval.length shouldEqual 2
+    eval.length shouldEqual 11
 
     ProcessedOrderParser
       .make[IO]
-      .evaluated(LM.tx, 1, register.head, SelfHosted.pool, 1, List.empty)
+      .evaluated(compoundBatchTx, 1, register.head, SelfHosted.pool, 1, List.empty)
       .unsafeRunSync()
       .get shouldEqual eval.head
 
     Processed.make(
-      OrderState(LM.tx.id, 1, OrderStatus.Registered),
+      OrderState(compoundBatchTx.id, 1, OrderStatus.Registered),
       CompoundParserV1.v1Compound
         .compound(
           LM.compoundCreateForDeposit,
@@ -109,7 +110,6 @@ class OrderProcessorSpec extends AnyFlatSpec with Matchers with Indexer {
         )
         .get
     ) shouldEqual eval.last
-
   }
 
   "Order processor" should "find LM redeem" in {
@@ -141,8 +141,8 @@ class OrderProcessorSpec extends AnyFlatSpec with Matchers with Indexer {
         .unsafeRunSync()
 
     eval.length shouldEqual 2
-    eval.head.order.id shouldEqual OrderId("6293e74ef80b60076ceba4372c9f68c8bcd610eb9ddd6b565e4adf624f4a9d7a")
-    eval.last.order.id shouldEqual OrderId("353fb1e32f52c4353daf8c66c8426b36f2d1989a88efd64bd38ac3173dc3c4ca")
+    eval.head.order.id shouldEqual OrderId("00165c410829ff0cc2d176acb1fe8e37d7b65d597faf11f5ce210ef8457cd780")
+    eval.last.order.id shouldEqual OrderId("c622e40595f7edfdb26ae3709fbcbc8584f26ef258461e247d2516015ae42a43")
   }
 
 }
