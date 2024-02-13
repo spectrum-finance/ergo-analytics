@@ -41,7 +41,10 @@ object HttpServer {
       val historyR       = HistoryRoutes.make[F]
       val docsR          = DocsRoutes.make[F]
       val routes = unliftRoutes[F, I](
-        metrics.middleware(historyR <+> cache.middleware(ammStatsR <+> priceTrackingR <+> lmStatsR <+> docsR))
+        metrics.middleware(
+          historyR.routes <+> cache
+            .middleware(historyR.cachingRoutes <+> ammStatsR <+> priceTrackingR <+> lmStatsR <+> docsR)
+        )
       )
       val corsRoutes = CORS.policy.withAllowOriginAll(routes)
       val api        = Router("/" -> corsRoutes).orNotFound

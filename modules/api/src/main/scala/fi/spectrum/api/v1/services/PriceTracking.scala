@@ -176,6 +176,7 @@ object PriceTracking {
 
             currentOpt.toList.map { vol =>
               AmmMarketSummary(
+                vol.poolId,
                 snapshot.lockedX,
                 snapshot.lockedY,
                 vol.volumeByX,
@@ -215,6 +216,7 @@ object PriceTracking {
             } yield (
               CMCMarket(
                 MarketId(tx.id, ty.id),
+                snapshot.id,
                 tx.id,
                 tx.ticker,
                 tx.ticker,
